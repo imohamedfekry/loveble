@@ -1,17 +1,61 @@
 export const RESPONSE_MESSAGES = {
   AUTH: {
-    LOGIN_SUCCESS: {
-      code: 'LOGIN_SUCCESS',
-      message: 'Login completed successfully.',
+    OTP: {
+      VERFIED: {
+        code: 'OTP_VERIFIED',
+        message: 'OTP verified successfully',
+      },
+      EXPIRED: {
+        code: 'OTP_EXPIRED',
+        message: 'OTP has expired',
+      },
+      INVALID: {
+        code: 'OTP_INVALID',
+        message: 'Invalid email or OTP',
+      },
+      REQUEST: {
+        SUCCESS: {
+          code: 'OTP_REQUEST_SUCCESS',
+          message: 'OTP requested successfully',
+        },
+        RESENT: {
+          code: 'OTP_RESENT',
+          message: 'OTP resent successfully',
+        },
+        EMAIL_ALREADY_EXISTS: {
+          code: 'EMAIL_ALREADY_EXISTS',
+          message: 'Email already exists',
+        },
+        already_sent: {
+          code: 'OTP_ALREADY_SENT',
+          message: (seconds: number) => `Otp already sent. Try again after ${seconds} seconds`,
+        }
+      },
+      LOGIN_SUCCESS: {
+        code: 'LOGIN_SUCCESS',
+        message: 'Login completed successfully.',
+      },
+      LOGOUT_SUCCESS: {
+        code: 'LOGOUT_SUCCESS',
+        message: 'Logout completed successfully.',
+      },
+      INVALID_CREDENTIALS: {
+        code: 'INVALID_CREDENTIALS',
+        message: 'Invalid email or password.',
+      },
     },
-    LOGOUT_SUCCESS: {
-      code: 'LOGOUT_SUCCESS',
-      message: 'Logout completed successfully.',
-    },
-    INVALID_CREDENTIALS: {
-      code: 'INVALID_CREDENTIALS',
-      message: 'Invalid email or password.',
-    },
+    login: {
+      SUCCESS: {
+        code: 'LOGIN_SUCCESS',
+        message: 'Login completed successfully.',
+      },
+      FAIL: {
+        INVALID_CREDENTIALS: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid credentials.',
+        },
+      },
+    }
   },
   USER: {
     FETCH_SUCCESS: {
@@ -24,65 +68,20 @@ export const RESPONSE_MESSAGES = {
         message: 'User created successfully',
       },
       FAIL: {
+        INVALID_TOKEN: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid or expired token.',
+        },
         USER_ALREADY_EXISTS: {
           code: 'USER_ALREADY_EXISTS',
           message: 'User already exists.',
         },
       },
     },
-    ADD_ROLE: {
-      SUCCESS: {
-        code: 'ROLE_ADDED_SUCCESS',
-        message: 'Role added successfully to user.',
-      },
-      FAIL: {
-        code: 'ROLE_ADD_FAILED',
-        message: 'Failed to add role to user.',
-      },
-    },
-    REMOVE_ROLE: {
-      SUCCESS: {
-        code: 'ROLE_REMOVED_SUCCESS',
-        message: 'Role removed successfully from user.',
-      },
-      FAIL: {
-        code: 'ROLE_REMOVE_FAILED',
-        message: 'Failed to remove role from user.',
-      }
-    },
     NOTFOUND: {
       code: 'USER_NOT_FOUND',
       message: 'User not found',
-    }
-  },
-  ROLE: {
-    FETCH_SUCCESS: {
-      code: 'ROLES_FETCHED',
-      message: 'Roles fetched successfully.',
     },
-    CREATE: {
-      code: 'ROLE_CREATED',
-      message: 'Role created Successfully',
-    },
-    DELETE: {
-      SUCCESS: {
-        code: 'ROLE_DELETED',
-        message: 'Role deleted successfully',
-      },
-      fail: {
-        code: 'ROLE_DELETE_FAILED',
-        message: "Role failed to delete"
-      }
-    },
-    NOTFOUND: {
-      code: 'ROLE_NOT_FOUND',
-      message: 'Role not found',
-    },
-    UPDATED: {
-      code: 'ROLE_UPDATED',
-      message: 'Role updated successfully'
-    }
-
   },
 } as const;
 

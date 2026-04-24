@@ -16,4 +16,7 @@ export default registerAs('jwt', () => ({
       'your-super-secret-refresh-key-here',
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
+  temp: {
+    secret: process.env.JWT_TEMP,
+  },
 }));

@@ -1,35 +1,39 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
-import { Response } from 'express';
+import { FastifyReply } from 'fastify';
 import { ApiResponseHelper } from '../helpers/api-response.helper';
 import { RESPONSE_CODES } from '../constants/response-codes';
 
 @Catch()
-export default class CatchAllFilter implements ExceptionFilter {
-  catch(exception: Error & { code?: string }, host: ArgumentsHost) {
-    const res = host.switchToHttp().getResponse<Response>();
+export class CatchAllFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const res = host.switchToHttp().getResponse<FastifyReply>();
+
     console.log(exception);
+
     if (process.env.NODE_ENV === 'development') {
       return this.errorDev(res, exception);
-    } else {
-      return this.errorProd(res);
     }
+
+    return this.errorProd(res);
   }
 
-  errorDev(res: Response, exception: Error & { code?: string | undefined }) {
-    res.status(500).json(
+  errorDev(res: FastifyReply, exception: unknown) {
+    return res.code(500).send(
       ApiResponseHelper.error(
-        { code: RESPONSE_CODES.SERVER_ERROR, message: exception.message },
+        {
+          code: RESPONSE_CODES.SERVER_ERROR,
+          message: (exception as Error)?.message || 'Unknown error',
+        },
         {
           timestamp: new Date().toISOString(),
-          // @ts-expect-error allow meta in dev
           meta: { exception },
-        },
+        } as any,
       ),
     );
   }
 
-  errorProd(res: Response) {
-    res.status(500).json(
+  errorProd(res: FastifyReply) {
+    return res.code(500).send(
       ApiResponseHelper.error({
         code: RESPONSE_CODES.SERVER_ERROR,
         message: 'Internal Server Error',

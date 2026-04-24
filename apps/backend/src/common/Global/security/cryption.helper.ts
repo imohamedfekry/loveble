@@ -15,4 +15,3 @@ export function decrypt(encrypted: string): string {
   decrypted += decipher.final('utf8');
   return decrypted;
 }
-

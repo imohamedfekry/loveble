@@ -1,64 +1,65 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
-// import { UserRepository } from 'src/common/database/repositories/User/User.repository';
+import type { AuthenticatedUser } from '../types/auth-request.type';
+import { UserRepository } from 'src/common/database/repositories/user/user.repository';
 
-type TokenPayload = {
-  sub: string;
-  type?: 'access' | 'refresh';
-} & Record<string, unknown>;
-
-type DecodedToken = {
+type JwtSubjectPayload = {
   sub?: string;
 } & Record<string, unknown>;
+
+type TokenKind = 'access' | 'temp' | 'refresh';
+type TokenAction = 'sign' | 'verify';
 
 @Injectable()
 export class JwtHelper {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    // private readonly userRepository: UserRepository,
+    private readonly userRepository: UserRepository,
   ) { }
 
-  /**
-   * Signs a JWT. Uses `jwt.refreshToken.*` when `payload.type === 'refresh'`, else `jwt.accessToken.*`.
-   */
-  generateToken(payload: TokenPayload): string {
-    const isRefresh = payload.type === 'refresh';
-    const base = isRefresh ? 'jwt.refreshToken' : 'jwt.accessToken';
-    const secret = this.configService.getOrThrow<string>(`${base}.secret`);
-    const expiresIn = this.configService.get<string>(`${base}.expiresIn`, '7d');
-    return this.jwtService.sign(payload, {
-      secret,
-      expiresIn,
-    } as JwtSignOptions);
-  }
+  token(
+    action: TokenAction,
+    kind: TokenKind,
+    input: string | JwtSubjectPayload,
+  ): string | JwtSubjectPayload | null {
+    const secret =
+      kind === 'temp'
+        ? this.configService.getOrThrow<string>('jwt.temp.secret')
+        : kind === 'refresh'
+          ? this.configService.getOrThrow<string>('jwt.refreshToken.secret')
+          : this.configService.getOrThrow<string>('jwt.accessToken.secret');
 
-  /**
-   * Verifies a JWT with the access or refresh secret.
-   */
-  verifyToken(token: string, kind: 'access' | 'refresh' = 'access'): unknown {
-    const base = kind === 'refresh' ? 'jwt.refreshToken' : 'jwt.accessToken';
-    const secret = this.configService.getOrThrow<string>(`${base}.secret`);
-    return this.jwtService.verify(token, { secret });
-  }
-  async VerifyAndGetUser(token: unknown): Promise<unknown | null> {
     try {
-      if (typeof token !== 'string' || !token) return null;
+      if (action === 'verify') {
+        return this.jwtService.verify(input as string, { secret }) as JwtSubjectPayload;
+      }
 
-      const decoded = this.verifyToken(token) as DecodedToken | null;
+      const payload = input as JwtSubjectPayload;
+      const expiresIn =
+        kind === 'temp'
+          ? '3m'
+          : kind === 'refresh'
+            ? this.configService.get<string>('jwt.refreshToken.expiresIn', '7d')
+            : this.configService.get<string>('jwt.accessToken.expiresIn', '15m');
 
-      if (!decoded?.sub) return null;
-
-      const userId = BigInt(decoded.sub);
-
-      // const user = await this.userRepository.findById(userId);
-      // if (!user) return null;
-      // if (user.jwtSecret !== decoded.jwtSecret) return null;
-
-      // return user;
+      return this.jwtService.sign(payload, {
+        secret,
+        expiresIn,
+      } as JwtSignOptions);
     } catch {
       return null;
     }
+  }
+
+  async VerifyAndGetUser(token: string): Promise<AuthenticatedUser | null> {
+    const decoded = this.token('verify', 'access', token) as JwtSubjectPayload | null;
+    if (!decoded?.sub) {
+      return null;
+    }
+    const userId = BigInt(decoded.sub);
+    const user = await this.userRepository.findById(userId);
+    return user ?? null;
   }
 }

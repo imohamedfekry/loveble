@@ -8,7 +8,8 @@ export function generateOtp(options?: OtpOptions): string {
   const type = options?.type ?? 'numeric';
 
   const digits = '0123456789';
-  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const alpha =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
   const chars = type === 'numeric' ? digits : alpha;
 
@@ -18,6 +19,7 @@ export function generateOtp(options?: OtpOptions): string {
     const index = Math.floor(Math.random() * chars.length);
     otp += chars[index];
   }
-
+  console.log(otp);
+  
   return otp;
 }

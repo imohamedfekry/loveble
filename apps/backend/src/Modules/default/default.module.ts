@@ -6,4 +6,4 @@ import { DefaultService } from './default.service';
   controllers: [DefaultController],
   providers: [DefaultService],
 })
-export class DefaultModule { }
+export class DefaultModule {}

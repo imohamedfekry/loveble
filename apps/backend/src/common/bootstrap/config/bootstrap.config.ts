@@ -1,88 +1,85 @@
-import { NestApplication } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import CatchAllFilter from '../../filters/catchAll.filter';
-import CustomHttpException from '../../filters/customHttpException.filter';
+
+import { CatchAllFilter } from '../../filters/catchAll.filter';
 import { BigIntInterceptor } from '../../interceptors/BigInt.interceptors';
-import cookieParser from 'cookie-parser';
 import { StandardValidationPipe } from '@mag123c/nestjs-stdschema';
+
+import fastifyCors from '@fastify/cors';
+import fastifyCookie from '@fastify/cookie';
 
 export class BootstrapConfig {
   static async configureApp(
-    app: NestApplication,
+    app: NestFastifyApplication,
     configService: ConfigService,
   ) {
-    // Enable CORS
-    app.enableCors({
-      origin: configService.get('app.cors.origin') || '*',
-      methods: configService.get('app.cors.methods') || [
-        'GET',
-        'POST',
-        'PUT',
-        'PATCH',
-        'DELETE',
-        'OPTIONS',
-      ],
-      credentials: configService.get('app.cors.credentials') || true,
+    // ✅ CORS (Fastify plugin)
+    await app.register(fastifyCors, {
+      origin: configService.get<string>('app.cors.origin') || '*',
+
+      methods:
+        configService.get<string[]>('app.cors.methods') || [
+          'GET',
+          'POST',
+          'PUT',
+          'PATCH',
+          'DELETE',
+          'OPTIONS',
+        ],
+
+      credentials:
+        configService.get<boolean>('app.cors.credentials') ?? true,
     });
 
-    // Set global prefix
+    // ✅ Cookies
+    await app.register(fastifyCookie, {
+      secret: 'my-secret',
+    });
+
+    // Global prefix
     app.setGlobalPrefix(configService.get('app.apiPrefix') || 'api');
-    // Configure validation pipes
+
+    // Validation
     this.configureValidationPipes(app);
 
-    // Configure global filters and interceptors
+    // Filters & Interceptors
     this.configureGlobalFilters(app);
     this.configureGlobalInterceptors(app);
 
-    // Enable versioning
+    // Versioning
     this.configureVersioning(app);
-
-    // Use cookie parser middleware
-    this.configureCookieParser(app);
-    
   }
 
-  private static configureValidationPipes(app: NestApplication) {
-    const validationPipe = new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      disableErrorMessages: process.env.NODE_ENV === 'production',
-      stopAtFirstError: true,
-      transform: true,
-      validateCustomDecorators: true,
-    });
+  private static configureValidationPipes(app: NestFastifyApplication) {
     app.useGlobalPipes(new StandardValidationPipe());
-    // app.useGlobalPipes(validationPipe);
   }
 
-  private static configureGlobalFilters(app: NestApplication) {
-    app.useGlobalFilters(new CatchAllFilter(), new CustomHttpException());
+  private static configureGlobalFilters(app: NestFastifyApplication) {
+    app.useGlobalFilters(new CatchAllFilter(), new CatchAllFilter());
   }
 
-  private static configureGlobalInterceptors(app: NestApplication) {
+  private static configureGlobalInterceptors(app: NestFastifyApplication) {
     app.useGlobalInterceptors(new BigIntInterceptor());
   }
 
-  private static configureVersioning(app: NestApplication) {
+  private static configureVersioning(app: NestFastifyApplication) {
     app.enableVersioning({
       type: VersioningType.URI,
       defaultVersion: '1',
     });
-  }
-  // configure cookie parser middleware
-  private static configureCookieParser(app: NestApplication) {
-    app.use(cookieParser());
   }
 
   static getServerInfo(configService: ConfigService) {
     const port =
       configService.get<number>('app.port') ??
       parseInt(process.env.PORT ?? '3000', 10);
+
     const nodeEnv =
       configService.get<string>('app.nodeEnv') ??
       process.env.NODE_ENV ??
       'development';
+
     const apiPrefix = configService.get<string>('app.apiPrefix') ?? 'api';
     const apiVersion = configService.get<string>('app.apiVersion') ?? 'v1';
 

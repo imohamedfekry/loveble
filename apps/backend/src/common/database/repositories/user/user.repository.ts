@@ -1,11 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { DRIZZLE_DB } from 'src/common/database/database.module';
-import type { DrizzleDatabase } from 'src/common/database/database.module';
 
 import { NewUser, User, users } from '../../schema';
 import { BaseRepository } from '../base.repository';
+import { DRIZZLE_DB } from '../../database.constants';
+import type { DrizzleDatabase } from '../../database.constants';
 
 @Injectable()
 export class UserRepository extends BaseRepository {
@@ -33,7 +33,7 @@ export class UserRepository extends BaseRepository {
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
-      return result[0] ?? null;
+    return result[0] ?? null;
   }
   async deleteById(id: bigint): Promise<void> {
     await this.db.delete(users).where(eq(users.id, id));
