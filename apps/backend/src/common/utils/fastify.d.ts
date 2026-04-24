@@ -1,8 +1,4 @@
-// This empty export makes the file a "module" so that
-// `declare module 'fastify'` below is treated as MODULE AUGMENTATION
-// (merging with real Fastify types), NOT as a standalone ambient declaration
-// that would replace the original types.
-export {};
+export { };
 
 declare module 'fastify' {
   interface FastifyReply {

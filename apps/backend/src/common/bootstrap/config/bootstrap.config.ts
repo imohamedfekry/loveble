@@ -2,6 +2,7 @@ import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { HttpExceptionFilter } from '../../filters/customHttpException.filter';
 import { CatchAllFilter } from '../../filters/catchAll.filter';
 import { BigIntInterceptor } from '../../interceptors/BigInt.interceptors';
 import { StandardValidationPipe } from '@mag123c/nestjs-stdschema';
@@ -26,6 +27,7 @@ export class BootstrapConfig {
           'PATCH',
           'DELETE',
           'OPTIONS',
+          'HEAD',
         ],
 
       credentials:
@@ -56,7 +58,7 @@ export class BootstrapConfig {
   }
 
   private static configureGlobalFilters(app: NestFastifyApplication) {
-    app.useGlobalFilters(new CatchAllFilter(), new CatchAllFilter());
+    app.useGlobalFilters(new CatchAllFilter(), new HttpExceptionFilter());
   }
 
   private static configureGlobalInterceptors(app: NestFastifyApplication) {

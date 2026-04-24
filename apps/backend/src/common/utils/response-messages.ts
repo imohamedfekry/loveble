@@ -84,8 +84,3 @@ export const RESPONSE_MESSAGES = {
     },
   },
 } as const;
-
-// PROFILE_FETCHED: {
-//   code: 'USER_PROFILE_FETCHED',
-//   message: 'User profile retrieved successfully.',
-// },

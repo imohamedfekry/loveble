@@ -3,38 +3,57 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import { JwtHelper } from '../jwt/jwt.helper';
+import { UserRepository } from 'src/common/database/repositories/user/user.repository';
 import type { AuthenticatedUser } from '../types/auth-request.type';
+import { AccessTokenService } from '../jwt/services/access-token.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly jwtHelper: JwtHelper) { }
+  private readonly logger = new Logger(AuthGuard.name);
+
+  constructor(
+    private readonly accessTokenService: AccessTokenService,
+    private readonly userRepository: UserRepository,
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (process.env.DEBUG_GUARDS === 'true') {
-      console.log('[AuthGuard] canActivate');
-    }
-
-    // Cast to FastifyRequest to access cookies (set by @fastify/cookie)
     const request = context
       .switchToHttp()
       .getRequest<FastifyRequest & { user: AuthenticatedUser }>();
 
-    // Read access token from HttpOnly cookie
     const token = request.cookies?.['Authorization'];
 
     if (!token) {
-      throw new UnauthorizedException('Forbidden resource');
+      throw new UnauthorizedException('Authentication token is missing');
     }
 
-    const user = await this.jwtHelper.VerifyAndGetUser(token);
-    if (!user) {
-      throw new UnauthorizedException('Forbidden resource');
-    }
+    try {
+      // Automatic verify handles expiration throw
+      const payload = await this.accessTokenService.verify<{ sub: string }>(token.trim());
+      
+      if (!payload?.sub) {
+        throw new Error('Invalid token payload');
+      }
 
-    request.user = user;
-    return true;
+      const user = await this.userRepository.findById(BigInt(payload.sub));
+      
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      request.user = user;
+      return true;
+    } catch (error) {
+      this.logger.error(`AuthGuard failed: ${error.message}`);
+      
+      const message = error.message.includes('expired') 
+        ? 'Token expired' 
+        : 'Invalid token';
+        
+      throw new UnauthorizedException(message);
+    }
   }
 }
