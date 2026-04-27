@@ -1,7 +1,8 @@
-import type { User } from 'src/common/database/schema';
+import type { FastifyRequest } from 'fastify';
+import type { User } from '../../../database/schema';
 
 export type AuthenticatedUser = User;
 
-export type AuthenticatedRequest = Request & {
+export type AuthenticatedRequest = FastifyRequest & {
   user: AuthenticatedUser;
 };

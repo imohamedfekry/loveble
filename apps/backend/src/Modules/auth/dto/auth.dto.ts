@@ -69,7 +69,20 @@ const LoginSchema = v.object({
     ),
   ),
 });
+const GithubCallbackSchema = v.object({
+  code: v.pipe(
+    v.string('Code must be a string'),
+    v.nonEmpty('Code is required'),
+  ),
 
+  state: v.optional(
+    v.pipe(
+      v.string('State must be a string'),
+      v.nonEmpty('State cannot be empty'),
+    )
+  ),
+});
+export class GithubCallbackDto extends createStandardDto(GithubCallbackSchema) { }
 export class TempUserDto extends createStandardDto(TempUserSchema) { }
 export class verfyOtpDto extends createStandardDto(verfyOtpSchema) { }
 export class CreateUserDto extends createStandardDto(CreateUserSchema) { }

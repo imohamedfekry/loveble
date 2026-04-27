@@ -4,7 +4,7 @@ type Msg = { code: string; message: string };
 
 export function success<T>(msg: Msg, data?: T): ApiResponse<T> {
   return {
-    status: 'success',
+    success: true,
     code: msg.code,
     message: msg.message,
     data,
@@ -16,7 +16,7 @@ export function fail<T = undefined>(
   extra?: Partial<ApiResponse<T>>,
 ): ApiResponse<T> {
   return {
-    status: 'fail',
+    success: false,
     code: msg.code,
     message: msg.message,
     ...(extra as any),
@@ -28,7 +28,7 @@ export function error(
   extra?: Partial<ApiResponse>,
 ): ApiResponse<undefined> {
   return {
-    status: 'error',
+    success: false,
     code: msg.code,
     message: msg.message,
     ...extra,

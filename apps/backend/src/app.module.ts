@@ -4,8 +4,9 @@ import { CoreModule } from './common/core/core.module';
 import { DefaultModule } from './Modules/default/default.module';
 import { RedisModule } from './common/redis/redis.module';
 import { AuthModule } from './Modules/auth/auth.module';
+import { QueueModule } from './Modules/queue/queue.module';
 
 @Module({
-  imports: [CoreModule, UserModule, DefaultModule, RedisModule, AuthModule],
+  imports: [CoreModule, UserModule, DefaultModule, RedisModule, AuthModule, QueueModule],
 })
 export class AppModule { }

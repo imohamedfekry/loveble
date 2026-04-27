@@ -7,8 +7,8 @@ import {
 } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { UserRepository } from 'src/common/database/repositories/user/user.repository';
-import type { AuthenticatedUser } from '../types/auth-request.type';
 import { AccessTokenService } from '../jwt/services/access-token.service';
+import type { AuthenticatedUser } from '../types/auth-request.type';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -33,13 +33,13 @@ export class AuthGuard implements CanActivate {
     try {
       // Automatic verify handles expiration throw
       const payload = await this.accessTokenService.verify<{ sub: string }>(token.trim());
-      
+
       if (!payload?.sub) {
         throw new Error('Invalid token payload');
       }
 
       const user = await this.userRepository.findById(BigInt(payload.sub));
-      
+
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
@@ -48,11 +48,11 @@ export class AuthGuard implements CanActivate {
       return true;
     } catch (error) {
       this.logger.error(`AuthGuard failed: ${error.message}`);
-      
-      const message = error.message.includes('expired') 
-        ? 'Token expired' 
+
+      const message = error.message.includes('expired')
+        ? 'Token expired'
         : 'Invalid token';
-        
+
       throw new UnauthorizedException(message);
     }
   }

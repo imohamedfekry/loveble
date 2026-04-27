@@ -19,4 +19,8 @@ export default registerAs('jwt', () => ({
   temp: {
     secret: process.env.JWT_TEMP,
   },
+  oauth: {
+    secret: process.env.OAUTH_TOKEN,
+    expiresIn: '2m',
+  },
 }));

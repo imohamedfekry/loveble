@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 
 const envSchema = v.object({
+  // ENV
   NODE_ENV: v.optional(
     v.pipe(
       v.string(),
@@ -20,6 +21,7 @@ const envSchema = v.object({
     v.maxValue(65535),
   ),
   CORS_ORIGIN: v.pipe(v.string(), v.nonEmpty()),
+  MONGODB_URL: v.pipe(v.string(), v.nonEmpty()),
   LOG_LEVEL: v.optional(
     v.pipe(
       v.string(),
@@ -28,21 +30,24 @@ const envSchema = v.object({
     ),
     'log',
   ),
-
+  // JWT
   JWT_SECRET_ACCESS: v.pipe(v.string(), v.nonEmpty()),
   JWT_TEMP: v.pipe(v.string(), v.nonEmpty()),
   JWT_EXPIRES_IN: v.pipe(v.string(), v.nonEmpty()),
   JWT_SECRET_REFRESH: v.pipe(v.string(), v.nonEmpty()),
   JWT_REFRESH_EXPIRES_IN: v.pipe(v.string(), v.nonEmpty()),
-
+  OAUTH_TOKEN: v.pipe(v.string(), v.nonEmpty()),
+  // Encryption
   ENCRYPTION_KEY: v.pipe(v.string(), v.nonEmpty()),
   ENCRYPTION_ALGORITHM: v.pipe(v.string(), v.nonEmpty()),
   ENCRYPTION_IV: v.pipe(v.string(), v.nonEmpty()),
 
-  REDIS_ENABLED: v.optional(
-    v.pipe(v.string(), v.picklist(['true', 'false'])),
-    'false',
-  ),
+  // GitHub
+  GITHUB_CLIENT_ID: v.optional(v.string()),
+  GITHUB_CLIENT_SECRET: v.optional(v.string()),
+  GITHUB_CALLBACK_URL: v.optional(v.string()),
+
+  // Redis
   REDIS_URL: v.optional(v.string()),
   REDIS_HOST: v.optional(v.string(), '127.0.0.1'),
   REDIS_PORT: v.optional(

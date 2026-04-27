@@ -1,7 +1,7 @@
 export interface ApiResponse<T = any> {
-  status: 'success' | 'fail' | 'error';
-  code: string; // e.g., 'USER_CREATED', 'LOGIN_SUCCESS'
+  success: boolean;
   message: string;
   data?: T;
+  code?: string;
   timestamp?: string;
 }

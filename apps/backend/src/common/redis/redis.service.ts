@@ -11,30 +11,30 @@ import Redis from 'ioredis';
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   private client: Redis | null = null;
-  private enabled = false;
   private hadReconnectAttempt = false;
+  private connectionErrorLogged = false;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   async onModuleInit(): Promise<void> {
-    this.enabled = this.configService.get<boolean>('redis.enabled') ?? false;
-
-    if (!this.enabled) {
-      this.logger.log('Redis is disabled (REDIS_ENABLED=false)');
-      return;
-    }
-
     this.client = this.createClient();
     this.registerEventHandlers(this.client);
 
-    try {
-      await this.client.ping();
-      this.logger.log('Redis connected successfully');
-    } catch (error) {
-      const message = error instanceof Error ? error.stack : String(error);
-      this.logger.error('Failed to connect to Redis', message);
-      throw error;
-    }
+    this.logger.log('Redis initialization started...');
+
+    // Attempt an initial ping but don't block startup or crash if it fails
+    this.client.ping()
+      .then(() => {
+        this.logger.log('Redis connected successfully');
+        this.connectionErrorLogged = false;
+      })
+      .catch((error) => {
+        if (!this.connectionErrorLogged) {
+          const message = error instanceof Error ? error.message : String(error);
+          this.logger.warn(`Redis connection failed initially: ${message}. The app will continue starting but Redis features will be unavailable.`);
+          this.connectionErrorLogged = true;
+        }
+      });
   }
 
   getClient(): Redis | null {
@@ -42,11 +42,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async ping(): Promise<boolean> {
-    if (!this.enabled || !this.client) {
-      return true;
+    if (!this.client) return false;
+    try {
+      return (await this.client.ping()) === 'PONG';
+    } catch {
+      return false;
     }
-
-    return (await this.client.ping()) === 'PONG';
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -58,13 +59,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   private createClient(): Redis {
     const redisUrl = this.configService.get<string>('redis.url');
+    const commonOptions = {
+      maxRetriesPerRequest: null, // Required by BullMQ to prevent MaxRetriesPerRequestError
+      lazyConnect: true,
+      enableReadyCheck: false,
+      retryStrategy: (times: number) => {
+        // Exponential backoff with a cap, and less verbose logging
+        const delay = Math.min(times * 1000, 10000);
+        return delay;
+      },
+    };
 
     if (redisUrl) {
-      return new Redis(redisUrl, {
-        maxRetriesPerRequest: 1,
-        lazyConnect: false,
-        enableReadyCheck: true,
-      });
+      return new Redis(redisUrl, commonOptions);
     }
 
     return new Redis({
@@ -73,31 +80,35 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       username: this.configService.get<string>('redis.username'),
       password: this.configService.get<string>('redis.password'),
       db: this.configService.get<number>('redis.db'),
-      maxRetriesPerRequest: 1,
-      lazyConnect: false,
-      enableReadyCheck: true,
+      ...commonOptions,
     });
   }
 
   private registerEventHandlers(client: Redis): void {
     client.on('ready', () => {
-      if (this.hadReconnectAttempt) {
+      if (this.hadReconnectAttempt || this.connectionErrorLogged) {
         this.logger.log('Redis reconnected successfully');
         this.hadReconnectAttempt = false;
+        this.connectionErrorLogged = false;
         return;
       }
-
       this.logger.log('Redis connection is ready');
     });
 
     client.on('error', (error) => {
-      const message = error instanceof Error ? error.stack : String(error);
-      this.logger.error('Redis runtime error', message);
+      // Only log the first connection error to avoid spamming
+      if (!this.connectionErrorLogged) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Redis error: ${message}`);
+        this.connectionErrorLogged = true;
+      }
     });
 
     client.on('reconnecting', () => {
-      this.hadReconnectAttempt = true;
-      this.logger.warn('Redis reconnecting...');
+      if (!this.hadReconnectAttempt && !this.connectionErrorLogged) {
+        this.logger.warn('Redis reconnecting...');
+        this.hadReconnectAttempt = true;
+      }
     });
   }
 }

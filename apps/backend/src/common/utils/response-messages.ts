@@ -1,5 +1,9 @@
 export const RESPONSE_MESSAGES = {
   AUTH: {
+    UNAUTHORIZED: {
+      code: 'UNAUTHORIZED',
+      message: 'You are not authorized to perform this action.',
+    },
     OTP: {
       VERFIED: {
         code: 'OTP_VERIFIED',
@@ -28,8 +32,9 @@ export const RESPONSE_MESSAGES = {
         },
         already_sent: {
           code: 'OTP_ALREADY_SENT',
-          message: (seconds: number) => `Otp already sent. Try again after ${seconds} seconds`,
-        }
+          message: (seconds: number) =>
+            `Otp already sent. Try again after ${seconds} seconds`,
+        },
       },
       LOGIN_SUCCESS: {
         code: 'LOGIN_SUCCESS',
@@ -55,7 +60,33 @@ export const RESPONSE_MESSAGES = {
           message: 'Invalid credentials.',
         },
       },
-    }
+    },
+    oauth: {
+      LINK: {
+        SUCCESS: {
+          code: 'GITHUB_LINK_SUCCESS',
+          message: 'GitHub account linked successfully.',
+        },
+        FAIL: {
+          INVALID_OAUTH_RESPONSE: {
+            code: 'INVALID_OAUTH_RESPONSE',
+            message: 'Invalid GitHub response.',
+          },
+          ACCOUNT_ALREADY_LINKED: {
+            code: 'GITHUB_ACCOUNT_ALREADY_LINKED',
+            message: 'This GitHub account is already linked to another user.',
+          },
+          INVALID_TOKEN: {
+            code: 'INVALID_TOKEN',
+            message: 'Invalid or expired authentication token.',
+          },
+          EMAIL_REQUIRED: {
+            code: 'GITHUB_EMAIL_REQUIRED',
+            message: 'GitHub email is required to complete authentication.',
+          },
+        },
+      },
+    },
   },
   USER: {
     FETCH_SUCCESS: {
@@ -81,6 +112,26 @@ export const RESPONSE_MESSAGES = {
     NOTFOUND: {
       code: 'USER_NOT_FOUND',
       message: 'User not found',
+    },
+  },
+  PROJECT: {
+    FETCH_SUCCESS: {
+      code: 'PROJECT_FETCH_SUCCESS',
+      message: 'Project(s) retrieved successfully.',
+    },
+    CREATE: {
+      SUCCESS: {
+        code: 'PROJECT_CREATE_SUCCESS',
+        message: 'Project created successfully.',
+      },
+    },
+    DELETE_SUCCESS: {
+      code: 'PROJECT_DELETE_SUCCESS',
+      message: 'Project deleted successfully.',
+    },
+    NOT_FOUND: {
+      code: 'PROJECT_NOT_FOUND',
+      message: 'Project not found.',
     },
   },
 } as const;

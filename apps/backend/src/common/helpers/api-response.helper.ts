@@ -1,43 +1,45 @@
-import { ApiResponse } from '../utils/types';
-
-export type Msg = { code: string; message: string };
+import type { ApiResponse as ApiResponseType } from '../utils/types';
 
 export const ApiResponseHelper = {
-  success<T>(
-    msg: Msg,
-    data?: T,
-    extra?: Partial<ApiResponse<T>>,
-  ): ApiResponse<T> {
+  success<T>(data?: T, message = 'Success'): ApiResponseType<T> {
     return {
-      status: 'success',
-      code: msg.code,
-      message: msg.message,
+      success: true,
+      message,
       data,
-      ...extra,
-    } as ApiResponse<T>;
+    };
   },
 
-  fail<T = undefined>(
-    msg: Msg,
-    extra?: Partial<ApiResponse<T>>,
-  ): ApiResponse<T> {
-    return {
-      status: 'fail',
-      code: msg.code,
-      message: msg.message,
-      ...(extra as any),
-    } as ApiResponse<T>;
+  error(
+    msg: string | { message: string; code: string },
+    codeOrExtra?: string | any,
+  ): ApiResponseType {
+    const message = typeof msg === 'string' ? msg : msg.message;
+    const code =
+      typeof msg === 'object'
+        ? msg.code
+        : typeof codeOrExtra === 'string'
+        ? codeOrExtra
+        : undefined;
+
+    const response: ApiResponseType = {
+      success: false,
+      message,
+      code,
+    };
+
+    if (typeof codeOrExtra === 'object' && codeOrExtra !== null) {
+      Object.assign(response, codeOrExtra);
+    }
+
+    return response;
   },
 
-  error<T = undefined>(
-    msg: Msg,
-    extra?: Partial<ApiResponse<T>>,
-  ): ApiResponse<T> {
-    return {
-      status: 'error',
-      code: msg.code,
-      message: msg.message,
-      ...(extra as any),
-    } as ApiResponse<T>;
+  fail(
+    msg: string | { message: string; code: string },
+    extra?: any,
+  ): ApiResponseType {
+    return this.error(msg, extra);
   },
 };
+
+export const ApiResponse = ApiResponseHelper;

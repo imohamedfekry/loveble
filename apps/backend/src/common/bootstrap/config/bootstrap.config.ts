@@ -7,8 +7,9 @@ import { CatchAllFilter } from '../../filters/catchAll.filter';
 import { BigIntInterceptor } from '../../interceptors/BigInt.interceptors';
 import { StandardValidationPipe } from '@mag123c/nestjs-stdschema';
 
-import fastifyCors from '@fastify/cors';
+// import fastifyCors from '@fastify/cors';
 import fastifyCookie from '@fastify/cookie';
+import fastifyCors from '@fastify/cors';
 
 export class BootstrapConfig {
   static async configureApp(
@@ -16,8 +17,15 @@ export class BootstrapConfig {
     configService: ConfigService,
   ) {
     // ✅ CORS (Fastify plugin)
+    const corsOrigins = configService.get<string | string[]>('app.cors.origin');
+    const origins = Array.isArray(corsOrigins)
+      ? corsOrigins
+      : (corsOrigins
+        ? corsOrigins.split(',').map(o => o.trim())
+        : ['http://localhost:3001', 'http://localhost:5500','http://localhost:3000']);
+
     await app.register(fastifyCors, {
-      origin: configService.get<string>('app.cors.origin') || '*',
+      origin: origins,
 
       methods:
         configService.get<string[]>('app.cors.methods') || [

@@ -29,15 +29,18 @@ export class DatabaseModule {
         const db = drizzle(pool, { schema });
 
         await db.execute('SELECT 1');
-        console.log('Database connected');
+        console.log('PostgreSQL connected');
 
         return db;
       },
       inject: [ConfigService],
     };
+
     return {
       module: DatabaseModule,
-      imports: [ConfigModule],
+      imports: [
+        ConfigModule,
+      ],
       providers: [drizzleProvider, DatabaseService],
       exports: [drizzleProvider, DatabaseService],
     };

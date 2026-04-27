@@ -9,6 +9,6 @@ export class UserController {
   constructor(private readonly userService: UserService) { }
   @Get('@me')
   async getMe(@Req() req: AuthenticatedRequest) {
-    return this.userService.getMe(req.user);
+    return this.userService.getMe(req);
   }
 }

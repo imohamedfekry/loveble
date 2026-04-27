@@ -4,8 +4,8 @@ import { eq } from 'drizzle-orm';
 
 import { NewUser, User, users } from '../../schema';
 import { BaseRepository } from '../base.repository';
-import { DRIZZLE_DB } from '../../database.constants';
-import type { DrizzleDatabase } from '../../database.constants';
+import { DRIZZLE_DB } from 'src/common/database/database.constants';
+import type { DrizzleDatabase } from 'src/common/database/database.constants';
 
 @Injectable()
 export class UserRepository extends BaseRepository {

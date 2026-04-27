@@ -1,8 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { DRIZZLE_DB } from '../../database.constants';
-import type { DrizzleDatabase } from '../../database.constants';
+import { DRIZZLE_DB } from 'src/common/database/database.constants';
+import type { DrizzleDatabase } from 'src/common/database/database.constants';
 
 import { BaseRepository } from '../base.repository';
 import { tempUsers, TempUser, NewTempUser } from '../../schema';
@@ -59,7 +59,7 @@ export class TempUserRepository extends BaseRepository {
         })
         .where(eq(tempUsers.email, email))
         .returning();
-  
+
       return updated ?? null;
     });
   }

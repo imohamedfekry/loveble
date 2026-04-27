@@ -9,21 +9,18 @@ import {
 } from '@nestjs/platform-fastify';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(
+  const app = await NestFactory.create(
     AppModule,
     new FastifyAdapter(),
-  );
+  ) as NestFastifyApplication;
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-  // Bootstrap
   const { serverInfo } = await AppBootstrap.bootstrap(app);
 
-  // Interceptors
   app.useGlobalInterceptors(new ResponseInterceptor());
 
-  // Start server
   await app.listen(serverInfo.port, '0.0.0.0');
 
-  // Logs
   AppBootstrap.logServerInfo(serverInfo);
 }
 

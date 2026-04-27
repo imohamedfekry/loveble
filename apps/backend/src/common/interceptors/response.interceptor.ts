@@ -7,16 +7,13 @@ import {
 import { map, Observable } from 'rxjs';
 import { ApiResponse } from '../utils/types';
 
-const DEFAULT_STATUS = 'success';
-const DEFAULT_CODE = 'SUCCESS';
 const DEFAULT_MESSAGE = 'Operation completed successfully';
 
 function isApiResponse(value: unknown): value is ApiResponse<any> {
   return (
     typeof value === 'object' &&
     value !== null &&
-    'status' in value &&
-    'code' in value &&
+    'success' in value &&
     'message' in value
   );
 }
@@ -30,12 +27,13 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
 
         const isObject = typeof data === 'object' && data !== null;
 
-        return {
-          status: DEFAULT_STATUS,
-          code: DEFAULT_CODE,
+        const response: ApiResponse<any> = {
+          success: true,
           message: DEFAULT_MESSAGE,
           data: isObject ? data : { value: data },
-        } satisfies ApiResponse<any>;
+        };
+        
+        return response;
       }),
     );
   }
