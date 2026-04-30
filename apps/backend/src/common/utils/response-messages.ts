@@ -133,5 +133,9 @@ export const RESPONSE_MESSAGES = {
       code: 'PROJECT_NOT_FOUND',
       message: 'Project not found.',
     },
+    UPDATE_SUCCESS: {
+      code: 'PROJECT_UPDATE_SUCCESS',
+      message: 'Project updated successfully.',
+    }
   },
 } as const;

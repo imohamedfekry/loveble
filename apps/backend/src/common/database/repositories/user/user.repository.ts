@@ -18,15 +18,25 @@ export class UserRepository extends BaseRepository {
     return user;
   }
 
-  async findById(id: bigint): Promise<User | null> {
-    const result = await this.db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+async findById(id: bigint): Promise<User | null> {
+  const result = await this.db.query.users.findFirst({
+    where: eq(users.id, id),
+    with: {
+      oauthAccounts: true,
+    },
+  });
 
-    return result[0] ?? null;
-  }
+  return result ?? null;
+}
+// async findById(id: bigint): Promise<User | null> {
+//   const result = await this.db
+//     .select()
+//     .from(users)
+//     .where(eq(users.id, id))
+//     .limit(1);
+
+//   return result[0] ?? null;
+// }
   async findByEmail(email: string): Promise<User | null> {
     const result = await this.db
       .select()

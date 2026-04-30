@@ -1,13 +1,19 @@
 import { Body, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateUserDto, GithubCallbackDto, LoginDto, TempUserDto, verfyOtpDto } from './dto/auth.dto';
+import {
+  CreateUserDto,
+  GithubCallbackDto,
+  LoginDto,
+  TempUserDto,
+  verfyOtpDto,
+} from './dto/auth.dto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Auth } from 'src/common/decorator/auth-user.decorator';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly AuthService: AuthService) { }
+  constructor(private readonly AuthService: AuthService) {}
 
   @Post('request-otp')
   async requestOtp(@Body() body: TempUserDto) {
@@ -39,27 +45,24 @@ export class AuthController {
   }
   @Get('github/connect')
   @Auth()
-  async githubConnect(@Req() req: AuthenticatedRequest, @Res() res: FastifyReply) {
+  async githubConnect(
+    @Req() req: AuthenticatedRequest,
+    @Res() res: FastifyReply,
+  ) {
     return this.AuthService.getAuthUrl(req, res);
   }
   @Get('github/callback')
   @Auth()
   async githubCallback(
     @Query() query: GithubCallbackDto,
-    @Res() res: FastifyReply,
+    @Res({ passthrough: true }) res: FastifyReply,
     @Req() req: AuthenticatedRequest,
   ) {
-    try {
-      const { code, state } = query;
+    const { code, state } = query;
 
-      const accessToken = await this.AuthService.exchangeCode(code);
-      const profile = await this.AuthService.getProfile(accessToken);
+    const accessToken = await this.AuthService.exchangeCode(code);
+    const profile = await this.AuthService.getProfile(accessToken);
 
-      this.AuthService.linkAccount(profile, res, req, state);
-      return res.redirect('http://localhost:3000/auth/callback?github=linked');
-    } catch (error) {
-      return res.redirect('http://localhost:3000/auth/callback?error=github_failed');
-    }
-
+    return this.AuthService.linkAccount(profile, res, req, state);
   }
 }

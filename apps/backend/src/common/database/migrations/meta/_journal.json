@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1776024244288,
-      "tag": "0000_cooing_edwin_jarvis",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776122965526,
-      "tag": "0001_salty_expediter",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1777077370063,
-      "tag": "0002_easy_ricochet",
+      "when": 1777377722267,
+      "tag": "0000_wild_franklin_richards",
       "breakpoints": true
     }
   ]

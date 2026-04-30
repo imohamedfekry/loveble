@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth test panel</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .heading {
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .sub {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 0.5px solid #334155;
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: #64748b;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 0.5px solid #ffffff0a;
+      font-size: 14px;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .lbl {
+      color: #94a3b8;
+    }
+
+    .val {
+      font-family: monospace;
+      font-size: 12px;
+      color: #64748b;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .badge {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
+    .ok {
+      background: #14532d33;
+      color: #4ade80;
+      border: 0.5px solid #166534;
+    }
+
+    .fail {
+      background: #7f1d1d33;
+      color: #f87171;
+      border: 0.5px solid #991b1b;
+    }
+
+    .warn {
+      background: #78350f33;
+      color: #fbbf24;
+      border: 0.5px solid #92400e;
+    }
+
+    .info {
+      background: #1e3a5f33;
+      color: #60a5fa;
+      border: 0.5px solid #1e40af;
+    }
+
+    .muted {
+      background: #1e293b;
+      color: #475569;
+      border: 0.5px solid #334155;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px 14px;
+      border: 0.5px solid #334155;
+      border-radius: 8px;
+      background: transparent;
+      color: #e2e8f0;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background .15s;
+      text-align: left;
+    }
+
+    button:hover {
+      background: #273549;
+    }
+
+    button:active {
+      transform: scale(.98);
+    }
+
+    button.primary {
+      background: #1e3a5f;
+      border-color: #2563eb;
+      color: #93c5fd;
+    }
+
+    button.primary:hover {
+      background: #1e40af33;
+    }
+
+    button.danger {
+      border-color: #7f1d1d;
+      color: #f87171;
+    }
+
+    button.danger:hover {
+      background: #7f1d1d22;
+    }
+
+    input[type=email],
+    input[type=password] {
+      width: 100%;
+      padding: 9px 12px;
+      background: #0f172a;
+      border: 0.5px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 8px;
+    }
+
+    input:focus {
+      border-color: #2563eb;
+    }
+
+    #log {
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 150px;
+      overflow-y: auto;
+      line-height: 1.7;
+    }
+
+    .entry {
+      display: flex;
+      gap: 8px;
+    }
+
+    .ts {
+      color: #334155;
+      flex-shrink: 0;
+    }
+
+    .msg {
+      color: #94a3b8;
+    }
+
+    .msg.err {
+      color: #f87171;
+    }
+
+    .msg.suc {
+      color: #4ade80;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <div>
+      <p class="heading">Auth test panel</p>
+      <p class="sub">Login, session, GitHub OAuth</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Session</div>
+      <div class="row"><span class="lbl">Login state</span><span class="badge muted" id="b-login">checking...</span>
+      </div>
+      <div class="row"><span class="lbl">Username</span><span class="val" id="v-user">—</span></div>
+      <div class="row"><span class="lbl">Email</span><span class="val" id="v-email">—</span></div>
+      <div class="row"><span class="lbl">User ID</span><span class="val" id="v-id">—</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Login</div>
+      <input type="email" id="inp-email" placeholder="Email" value="mohamed@gmail.com" />
+      <input type="password" id="inp-pass" placeholder="Password" value="password.comAa#0" />
+      <button class="primary" onclick="doLogin()">Login</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">GitHub OAuth</div>
+      <div class="row"><span class="lbl">GitHub linked</span><span class="badge muted" id="b-github">—</span></div>
+      <div style="margin-top:12px">
+        <button class="primary" onclick="connectGitHub()">Connect GitHub account</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Actions</div>
+      <div class="actions">
+        <button onclick="checkMe()">Refresh session</button>
+        <button class="danger" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Log</div>
+      <div id="log">
+        <div class="entry"><span class="ts">--:--:--</span><span class="msg">Ready.</span></div>
+      </div>
+    </div>
+
+  </div>
+  <script>
+    const API = 'http://localhost:3001/api/v1';
+
+    function ts() { return new Date().toLocaleTimeString('en-GB'); }
+
+    function log(msg, type) {
+      const el = document.getElementById('log');
+      const cls = type === 'error' ? 'err' : type === 'success' ? 'suc' : '';
+      el.innerHTML = `<div class="entry"><span class="ts">${ts()}</span><span class="msg ${cls}">${msg}</span></div>` + el.innerHTML;
+    }
+
+    function setBadge(id, text, type) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'badge ' + (type || 'muted');
+    }
+
+    function setUser(u) {
+      document.getElementById('v-user').textContent = u?.username || '—';
+      document.getElementById('v-email').textContent = u?.email || '—';
+      document.getElementById('v-id').textContent = String(u?.id || '—');
+    }
+
+    function clearUser() {
+      ['v-user', 'v-email', 'v-id'].forEach(id => document.getElementById(id).textContent = '—');
+      setBadge('b-login', 'not logged in', 'fail');
+      setBadge('b-github', '—', 'muted');
+    }
+
+    async function checkMe() {
+      log('GET /user/@me ...');
+      try {
+        const r = await fetch(API + '/user/@me', { credentials: 'include' });
+        const data = await r.json();
+        if (r.ok && data.success !== false) {
+          const u = data.data?.user || data.data || data;
+          setUser(u);
+          setBadge('b-login', 'logged in', 'ok');
+          log('Logged in as: ' + (u.username || u.email), 'success');
+        } else {
+          clearUser();
+          log('Not authenticated — ' + (data.message || data.code || r.status), 'error');
+        }
+      } catch (e) {
+        clearUser();
+        log('Fetch error: ' + e.message, 'error');
+      }
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('inp-email').value.trim();
+      const pass = document.getElementById('inp-pass').value;
+      log('POST /auth/login ...');
+      try {
+        const r = await fetch(API + '/auth/login', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pass }),
+        });
+        const data = await r.json();
+        if (r.ok && data.success !== false) {
+          log('Login success', 'success');
+          await checkMe();
+        } else {
+          log('Login failed — ' + (data.message || data.code), 'error');
+          setBadge('b-login', 'failed', 'fail');
+        }
+      } catch (e) {
+        log('Fetch error: ' + e.message, 'error');
+      }
+    }
+
+    async function doLogout() {
+      log('Logging out...');
+      try {
+        await fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' });
+      } catch (_) { }
+      clearUser();
+      log('Logged out');
+    }
+
+    function connectGitHub() {
+      log('Redirecting to GitHub connect...');
+      window.location.href = API + '/auth/github/connect';
+    }
+
+    function handleCallbackResult() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('linked') === 'true') {
+        setBadge('b-github', 'linked', 'ok');
+        log('GitHub linked successfully', 'success');
+      }
+      if (params.get('error')) {
+        setBadge('b-github', 'failed', 'fail');
+        log('GitHub error: ' + params.get('error'), 'error');
+      }
+    }
+
+    handleCallbackResult();
+    checkMe();
+  </script>
+</body>
+
+</html>

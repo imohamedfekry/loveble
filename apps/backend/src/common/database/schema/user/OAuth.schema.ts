@@ -4,11 +4,12 @@ import {
   varchar,
   timestamp,
   text,
-  unique,
+  index,
 } from 'drizzle-orm/pg-core';
 
 import { nextSnowflakeId } from 'src/common/utils/snowflake';
 import { users } from './user.schema';
+import { relations } from 'drizzle-orm/relations';
 
 export const userOAuthAccounts = pgTable(
   'user_oauth_accounts',
@@ -16,7 +17,7 @@ export const userOAuthAccounts = pgTable(
     id: bigint('id', { mode: 'bigint' })
       .primaryKey()
       .$defaultFn(() => nextSnowflakeId()),
-
+    avatar_url: text('avatar'),
     userId: bigint('user_id', { mode: 'bigint' })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -29,10 +30,17 @@ export const userOAuthAccounts = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
-  (table) => ({
-    userOAuthUnique: unique('user_oauth_unique').on(
-      table.provider,
-      table.providerId,
-    ),
+  (table) => [index('user_oauth_user_id_idx').on(table.userId)],
+);
+export const usersRelations = relations(users, ({ many }) => ({
+  oauthAccounts: many(userOAuthAccounts),
+}));
+export const userOAuthAccountsRelations = relations(
+  userOAuthAccounts,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userOAuthAccounts.userId],
+      references: [users.id],
+    }),
   }),
 );

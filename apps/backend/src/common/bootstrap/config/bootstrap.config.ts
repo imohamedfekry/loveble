@@ -11,6 +11,8 @@ import { StandardValidationPipe } from '@mag123c/nestjs-stdschema';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 
+type RegisterPlugin = Parameters<NestFastifyApplication['register']>[0];
+
 export class BootstrapConfig {
   static async configureApp(
     app: NestFastifyApplication,
@@ -24,7 +26,7 @@ export class BootstrapConfig {
         ? corsOrigins.split(',').map(o => o.trim())
         : ['http://localhost:3001', 'http://localhost:5500','http://localhost:3000']);
 
-    await app.register(fastifyCors, {
+    await app.register(fastifyCors as unknown as RegisterPlugin, {
       origin: origins,
 
       methods:
@@ -43,7 +45,7 @@ export class BootstrapConfig {
     });
 
     // ✅ Cookies
-    await app.register(fastifyCookie, {
+    await app.register(fastifyCookie as unknown as RegisterPlugin, {
       secret: 'my-secret',
     });
 

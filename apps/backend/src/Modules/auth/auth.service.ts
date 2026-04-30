@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   CreateUserDto,
   LoginDto,
@@ -25,6 +29,7 @@ import { OauthTokenService } from 'src/common/Global/security/jwt/services/oauth
 interface GitHubProfile {
   provider: string;
   providerId: string;
+  avatar_url: string;
   accessToken: string;
   email: string | null;
   username: string | null;
@@ -42,7 +47,7 @@ export class AuthService {
     private readonly oauthRepository: OAuthRepository,
     private readonly configService: ConfigService,
     private readonly oauthTokenService: OauthTokenService,
-  ) { }
+  ) {}
 
   async requestOtp(body: TempUserDto) {
     const tempUser = await this.tempUserRepository.findByEmail(body.email);
@@ -60,13 +65,15 @@ export class AuthService {
         const remainingTime = Math.ceil(
           (tempUser.otpExpiry.getTime() - now.getTime()) / 1000,
         );
-        return fail({
-          code: RESPONSE_MESSAGES.AUTH.OTP.REQUEST.already_sent.code,
-          message:
-            RESPONSE_MESSAGES.AUTH.OTP.REQUEST.already_sent.message(
-              remainingTime,
-            ),
-        });
+        throw new BadRequestException(
+          fail({
+            code: RESPONSE_MESSAGES.AUTH.OTP.REQUEST.already_sent.code,
+            message:
+              RESPONSE_MESSAGES.AUTH.OTP.REQUEST.already_sent.message(
+                remainingTime,
+              ),
+          }),
+        );
       }
     }
 
@@ -118,7 +125,9 @@ export class AuthService {
     const token = request.cookies?.['temptoken'];
 
     if (!token) {
-      return fail(RESPONSE_MESSAGES.USER.CREATE.FAIL.INVALID_TOKEN);
+      throw new UnauthorizedException(
+        fail(RESPONSE_MESSAGES.USER.CREATE.FAIL.INVALID_TOKEN),
+      );
     }
 
     try {
@@ -130,13 +139,17 @@ export class AuthService {
         BigInt(decoded.sub),
       );
       if (!tempUser)
-        return fail(RESPONSE_MESSAGES.USER.CREATE.FAIL.INVALID_TOKEN);
+        throw new UnauthorizedException(
+          fail(RESPONSE_MESSAGES.USER.CREATE.FAIL.INVALID_TOKEN),
+        );
 
       const existingUser = await this.userRepository.findByEmail(
         tempUser.email,
       );
       if (existingUser)
-        return fail(RESPONSE_MESSAGES.USER.CREATE.FAIL.USER_ALREADY_EXISTS);
+        throw new BadRequestException(
+          fail(RESPONSE_MESSAGES.USER.CREATE.FAIL.USER_ALREADY_EXISTS),
+        );
 
       const user = await this.userRepository.create({
         username: body.name,
@@ -151,32 +164,33 @@ export class AuthService {
 
       return success(RESPONSE_MESSAGES.USER.CREATE.SUCCESS);
     } catch {
-      return fail(RESPONSE_MESSAGES.USER.CREATE.FAIL.INVALID_TOKEN);
+      throw new UnauthorizedException(
+        fail(RESPONSE_MESSAGES.USER.CREATE.FAIL.INVALID_TOKEN),
+      );
     }
   }
 
   async login(body: LoginDto, res: FastifyReply) {
     const user = await this.userRepository.findByEmail(body.email);
     if (!user || !(await verifyHash(body.password, user.password))) {
-      return fail(RESPONSE_MESSAGES.AUTH.login.FAIL.INVALID_CREDENTIALS);
+      throw new UnauthorizedException(
+        fail(RESPONSE_MESSAGES.AUTH.login.FAIL.INVALID_CREDENTIALS),
+      );
     }
 
     this.issueTokens(res, user.id.toString());
     return success(RESPONSE_MESSAGES.AUTH.login.SUCCESS);
   }
-  // // // // // // // // // // GITHUB OAUTH // // // // // // // // // // // 
+  // // // // // // // // // // GITHUB OAUTH // // // // // // // // // // //
   getAuthUrl(req: AuthenticatedRequest, res: FastifyReply) {
     const clientId = this.configService.get<string>('GITHUB_CLIENT_ID')!;
     const state = this.oauthTokenService.sign({ sub: req.user.id.toString() });
-    const callbackURL =
-      this.configService.get<string>('GITHUB_CALLBACK_URL') ||
-      'http://localhost:3001/api/v1/auth/github/callback';
-
+    const callbackURL = 'http://localhost:3000/callback';
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: callbackURL,
       scope: 'user:email repo',
-      state
+      state,
     });
 
     const url = `https://github.com/login/oauth/authorize?${params.toString()}`;
@@ -205,7 +219,9 @@ export class AuthService {
     };
 
     if (!data.access_token) {
-      throw fail(RESPONSE_MESSAGES.AUTH.oauth.LINK.FAIL.INVALID_OAUTH_RESPONSE);
+      throw new UnauthorizedException(
+        fail(RESPONSE_MESSAGES.AUTH.oauth.LINK.FAIL.INVALID_OAUTH_RESPONSE),
+      );
     }
 
     return data.access_token;
@@ -221,8 +237,8 @@ export class AuthService {
       fetch('https://api.github.com/user/emails', { headers }),
     ]);
 
-    const user = await userRes.json() as any;
-    const emails = await emailsRes.json() as any[];
+    const user = (await userRes.json()) as any;
+    const emails = (await emailsRes.json()) as any[];
 
     const primaryEmail =
       emails.find((e) => e.primary && e.verified)?.email ??
@@ -236,20 +252,32 @@ export class AuthService {
       email: primaryEmail,
       username: user.login ?? null,
       displayName: user.name ?? null,
+      avatar_url: user.avatar_url ?? null,
     };
   }
-  async linkAccount(profile: GitHubProfile, res: FastifyReply, req: AuthenticatedRequest, state?: string) {
+  async linkAccount(
+    profile: GitHubProfile,
+    res: FastifyReply,
+    req: AuthenticatedRequest,
+    state?: string,
+  ) {
     if (!profile.provider || !profile.providerId) {
-      return fail(RESPONSE_MESSAGES.AUTH.oauth.LINK.FAIL.INVALID_OAUTH_RESPONSE);
+      throw new BadRequestException(
+        fail(RESPONSE_MESSAGES.AUTH.oauth.LINK.FAIL.INVALID_OAUTH_RESPONSE),
+      );
     }
     console.log('state', state);
     console.log('profile', profile);
     // console.log(req.user.id);
 
     if (state) {
-      const decoded = await this.oauthTokenService.verify<{ sub: string }>(state);
+      const decoded = await this.oauthTokenService.verify<{ sub: string }>(
+        state,
+      );
       if (decoded.sub !== req.user.id.toString()) {
-        return fail(RESPONSE_MESSAGES.AUTH.oauth.LINK.FAIL.INVALID_OAUTH_RESPONSE);
+        throw new BadRequestException(
+          fail(RESPONSE_MESSAGES.AUTH.oauth.LINK.FAIL.INVALID_OAUTH_RESPONSE),
+        );
       }
     }
     const existingOAuth = await this.oauthRepository.findByProvider(
@@ -260,7 +288,11 @@ export class AuthService {
     // الـ OAuth account موجود → login مباشر
     if (existingOAuth) {
       const user = await this.userRepository.findById(existingOAuth.userId);
-      if (!user) return fail(RESPONSE_MESSAGES.AUTH.UNAUTHORIZED);
+      if (!user) {
+        throw new UnauthorizedException(
+          fail(RESPONSE_MESSAGES.AUTH.UNAUTHORIZED),
+        );
+      }
 
       await this.oauthRepository.updateToken(
         profile.provider,
@@ -277,13 +309,16 @@ export class AuthService {
 
     // مفيش email → مش قادر ننشئ account
     if (!profile.email) {
-      return fail(RESPONSE_MESSAGES.AUTH.oauth.LINK.FAIL.EMAIL_REQUIRED);
+      throw new UnauthorizedException(
+        fail(RESPONSE_MESSAGES.AUTH.oauth.LINK.FAIL.EMAIL_REQUIRED),
+      );
     }
     // encryption accesstoken
     profile.accessToken = encrypt(profile.accessToken);
     await this.oauthRepository.create({
       userId: req.user.id,
       provider: profile.provider,
+      avatar_url: profile.avatar_url,
       providerId: profile.providerId,
       accessToken: profile.accessToken,
     });

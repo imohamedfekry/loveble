@@ -47,12 +47,8 @@ export class AuthGuard implements CanActivate {
       request.user = user;
       return true;
     } catch (error) {
-      this.logger.error(`AuthGuard failed: ${error.message}`);
-
-      const message = error.message.includes('expired')
-        ? 'Token expired'
-        : 'Invalid token';
-
+      this.logger.error(`AuthGuard failed: ${error}`);
+      const message = error instanceof Error ? error.message : 'Authentication failed';
       throw new UnauthorizedException(message);
     }
   }
