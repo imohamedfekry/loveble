@@ -24,7 +24,7 @@ export class BootstrapConfig {
       ? corsOrigins
       : (corsOrigins
         ? corsOrigins.split(',').map(o => o.trim())
-        : ['http://localhost:3001', 'http://localhost:5500','http://localhost:3000']);
+        : ['http://localhost:3001', 'http://localhost:5500','http://localhost:3000','http://localhost:4200','http://localhost:3730','http://localhost:8288']);
 
     await app.register(fastifyCors as unknown as RegisterPlugin, {
       origin: origins,

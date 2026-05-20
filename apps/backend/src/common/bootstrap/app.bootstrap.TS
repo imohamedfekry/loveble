@@ -1,6 +1,7 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { ConfigService } from '@nestjs/config';
 import { BootstrapConfig } from './config/bootstrap.config';
+import { inngest } from '../inngest/client';
 
 type BootstrapResult = {
   app: NestFastifyApplication;

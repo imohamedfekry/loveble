@@ -1,0 +1,27 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    container_name: crawl4ai
+
+    environment:
+      LLM_PROVIDER: gemini/gemini-2.5-flash
+      GOOGLE_API_KEY: AIzaSyDsxzjfjHuCRB_tbF8dm-BBfhgCiZyvZho
+      LITELLM_MODEL: gemini/gemini-2.5-flash
+
+      BROWSER_MODE: "true"
+      HEADLESS: "true"
+      STEALTH: "true"
+
+    ports:
+      - "11235:11235"
+
+    shm_size: "1gb"
+
+    restart: unless-stopped
