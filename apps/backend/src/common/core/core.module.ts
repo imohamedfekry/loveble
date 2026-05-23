@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { validateEnv } from 'src/common/Global/config/env.validation';
+import { env } from 'src/common/Global/config/env.validation';
 import { DatabaseModule } from '../database/database.module';
 import { JwtHelperModule } from '../Global/security/jwt/JwtHelper.Module';
 import appConfig from '../bootstrap/config/app.config';
@@ -13,7 +13,7 @@ import { RedisModule } from '../redis/redis.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      validate: validateEnv,
+      validate: env,
       load: [appConfig, redisConfig, jwtConfig],
     }),
     DatabaseModule.forRoot(),
