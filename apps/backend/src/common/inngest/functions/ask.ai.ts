@@ -1,24 +1,23 @@
 import { inngest } from "../client";
+
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { generateText as aiGenerateText } from "ai";
 
-import { crawl } from "src/common/scraping/crawl.service";
-import { normalize } from "src/common/scraping/Normalize.helper";
-import { cleanHTMLToMarkdown } from "src/common/scraping/clean.service";
+import { generateText as aiGenerateText, stepCountIs } from "ai";
+import { crawlTool } from "src/ai/tools/crawl.tool";
+import { searchTool } from "src/ai/tools/webSearch.tool";
 
-const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
 const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
 
-export const generateText: any = inngest.createFunction(
+export const generateText = inngest.createFunction(
   {
     id: "generate-text",
-    name: "AI Generate With Web Context",
+    name: "AI Agent Generate",
     retries: 3,
     triggers: [{ event: "text/generate" }],
   },
 
-  async ({ event, step }) => {
-    // Validate API key
+  async ({ event }) => {
     if (!API_KEY) {
       throw new Error(
         "GOOGLE_GENERATIVE_AI_API_KEY environment variable is not set"
@@ -29,103 +28,34 @@ export const generateText: any = inngest.createFunction(
       apiKey: API_KEY,
     });
 
-    const userPrompt = event.data.prompt;
+    const result = await aiGenerateText({
+      model: google("gemini-2.5-flash"),
 
-    // 1. Extract URLs
-    const urls: string[] = (userPrompt.match(URL_REGEX) ?? []) as string[];
-    console.log("Extracted URLs:", urls);
+      system: `
+      You are a helpful AI assistant.
 
-    // 2. Crawl URLs
-    const scrapedData =
-      urls.length > 0
-        ? await step.run("crawl-urls", async () => {
-            // crawl
-            const raw = await crawl(urls);
+      IMPORTANT:
+      - If the user provides URLs,
+      use the crawlTool automatically.
+      - Analyze webpage content carefully before answering.
+      `,
 
-            // normalize
-            const items = normalize(raw);
+      prompt: event.data.prompt,
 
-            // clean
-            const dataset = items
-              .map((item: any) => {
-                try {
-                  const html = item.html || item.content || "";
-                  const url = item.url || item.sourceURL || "";
+      tools: {
+        crawlTool,
+        searchTool,
+      },
 
-                  if (!html) return null;
-
-                  const cleaned = cleanHTMLToMarkdown(html, url);
-
-                  return {
-                    url,
-                    title: cleaned.title,
-                    content: cleaned.markdown,
-                  };
-                } catch {
-                  return null;
-                }
-              })
-              .filter(Boolean);
-
-            return dataset;
-          })
-        : [];
-
-    // 3. Build AI Context
-    const scrapedContext = scrapedData
-      .map(
-        (item: any) => `
-# Source
-URL: ${item.url}
-
-Title: ${item.title}
-
-Content:
-${item.content}
-`
-      )
-      .join("\n\n----------------------\n\n");
-
-    // 4. Final Prompt
-    const finalPrompt = `
-You are an AI assistant.
-
-Use the scraped web context below if relevant.
-
-========================
-WEB CONTEXT
-========================
-
-${scrapedContext}
-
-========================
-USER PROMPT
-========================
-
-${userPrompt}
-`;
-
-    // 5. Generate
-    const result = await step.run("generate-ai-response", async () => {
-      const { text, usage, finishReason } = await aiGenerateText({
-        model: google("gemini-2.5-flash"),
-        prompt: finalPrompt,
-        temperature: 0.7,
-      });
-
-      return {
-        text,
-        usage,
-        finishReason,
-      };
+      stopWhen: stepCountIs(5),
+      temperature: 0.7,
     });
-
+    console.dir(result.steps, { depth: null });
     return {
       success: true,
-      urls,
-      scrapedPages: scrapedData.length,
       response: result.text,
       usage: result.usage,
+      steps: result.steps,
     };
   }
 );
