@@ -7,9 +7,11 @@ import appConfig from '../bootstrap/config/app.config';
 import redisConfig from '../Global/config/redis.config';
 import jwtConfig from '../Global/config/jwt.config';
 import { RedisModule } from '../redis/redis.module';
+import { SentryModule } from "@sentry/nestjs/setup";
 
 @Module({
   imports: [
+    SentryModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

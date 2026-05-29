@@ -1,14 +1,12 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-} from '@nestjs/common';
+import type { ArgumentsHost } from '@nestjs/common';
+import { Catch, ExceptionFilter, HttpException } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { ApiResponseHelper } from '../helpers/api-response.helper';
+import { SentryExceptionCaptured } from '@sentry/nestjs';
 
 @Catch()
 export class CatchAllFilter implements ExceptionFilter {
+  @SentryExceptionCaptured()
   catch(exception: unknown, host: ArgumentsHost) {
     // HttpException is handled by HttpExceptionFilter — skip it here
     if (exception instanceof HttpException) return;

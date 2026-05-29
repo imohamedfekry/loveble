@@ -61,6 +61,7 @@ const envSchema = v.object({
     v.pipe(v.string(), v.nonEmpty()),
     '0',
   ),
+  SENTRY_DSN: v.optional(v.string()),
 });
 
 export type Env = v.InferOutput<typeof envSchema>;
