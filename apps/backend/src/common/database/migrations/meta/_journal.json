@@ -8,6 +8,20 @@
       "when": 1777377722267,
       "tag": "0000_wild_franklin_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780612999547,
+      "tag": "0001_overjoyed_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780613470075,
+      "tag": "0002_good_ravenous",
+      "breakpoints": true
     }
   ]
 }
