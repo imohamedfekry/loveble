@@ -1,10 +1,35 @@
+export type ImportStatus = "importing" | "completed" | "failed";
+export type ExportStatus = "exporting" | "completed" | "failed";
+
 export type Project = {
   id: string;
   name: string;
   userId: string;
-  importStatus: string;
+  importStatus: ImportStatus;
+  exportStatus: ExportStatus | null;
+  exportRepoUrl: string | null;
   createdAt: string;
+  updatedAt: string;
 };
+
+export type Pagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type PaginatedProjects = {
+  items: Project[];
+  pagination: Pagination;
+};
+
+export type ApiResponse<T> = {
+  success: boolean;
+  message: string;
+  data: T;
+};
+
 export type UserOAuthAccount = {
   id: string;
   provider: "github" | "google" | string;
@@ -14,6 +39,7 @@ export type UserOAuthAccount = {
   updatedAt: string;
   userId: string;
 };
+
 export type User = {
   id: string;
   username: string;
@@ -26,6 +52,7 @@ export type User = {
 
   oauthAccounts: UserOAuthAccount[];
 };
+
 export type UserStore = {
   user: User | null;
   setUser: (u: User) => void;

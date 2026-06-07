@@ -129,7 +129,7 @@
   }
 }
 
-/* @theme inline {
+@theme inline {
   --animate-cell-ripple: cell-ripple var(--duration, 200ms) ease-out none 1
     var(--delay, 0ms);
 
@@ -144,7 +144,7 @@
       opacity: 0.4;
     }
   }
-} */
+}
 
 ::-webkit-scrollbar {
   @apply w-2.5 h-2.5;

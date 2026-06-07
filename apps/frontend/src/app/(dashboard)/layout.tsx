@@ -1,21 +1,15 @@
+"use client";
+
+import { useLoadProjects } from "@/lib/hooks/projects/useLoadProjects";
+import { useRealtimeProjects } from "@/lib/hooks/projects/useRealtimeProjects";
+
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return (
-    <div className="min-h-screen flex">
-      
-      {/* Sidebar */}
-      <aside className="w-64 border-r p-4">
-        Sidebar
-      </aside>
+  useLoadProjects({ recent: true });
+  useRealtimeProjects();
 
-      {/* Content */}
-      <main className="flex-1 p-6">
-        {children}
-      </main>
-
-    </div>
-  )
+  return <>{children}</>;
 }

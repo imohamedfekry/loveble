@@ -18,5 +18,5 @@ export async function getMe() {
 
   const json = await res.json();
 
-  return json.data.user; // 👈 هنا السحر
+  return json.data.user; 
 }

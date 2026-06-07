@@ -8,9 +8,9 @@ export default function proxy(req: NextRequest) {
   const accessToken = req.cookies.get("Authorization")?.value;
   const refreshToken = req.cookies.get("refreshToken")?.value;
   const tempToken = req.cookies.get("temptoken")?.value;
-  console.log(req.cookies);
+  // console.log(req.cookies);
   
-  console.log(accessToken, refreshToken ,tempToken);
+  // console.log(accessToken, refreshToken ,tempToken);
   
   const isAuthRoute =
     pathname.startsWith("/login") ||
