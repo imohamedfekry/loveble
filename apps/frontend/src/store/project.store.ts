@@ -16,7 +16,7 @@ type Store = {
 
 export const useProjectsStore = create<Store>((set) => ({
   projects: [],
-  loading: false,
+  loading: true,
 
   setLoading: (loading) => set({ loading }),
 
