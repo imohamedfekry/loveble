@@ -18,7 +18,7 @@ const updateProjectSchema = v.object({
     v.pipe(
       v.string('Name must be a string'),
       v.nonEmpty('Name is required'),
-      v.maxLength(100, 'Name cannot exceed 100 characters')
+      v.maxLength(100, 'Name cannot exceed 100 characters'),
     )
   ),
   importStatus: v.pipe(

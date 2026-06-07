@@ -1,5 +1,5 @@
 {
-  "id": "3f57aef6-e6c3-40ec-b09b-e5b61e53dc6d",
+  "id": "057da845-f9e5-49a6-9388-8afb4744d8ac",
   "prevId": "620d539b-4d44-4cb7-89d3-7c00ade50642",
   "version": "7",
   "dialect": "postgresql",
@@ -264,15 +264,29 @@
           "notNull": true,
           "default": "'importing'"
         },
-        "created_at": {
-          "name": "created_at",
+        "export_status": {
+          "name": "export_status",
+          "type": "export_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'exporting'"
+        },
+        "export_repo_url": {
+          "name": "export_repo_url",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
-        "updated_at": {
-          "name": "updated_at",
+        "created_at": {
+          "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,

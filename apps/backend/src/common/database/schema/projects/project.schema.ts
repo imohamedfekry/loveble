@@ -7,6 +7,12 @@ const importStatusEnum = pgEnum('import_status_enum', [
   'failed',
 ]);
 
+const exportStatus = pgEnum('export_status_enum', [
+  'exporting',
+  'completed',
+  'failed',
+]);
+
 export const projects = pgTable(
   'projects',
   {
@@ -18,14 +24,10 @@ export const projects = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
     importStatus: importStatusEnum('import_status').notNull().default('importing'),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .defaultNow()
-      .$onUpdateFn(() => new Date())
-      .notNull(),
+    exportStatus: exportStatus('export_status').notNull().default('exporting'),
+    exportRepoUrl: varchar('export_repo_url', { length: 255 }),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [index('projects_user_id_idx').on(table.userId)],
 );

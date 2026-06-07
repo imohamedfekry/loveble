@@ -2,7 +2,8 @@
 /dist
 /node_modules
 /build
-
+docker-compose.yml
+searxng-settings.yml
 # Logs
 logs
 *.log
