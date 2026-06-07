@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 import { BaseRepository } from '../base.repository';
 import { DRIZZLE_DB } from 'src/common/database/database.constants';
@@ -32,7 +32,7 @@ export class ProjectRepository extends BaseRepository {
     return result[0] ?? null;
   }
   async findByUserId(userId: bigint): Promise<Project[]> {
-    return this.db.select().from(projects).where(eq(projects.userId, userId));
+    return this.db.select().from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.updatedAt));
   }
   async update(
     id: bigint,
