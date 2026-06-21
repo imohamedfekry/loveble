@@ -26,8 +26,13 @@ export async function getProjects(
 
   const query = search.toString();
 
+  const empty = {
+    items: [] as PaginatedProjects["items"],
+    pagination: { page: 1, limit: 0, total: 0, totalPages: 0 },
+  };
+
   const response = await fetch(
-    `${API_BASE_URL}/project${query ? `?${query}` : ""}`,
+    `${API_BASE_URL}/projects/all${query ? `?${query}` : ""}`,
     {
       method: "GET",
       headers: {
@@ -36,17 +41,19 @@ export async function getProjects(
       credentials: "include",
     }
   );
+
   const json = await response.json().catch(() => null);
 
-  if (!json) {
+  if (!response.ok) {
     return {
       success: false,
-      message: "Invalid response",
-      data: {
-        items: [],
-        pagination: { page: 1, limit: 0, total: 0, totalPages: 0 },
-      },
+      message: json?.message ?? `Request failed (${response.status})`,
+      data: empty,
     };
+  }
+
+  if (!json) {
+    return { success: false, message: "Invalid response", data: empty };
   }
 
   // Backend returns { data: { projects: [...] } }
@@ -67,7 +74,7 @@ export async function getProjects(
     } as ApiResponse<PaginatedProjects>;
   }
 
-  // Old shapes: { data: { items, pagination } }
+  // Normalized shape: { data: { items, pagination } }
   if (json.data && json.data.items) {
     return json as ApiResponse<PaginatedProjects>;
   }
@@ -95,7 +102,7 @@ export async function getProjects(
     };
   }
 
-  return { success: false, message: "Unexpected response shape", data: { items: [], pagination: { page: 1, limit: 0, total: 0, totalPages: 0 } } };
+  return { success: false, message: "Unexpected response shape", data: empty };
 }
 
 export async function createProject(name: string) {

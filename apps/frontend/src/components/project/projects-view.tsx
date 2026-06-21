@@ -1,84 +1,108 @@
 "use client";
 
-import { SparkleIcon } from "lucide-react"
-import { Poppins } from "next/font/google"
-import { Kbd } from "../ui/kbd"
-import { Button } from "../ui/button"
-import { cn } from "@/lib/utils"
-import { FaGithub } from "react-icons/fa"
-import { ProjectsList } from './projects-list'
+import { SparkleIcon } from "lucide-react";
+import { Poppins } from "next/font/google";
+import { Kbd } from "../ui/kbd";
+import { Button } from "../ui/button";
+import { cn } from "@/lib/utils";
+import { actionCardClassName } from "@/lib/styles";
+import { FaGithub } from "react-icons/fa";
+import { ProjectsList } from "./projects-list";
 import { useEffect, useState } from "react";
 import { ProjectsCommandDialog } from "./projects-commands-dialog";
+
 const font = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-poppins",
-})
+});
 
-export const ProjectsView = () => {
+export const ProjectsView = ({
+  githubSection,
+}: {
+  githubSection?: React.ReactNode;
+}) => {
   const [commandDialogOpen, setCommandDialogOpen] = useState(false);
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setCommandDialogOpen((open) => !open);
-      }
+
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+
+    const isTyping =
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable;
+
+    if (isTyping) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      setCommandDialogOpen((open) => !open);
     }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    }
-  }), [];
+  };
+
+  document.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    document.removeEventListener("keydown", handleKeyDown);
+  };
+}, []);
+
   return (
     <>
       <ProjectsCommandDialog
         open={commandDialogOpen}
         onOpenChange={setCommandDialogOpen}
       />
-      <div className="min-h-screen flex flex-col items-center justify-center bg-sidebar p-6 mb-p-16">
-        <div className="w-full max-w-sm mx-auto flex flex-col items-center">
-
-          <div className="flex items-center gap-2 w-full group/logo mb-5">
-            <img src="/logo.svg" alt="Polaris" className="size-[32px] md:size-[46px]" />
-            <h1 className={cn(
-              "text-4xl md:text-5xl font-semibold",
-              font.className,
-            )}>
+      <div className="page-gradient flex min-h-screen flex-col items-center justify-center p-6">
+        <div className="mx-auto flex w-full max-w-sm flex-col items-center">
+          <div className="group/logo mb-6 flex w-full items-center gap-2.5">
+            <img
+              src="/logo.svg"
+              alt="Squadra"
+              className="size-9 transition-transform duration-300 group-hover/logo:scale-105 md:size-11"
+            />
+            <h1
+              className={cn(
+                "text-4xl font-semibold tracking-tight md:text-5xl",
+                font.className,
+              )}
+            >
               Squadra
             </h1>
           </div>
 
+          <div className="flex w-full flex-col gap-4">
+            {githubSection}
 
-
-          <div className="flex flex-col gap-4 w-full">
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" onClick={() => { }} className="items-start justify-start h-full p-4 bg-background border flex flex-col gap-6 rounded-none
-">
-                <div className="flex items-center justify-between w-full">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {}}
+                className={actionCardClassName}
+              >
+                <div className="flex w-full items-center justify-between">
                   <SparkleIcon className="size-4 text-primary" />
-                  <Kbd className="bg-accent border">Ctrl + J</Kbd>
+                  <Kbd className="rounded-md border bg-accent/60">Ctrl + J</Kbd>
                 </div>
-                <span className="text-sm">
-                  New
-                </span>
+                <span className="text-sm font-medium">New</span>
               </Button>
-              <Button variant="outline" onClick={() => { }} className="items-start justify-start h-full p-4 bg-background border flex flex-col gap-6 rounded-none
-">
-                <div className="flex items-center justify-between w-full">
+              <Button
+                variant="outline"
+                onClick={() => {}}
+                className={actionCardClassName}
+              >
+                <div className="flex w-full items-center justify-between">
                   <FaGithub className="size-4 text-primary" />
-                  <Kbd className="bg-accent border">Ctrl + I</Kbd>
+                  <Kbd className="rounded-md border bg-accent/60">Ctrl + I</Kbd>
                 </div>
-                <span className="text-sm">
-                  Import
-                </span>
+                <span className="text-sm font-medium">Import</span>
               </Button>
             </div>
 
             <ProjectsList onViewAll={() => setCommandDialogOpen(true)} />
-
           </div>
         </div>
       </div>
     </>
   );
-}
+};

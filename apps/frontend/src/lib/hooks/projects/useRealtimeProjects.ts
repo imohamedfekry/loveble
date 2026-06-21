@@ -5,29 +5,34 @@ import { socket } from "@/lib/socket";
 import { useProjectsStore } from "@/store/project.store";
 
 export const useRealtimeProjects = () => {
-  const addProject = useProjectsStore((s) => s.addProject);
-  const updateProject = useProjectsStore((s) => s.updateProject);
-  const removeProject = useProjectsStore((s) => s.removeProject);
-
   useEffect(() => {
+    const onCreated = (project: any) => {
+      useProjectsStore.getState().addProject(project);
+    };
+
+    const onUpdated = (project: any) => {
+      useProjectsStore.getState().updateProject(project);
+    };
+
+    const onDeleted = ({ id }: { id: string }) => {
+      useProjectsStore.getState().removeProject(id);
+    };
+
     const onConnect = () => {
       console.log("socket connected", socket.id);
     };
 
-    const onDeleted = ({ id }: { id: string }) => {
-      removeProject(id);
-    };
-
+    // سجل الـ listeners بغض النظر عن حالة الاتصال
     socket.on("connect", onConnect);
-    socket.on("project:created", addProject);
-    socket.on("project:updated", updateProject);
+    socket.on("project:created", onCreated);
+    socket.on("project:updated", onUpdated);
     socket.on("project:deleted", onDeleted);
 
     return () => {
       socket.off("connect", onConnect);
-      socket.off("project:created", addProject);
-      socket.off("project:updated", updateProject);
+      socket.off("project:created", onCreated);
+      socket.off("project:updated", onUpdated);
       socket.off("project:deleted", onDeleted);
     };
-  }, [addProject, updateProject, removeProject]);
+  }, []);
 };
