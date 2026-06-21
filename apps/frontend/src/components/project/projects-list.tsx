@@ -42,10 +42,12 @@ export const ProjectsList = ({ onViewAll }: ProjectListProps) => {
               <button
                 type="button"
                 onClick={onViewAll}
-                className="flex items-center gap-2 text-muted-foreground text-xs hover:text-foreground transition-colors"
+                className="flex items-center gap-2 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
               >
                 <span>View all</span>
-                <Kbd className="bg-accent border">ctrl + K</Kbd>
+                {/* <Kbd className="bg-accent border">ctrl + K</Kbd> */}
+                <Kbd className="rounded-md border bg-accent/60">Ctrl + K</Kbd>
+
               </button>
             </div>
 

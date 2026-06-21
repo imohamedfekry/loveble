@@ -1,5 +1,9 @@
 import { API_BASE_URL } from "../api";
 
+export function redirectToGithubConnect() {
+  window.location.href = `${API_BASE_URL}/auth/github/connect`;
+}
+
 export async function githubCallback(code: string, state: string) {
   const params = new URLSearchParams({ code, state });
   const res = await fetch(

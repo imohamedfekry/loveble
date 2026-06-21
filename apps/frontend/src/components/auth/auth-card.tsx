@@ -13,8 +13,8 @@ export function AuthCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Card className="w-105">
+    <div className="min-h-screen page-gradient flex items-center justify-center p-6">
+      <Card className="w-full max-w-md shadow-lg ring-border/40">
         <CardHeader>
           <CardTitle>{title}</CardTitle>
         </CardHeader>
