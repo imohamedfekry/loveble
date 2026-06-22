@@ -39,13 +39,13 @@ export default function CreatePage() {
   }
 
   return (
-    <AuthCard title="Complete Profile">
+    <AuthCard title="Complete Profile" description="Set up your Squadra account">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
         <div>
           <Input placeholder="Name" {...register('name')} />
           {errors.name && (
-            <p className="text-red-500 text-sm">
+            <p className="text-sm text-destructive">
               {errors.name.message as string}
             </p>
           )}
@@ -58,7 +58,7 @@ export default function CreatePage() {
             {...register('password')}
           />
           {errors.password && (
-            <p className="text-red-500 text-sm">
+            <p className="text-sm text-destructive">
               {errors.password.message as string}
             </p>
           )}
@@ -70,7 +70,7 @@ export default function CreatePage() {
 
         <p className="text-center text-sm text-muted-foreground">
           لديك حساب بالفعل؟{' '}
-          <Link href="/login" className="text-primary underline">
+          <Link href="/login" className="text-primary underline-offset-4 hover:underline">
             سجل دخول هنا
           </Link>
         </p>

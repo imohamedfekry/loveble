@@ -2,6 +2,7 @@
 
 import { useProjectsStore } from "@/store/project.store";
 import { ShortcutKbd } from "../ui/shortcut-kbd";
+import { Spinner } from "../ui/spinner";
 import { ProjectItem } from "./project.item";
 import { ContinueCard } from "./continue.card";
 import { ContinueCardSkeleton } from "./project-list.skeleton";
@@ -16,7 +17,7 @@ export const ProjectsList = ({ onViewAll }: ProjectListProps) => {
   if (loading) {
     return <ContinueCardSkeleton />;
   }
-  
+
   if (projects.length === 0) {
     return (
       <div className="flex flex-col gap-4">

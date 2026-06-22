@@ -45,7 +45,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthCard title="Create Account">
+    <AuthCard title="Create Account" description="Enter your email to get started">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <Input placeholder="Email" {...register('email')} />
