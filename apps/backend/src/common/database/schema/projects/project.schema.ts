@@ -23,8 +23,8 @@ export const projects = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
-    importStatus: importStatusEnum('import_status').notNull().default('importing'),
-    exportStatus: exportStatus('export_status').notNull().default('exporting'),
+    importStatus: importStatusEnum('import_status').default('importing'),
+    exportStatus: exportStatus('export_status').default('exporting'),
     exportRepoUrl: varchar('export_repo_url', { length: 255 }),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

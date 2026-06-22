@@ -19,9 +19,13 @@ export class AppBootstrap {
   ): Promise<BootstrapResult> {
     const configService = app.get(ConfigService);
 
+    console.log('🔧 AppBootstrap: obtained ConfigService');
+    console.log('🔧 AppBootstrap: calling BootstrapConfig.configureApp');
     await BootstrapConfig.configureApp(app, configService);
+    console.log('🔧 AppBootstrap: BootstrapConfig.configureApp completed');
 
     const serverInfo = BootstrapConfig.getServerInfo(configService);
+    console.log('🔧 AppBootstrap: BootstrapConfig.getServerInfo returned', serverInfo);
 
     return {
       app,

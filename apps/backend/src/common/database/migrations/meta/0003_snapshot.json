@@ -1,6 +1,6 @@
 {
-  "id": "a5607a80-a0be-473d-a1de-76a306bb09de",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "dcd7b56b-a19b-4aec-aeae-205f59455c28",
+  "prevId": "6d94247c-1811-4076-8080-56a35d97fb24",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -151,8 +151,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "avatar": {
-          "name": "avatar",
+        "avatar_url": {
+          "name": "avatar_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -163,17 +163,17 @@
           "primaryKey": false,
           "notNull": true
         },
-        "username": {
-          "name": "username",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "display_name": {
           "name": "display_name",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "username": {
+          "name": "username",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
         },
         "provider": {
           "name": "provider",

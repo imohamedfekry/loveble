@@ -27,6 +27,7 @@ export class AuthController {
   ) {
     return this.AuthService.verifyOtp(res, body);
   }
+
   @Post('create')
   async create(
     @Req() req: FastifyRequest,
@@ -35,6 +36,7 @@ export class AuthController {
   ) {
     return this.AuthService.create(body, req, res);
   }
+
   @Post('login')
   async login(
     @Req() req: any,
@@ -43,6 +45,7 @@ export class AuthController {
   ) {
     return this.AuthService.login(body, res);
   }
+
   @Get('github/connect')
   @Auth()
   async githubConnect(
@@ -51,6 +54,7 @@ export class AuthController {
   ) {
     return this.AuthService.getAuthUrl(req, res);
   }
+
   @Get('github/callback')
   @Auth()
   async githubCallback(

@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppBootstrap } from './common/bootstrap';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { BigIntInterceptor } from './common/interceptors/BigInt.interceptors';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { fastifyPlugin } from 'inngest/fastify';
 import { inngest } from './common/inngest/client';
@@ -19,9 +20,13 @@ async function bootstrap() {
 
   const fastify = app.getHttpAdapter().getInstance();
 
+  console.log('🔌 fastify: obtained instance, registering inngest plugin');
   fastify.register(fastifyPlugin as any, {
     client: inngest,
     functions,
+  });
+  fastify.after(() => {
+    console.log('🔌 fastify: inngest plugin registration complete (after)');
   });
 
 
@@ -34,9 +39,26 @@ async function bootstrap() {
   });
 
   const { serverInfo } = await AppBootstrap.bootstrap(app);
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  
+  // ===============================
+  // Register Global Interceptors
+  // ===============================
+  // BigIntInterceptor: Converts all BigInt values to strings for JSON serialization
+  // ResponseInterceptor: Wraps all responses in the standard ApiResponse format
+  app.useGlobalInterceptors(new BigIntInterceptor(), new ResponseInterceptor());
 
-  await app.listen(serverInfo.port, '0.0.0.0');
+  console.log('🧭 About to start listening on port', serverInfo.port);
+  const listenPromise = app.listen(serverInfo.port, '0.0.0.0');
+  const timeoutMs = 10000;
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('listen timeout')), timeoutMs),
+  );
+  try {
+    await Promise.race([listenPromise, timeout]);
+    console.log('✅ app.listen resolved');
+  } catch (err) {
+    console.error(`❗ app.listen did not resolve within ${timeoutMs}ms`, err);
+  }
   AppBootstrap.logServerInfo(serverInfo);
 }
 

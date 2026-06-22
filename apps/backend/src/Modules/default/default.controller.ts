@@ -9,6 +9,7 @@ export class DefaultController {
   status() {
     return this.defaultService.status();
   }
+
   @Get('health')
   @HttpCode(HttpStatus.OK)
   async check() {

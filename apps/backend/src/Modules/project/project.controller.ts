@@ -1,23 +1,32 @@
-import { Body, Controller, Delete, Get, Post, Put, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Put, Query, Req, Param } from '@nestjs/common';
 import { Auth } from 'src/common/decorator/auth-user.decorator';
 import { projectService } from './project.service';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
-import { ProjectDto, UpdateProjectDto } from './dto/project.dto';
+import { ProjectDto, ProjectQueryDto, UpdateProjectDto } from './dto/project.dto';
 
-@Controller('project')
+@Controller('projects')
 @Auth()
 export class ProjectController {
   constructor(private readonly projectService: projectService) {}
 
-  @Get()
-  @Auth()
-  getAllProjects(@Req() req: AuthenticatedRequest) {
-    return this.projectService.findAll(req);
+  @Get('project/:id')
+  getProjectById(@Param('id') projectId: string, @Req() req: AuthenticatedRequest) {
+    return this.projectService.findById(BigInt(projectId), req);
   }
+
+  @Get('all')
+  getAllProjects(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: ProjectQueryDto,
+  ) {
+    return this.projectService.findAll(req, query);
+  }
+
   @Post('create')
   createProject(@Body() body: ProjectDto, @Req() req: AuthenticatedRequest) {
     return this.projectService.create(body, req);
   }
+
   @Put()
   updateProject(
     @Query('id') projectId: bigint,
@@ -26,10 +35,9 @@ export class ProjectController {
   ) {
     return this.projectService.update(projectId, body, req);
   }
-  @Delete('')
+
+  @Delete()
   deleteProject(@Query('id') projectId: bigint, @Req() req: AuthenticatedRequest) {
     return this.projectService.delete(projectId, req);
   }
-  // how delete show in url ? delete?id=1
-  // http://localhost:3001/api/v1/project/?id=123456
 }

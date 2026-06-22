@@ -1,3 +1,3 @@
-import { crawlFunction, generateText, sendEmail } from "./functions";
+import { crawlFunction, generateText,  } from "./functions";
 
-export const functions = [sendEmail,crawlFunction,generateText];
+export const functions = [crawlFunction,generateText];

@@ -18,6 +18,7 @@ export class BootstrapConfig {
     app: NestFastifyApplication,
     configService: ConfigService,
   ) {
+    console.log('BootstrapConfig: starting configureApp');
     // ✅ CORS (Fastify plugin)
     const corsOrigins = configService.get<string | string[]>('app.cors.origin');
     const origins = Array.isArray(corsOrigins)
@@ -26,6 +27,7 @@ export class BootstrapConfig {
         ? corsOrigins.split(',').map(o => o.trim())
         : ['http://localhost:3001', 'http://localhost:5500','http://localhost:3000','http://localhost:4200','http://localhost:3730','http://localhost:8288']);
 
+    console.log('BootstrapConfig: configuring CORS with origins', origins);
     await app.register(fastifyCors as unknown as RegisterPlugin, {
       origin: origins,
 
@@ -43,24 +45,38 @@ export class BootstrapConfig {
       credentials:
         configService.get<boolean>('app.cors.credentials') ?? true,
     });
+    console.log('BootstrapConfig: CORS registered');
 
     // ✅ Cookies
+    console.log('BootstrapConfig: registering cookie plugin');
     await app.register(fastifyCookie as unknown as RegisterPlugin, {
       secret: 'my-secret',
     });
+    console.log('BootstrapConfig: cookie plugin registered');
 
     // Global prefix
-    app.setGlobalPrefix(configService.get('app.apiPrefix') || 'api');
+    const prefix = configService.get('app.apiPrefix') || 'api';
+    app.setGlobalPrefix(prefix);
+    console.log('BootstrapConfig: global prefix set to', prefix);
 
     // Validation
+    console.log('BootstrapConfig: configuring validation pipes');
     this.configureValidationPipes(app);
+    console.log('BootstrapConfig: validation pipes configured');
 
     // Filters & Interceptors
+    console.log('BootstrapConfig: configuring global filters');
     this.configureGlobalFilters(app);
+    console.log('BootstrapConfig: global filters configured');
+
+    console.log('BootstrapConfig: configuring global interceptors');
     this.configureGlobalInterceptors(app);
+    console.log('BootstrapConfig: global interceptors configured');
 
     // Versioning
+    console.log('BootstrapConfig: configuring versioning');
     this.configureVersioning(app);
+    console.log('BootstrapConfig: versioning configured');
   }
 
   private static configureValidationPipes(app: NestFastifyApplication) {

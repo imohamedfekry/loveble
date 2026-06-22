@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { desc, eq } from 'drizzle-orm';
+import { count, desc, eq } from 'drizzle-orm';
 
 import { BaseRepository } from '../base.repository';
 import { DRIZZLE_DB } from 'src/common/database/database.constants';
@@ -22,6 +22,50 @@ export class ProjectRepository extends BaseRepository {
     return project;
   }
 
+  async findRecentByUserId(
+  userId: bigint,
+): Promise<Project[]> {
+  return this.db
+    .select()
+    .from(projects)
+    .where(eq(projects.userId, userId))
+    .orderBy(desc(projects.updatedAt))
+    .limit(6);
+}
+async findByUserIdPaginated(
+  userId: bigint,
+  page: number,
+  limit: number,
+) {
+  const offset = (page - 1) * limit;
+
+  const [items, totalResult] = await Promise.all([
+    this.db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId))
+      .orderBy(desc(projects.updatedAt))
+      .limit(limit)
+      .offset(offset),
+
+    this.db
+      .select({
+        count: count(),
+      })
+      .from(projects)
+      .where(eq(projects.userId, userId)),
+  ]);
+
+  return {
+    projects: items,
+    pagination: {
+      page,
+      limit,
+      total: totalResult[0].count,
+      totalPages: Math.ceil(totalResult[0].count / limit),
+    },
+  };
+}
   async findById(id: bigint): Promise<Project | null> {
     const result = await this.db
       .select()
@@ -30,9 +74,6 @@ export class ProjectRepository extends BaseRepository {
       .limit(1);
 
     return result[0] ?? null;
-  }
-  async findByUserId(userId: bigint): Promise<Project[]> {
-    return this.db.select().from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.updatedAt));
   }
   async update(
     id: bigint,

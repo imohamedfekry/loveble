@@ -47,7 +47,7 @@ export class AuthService {
     private readonly oauthRepository: OAuthRepository,
     private readonly configService: ConfigService,
     private readonly oauthTokenService: OauthTokenService,
-  ) {}
+  ) { }
 
   async requestOtp(body: TempUserDto) {
     const tempUser = await this.tempUserRepository.findByEmail(body.email);
@@ -239,7 +239,8 @@ export class AuthService {
 
     const user = (await userRes.json()) as any;
     const emails = (await emailsRes.json()) as any[];
-
+    console.log('User:', user);
+    console.log('Emails:', emails);
     const primaryEmail =
       emails.find((e) => e.primary && e.verified)?.email ??
       emails[0]?.email ??
@@ -248,6 +249,7 @@ export class AuthService {
     return {
       provider: 'github',
       providerId: String(user.id),
+
       accessToken,
       email: primaryEmail,
       username: user.login ?? null,
@@ -321,6 +323,8 @@ export class AuthService {
       avatar_url: profile.avatar_url,
       providerId: profile.providerId,
       accessToken: profile.accessToken,
+      username: profile.username,
+      displayName: profile.displayName,
     });
 
     this.issueTokens(res, req.user.id.toString());

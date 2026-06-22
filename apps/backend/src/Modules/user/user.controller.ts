@@ -6,7 +6,8 @@ import { Auth } from 'src/common/decorator/auth-user.decorator';
 @Controller('user')
 @Auth()
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
+
   @Get('@me')
   async getMe(@Req() req: AuthenticatedRequest) {
     return this.userService.getMe(req);

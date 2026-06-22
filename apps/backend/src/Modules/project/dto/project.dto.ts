@@ -30,5 +30,16 @@ const updateProjectSchema = v.object({
     ),
   ),
 });
+const projectQuerySchema = v.object({
+  recent: v.optional(
+    v.union([
+      v.literal('true'),
+      v.literal('false'),
+    ]),
+  ),
+  page: v.optional(v.string()),
+  limit: v.optional(v.string()),
+});
+export class ProjectQueryDto extends createStandardDto(projectQuerySchema) {}
 export class ProjectDto extends createStandardDto(projectSchema) { }
 export class UpdateProjectDto extends createStandardDto(updateProjectSchema) { }

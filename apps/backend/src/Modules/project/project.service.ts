@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
-import { ProjectDto, UpdateProjectDto } from './dto/project.dto';
+import { ProjectDto, ProjectQueryDto, UpdateProjectDto } from './dto/project.dto';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
 import { RESPONSE_MESSAGES } from 'src/common/utils/response-messages';
 import { fail, success } from 'src/common/utils/response.util';
@@ -13,11 +13,34 @@ export class projectService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
-  ) {}
-  async findAll(req: AuthenticatedRequest) {
-    const projects = await this.projectRepository.findByUserId(req.user.id);
+  ) { }
+  async findAll(req: AuthenticatedRequest,query: ProjectQueryDto, ) {
+    if (query.recent === 'true') {
+      const projects = await this.projectRepository.findRecentByUserId(
+        req.user.id,
+      );
+      return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
+        projects,
+      });
+    }
+    const page = Number(query.page ?? 1);
+    const limit = Number(query.limit ?? 20);
+    const result = await this.projectRepository.findByUserIdPaginated(
+      req.user.id,
+      page,
+      limit,
+    );
 
-    return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, { projects });
+    return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, result);
+  }
+  async findById(projectId: bigint, req: AuthenticatedRequest) {
+    const project = await this.projectRepository.findById(projectId);
+    if (!project || project.userId !== req.user.id) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
+    }
+    return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
+      project: serializeBigInt(project),
+    });
   }
   async create(body: ProjectDto, req: AuthenticatedRequest) {
     const project = await this.projectRepository.create({

@@ -13,10 +13,4 @@ export default registerAs('app', () => ({
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   },
-  swagger: {
-    title: 'Squadra API',
-    description: 'Squadra Backend API Documentation',
-    version: '1.0',
-    path: 'api/docs',
-  },
 }));
