@@ -54,7 +54,7 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                     )}>
 
                     <div>
-                        editor
+                        editor : {projectId}
                     </div>
                 </div>
 
@@ -63,7 +63,7 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                         activeView === "preview" ? "visible" : "invisible"
                     )}>
                     <div>
-                        preview
+                        preview : {projectId}
                     </div>
                 </div>
             </div>

@@ -15,7 +15,7 @@ export const ProjectIdLayout = ({
   useRealtimeProjects();
 
   return (
-    <div className="page-gradient flex h-screen w-full flex-col">
+    <div className="flex h-screen w-full flex-col">
       <Navbar projectId={projectId} />
       <div className="flex flex-1 overflow-hidden">{children}</div>
     </div>
