@@ -66,9 +66,9 @@ export function UserAvatarButton() {
               <FaGithub className="size-4" />
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm">GitHub Connected</span>
-                <span className="text-xs text-muted-foreground">
+                {/* <span className="text-xs text-muted-foreground">
                   {github.providerId}
-                </span>
+                </span> */}
               </div>
             </DropdownMenuLabel>
           ) : (

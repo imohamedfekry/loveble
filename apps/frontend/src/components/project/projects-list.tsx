@@ -1,10 +1,10 @@
 "use client";
 
 import { useProjectsStore } from "@/store/project.store";
-import { Kbd } from "../ui/kbd";
-import { Spinner } from "../ui/spinner";
+import { ShortcutKbd } from "../ui/shortcut-kbd";
 import { ProjectItem } from "./project.item";
 import { ContinueCard } from "./continue.card";
+import { ContinueCardSkeleton } from "./project-list.skeleton";
 
 interface ProjectListProps {
   onViewAll: () => void;
@@ -13,10 +13,10 @@ interface ProjectListProps {
 export const ProjectsList = ({ onViewAll }: ProjectListProps) => {
   const { projects, loading } = useProjectsStore();
 
-  if (loading && projects.length === 0) {
-    return <Spinner className="size-4 text-ring" />;
+  if (loading) {
+    return <ContinueCardSkeleton />;
   }
-
+  
   if (projects.length === 0) {
     return (
       <div className="flex flex-col gap-4">
@@ -45,8 +45,7 @@ export const ProjectsList = ({ onViewAll }: ProjectListProps) => {
                 className="flex items-center gap-2 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
               >
                 <span>View all</span>
-                {/* <Kbd className="bg-accent border">ctrl + K</Kbd> */}
-                <Kbd className="rounded-md border bg-accent/60">Ctrl + K</Kbd>
+                <ShortcutKbd keyLetter="K" />
 
               </button>
             </div>

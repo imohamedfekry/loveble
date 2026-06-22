@@ -2,13 +2,15 @@
 
 import { SparkleIcon } from "lucide-react";
 import { Poppins } from "next/font/google";
-import { Kbd } from "../ui/kbd";
+import { ShortcutKbd } from "../ui/shortcut-kbd";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { actionCardClassName } from "@/lib/styles";
+import { MOD_KEY_CODES } from "@/lib/keyboard";
+import { useKeyboardShortcut } from "@/lib/hooks/useKeyboardShortcut";
 import { FaGithub } from "react-icons/fa";
 import { ProjectsList } from "./projects-list";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ProjectsCommandDialog } from "./projects-commands-dialog";
 
 const font = Poppins({
@@ -24,28 +26,11 @@ export const ProjectsView = ({
 }) => {
   const [commandDialogOpen, setCommandDialogOpen] = useState(false);
 
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    const target = e.target as HTMLElement;
+  const toggleCommandDialog = useCallback(() => {
+    setCommandDialogOpen((open) => !open);
+  }, []);
 
-    const isTyping =
-      target.tagName === "INPUT" ||
-      target.tagName === "TEXTAREA" ||
-      target.isContentEditable;
-
-    if (isTyping) return;
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-      e.preventDefault();
-      setCommandDialogOpen((open) => !open);
-    }
-  };
-
-  document.addEventListener("keydown", handleKeyDown);
-
-  return () => {
-    document.removeEventListener("keydown", handleKeyDown);
-  };
-}, []);
+  useKeyboardShortcut(MOD_KEY_CODES.K, toggleCommandDialog);
 
   return (
     <>
@@ -82,7 +67,7 @@ useEffect(() => {
               >
                 <div className="flex w-full items-center justify-between">
                   <SparkleIcon className="size-4 text-primary" />
-                  <Kbd className="rounded-md border bg-accent/60">Ctrl + J</Kbd>
+                  <ShortcutKbd keyLetter="J" />
                 </div>
                 <span className="text-sm font-medium">New</span>
               </Button>
@@ -93,7 +78,7 @@ useEffect(() => {
               >
                 <div className="flex w-full items-center justify-between">
                   <FaGithub className="size-4 text-primary" />
-                  <Kbd className="rounded-md border bg-accent/60">Ctrl + I</Kbd>
+                  <ShortcutKbd keyLetter="I" />
                 </div>
                 <span className="text-sm font-medium">Import</span>
               </Button>
