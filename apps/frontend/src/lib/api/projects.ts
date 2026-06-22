@@ -113,3 +113,22 @@ export async function createProject(name: string) {
     credentials: "include",
   }).then((r) => r.json());
 }
+
+export async function updateProjectName(
+  projectId: string,
+  name: string
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/projects?id=${projectId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ name }),
+    }
+  );
+
+  return response.json();
+}

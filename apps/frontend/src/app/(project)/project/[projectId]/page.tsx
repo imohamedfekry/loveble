@@ -1,8 +1,8 @@
-import Link from "next/link";
+"use client";
+import { ProjectIdView } from "@/components/project/project-id-view";
 
-export default async function ProjectPage() {
+export default async function ProjectPage({params}: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
 
-  return (
-    <></>
-  );
+  return <ProjectIdView projectId={projectId} />;
 }

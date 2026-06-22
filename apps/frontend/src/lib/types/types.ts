@@ -33,7 +33,9 @@ export type ApiResponse<T> = {
 export type UserOAuthAccount = {
   id: string;
   provider: "github" | "google" | string;
-  providerId: string;
+  // providerId: string;
+  username: string;
+  displayName: string;
   avatar_url: string | null;
   createdAt: string;
   updatedAt: string;
@@ -53,7 +55,10 @@ export type User = {
   oauthAccounts: UserOAuthAccount[];
 };
 
-export type UserStore = {
+export interface UserStore {
   user: User | null;
-  setUser: (u: User) => void;
-};
+  isLoading: boolean;
+
+  setUser: (user: User | null) => void;
+  finishLoading: () => void;
+}

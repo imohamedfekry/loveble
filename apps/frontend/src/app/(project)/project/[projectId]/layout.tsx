@@ -1,4 +1,5 @@
 import { ProjectIdLayout } from "@/components/project/project-id-layout";
+import { ProjectSplitLayout } from "../../../../components/project/project-split-layout";
 
 export default async function Layout({
   children,
@@ -8,9 +9,12 @@ export default async function Layout({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
+
   return (
     <ProjectIdLayout projectId={projectId}>
-      {children}
+      <ProjectSplitLayout>
+        {children}
+      </ProjectSplitLayout>
     </ProjectIdLayout>
   );
 }
