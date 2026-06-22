@@ -1,25 +1,30 @@
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from "@/components/ui/card";
+import { BrandPageShell } from "@/components/layout/brand-page-shell";
 
 export function AuthCard({
   title,
+  description,
   children,
 }: {
-  title: string
-  children: React.ReactNode
+  title: string;
+  description?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen page-gradient flex items-center justify-center p-6">
-      <Card className="w-full max-w-md shadow-lg ring-border/40">
-        <CardHeader>
+    <BrandPageShell>
+      <Card className="surface-card w-full shadow-lg ring-border/40">
+        <CardHeader className="gap-1">
           <CardTitle>{title}</CardTitle>
+          {description && <CardDescription>{description}</CardDescription>}
         </CardHeader>
         <CardContent>{children}</CardContent>
       </Card>
-    </div>
-  )
+    </BrandPageShell>
+  );
 }

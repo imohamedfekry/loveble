@@ -60,7 +60,7 @@ export default function VerifyOtpPage() {
   }
 
   return (
-    <AuthCard title="Verify OTP">
+    <AuthCard title="Verify OTP" description="Enter the code sent to your email">
       <div className="space-y-4">
         
         <OTPInput value={otp} onChange={setOtp} />
