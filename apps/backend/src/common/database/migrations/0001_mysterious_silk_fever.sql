@@ -1,1 +1,0 @@
-ALTER TABLE "user_oauth_accounts" RENAME COLUMN "avatar" TO "avatar_url";

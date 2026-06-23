@@ -5,50 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1782055382858,
-      "tag": "0000_silly_mathemanic",
+      "when": 1782173241349,
+      "tag": "0000_unknown_nehzno",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1782055701804,
-      "tag": "0001_mysterious_silk_fever",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1782056825623,
-      "tag": "0002_wide_the_professor",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1782057054294,
-      "tag": "0003_calm_may_parker",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1782057102426,
-      "tag": "0004_daffy_marvel_apes",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1782057620136,
-      "tag": "0005_wide_slayback",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1782059689718,
-      "tag": "0006_wealthy_caretaker",
+      "when": 1782175045885,
+      "tag": "0001_wild_tenebrous",
       "breakpoints": true
     }
   ]
