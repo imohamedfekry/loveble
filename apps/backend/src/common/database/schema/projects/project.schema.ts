@@ -16,20 +16,18 @@ const exportStatus = pgEnum('export_status_enum', [
 export const projects = pgTable(
   'projects',
   {
-    id: bigint('id', { mode: 'bigint' })
-      .primaryKey()
-      .$defaultFn(() => nextSnowflakeId()),
-    userId: bigint('user_id', { mode: 'bigint' })
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+    id: bigint('id', { mode: 'bigint' }).primaryKey().$defaultFn(() => nextSnowflakeId()),
+    userId: bigint('user_id', { mode: 'bigint' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
-    importStatus: importStatusEnum('import_status').default('importing'),
-    exportStatus: exportStatus('export_status').default('exporting'),
+    importStatus: importStatusEnum('import_status'),
+    exportStatus: exportStatus('export_status'),
     exportRepoUrl: varchar('export_repo_url', { length: 255 }),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
-  (table) => [index('projects_user_id_idx').on(table.userId)],
+  (table) => [
+    index('projects_user_id_idx').on(table.userId)
+  ],
 );
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
