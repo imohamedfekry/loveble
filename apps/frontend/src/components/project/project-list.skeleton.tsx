@@ -2,46 +2,55 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { actionCardClassName } from "@/lib/styles";
+import { surfacePanelClassName } from "@/lib/styles";
 
-// Mirrors <ContinueCard /> 1:1
-// Structure:
-//   div.flex.flex-col.gap-2
-//     span (label "Last updated") → skeleton
-//     Link > Button[variant=outline + actionCardClassName + gap-2]
-//       div.flex.w-full.items-center.justify-between
-//         div.flex.min-w-0.items-center.gap-2  → icon + name
-//         ArrowRightIcon                        → skeleton
-//       span.text-xs (date)                     → skeleton
 export const ContinueCardSkeleton = () => {
   return (
-    <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        Last updated
-      </span>      <Skeleton className="h-3 w-20" />
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-3 w-16" />
 
-      {/* mirrors Button variant="outline" + actionCardClassName + className="gap-2"
-          actionCardClassName already sets flex-col, padding, border, rounded, etc. */}
-      <div
-        className={cn(
-          actionCardClassName,
-          "gap-2 pointer-events-none select-none"
-        )}
-      >
-        {/* top row */}
-        <div className="flex w-full items-center justify-between">
-          <div className="flex min-w-0 items-center gap-2">
-            {/* ProjectIcon size-3.5 */}
-            <Skeleton className="size-3.5 rounded-full shrink-0" />
-            {/* project name */}
-            <Skeleton className="h-4 w-40" />
+        <div
+          className={cn(
+            surfacePanelClassName,
+            "pointer-events-none flex-col items-stretch gap-3 p-4 select-none",
+          )}
+        >
+          <div className="flex w-full items-center gap-3">
+            <Skeleton className="size-10 shrink-0 rounded-lg" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="size-4 shrink-0" />
           </div>
-          {/* ArrowRightIcon size-4 */}
-          <Skeleton className="size-4 shrink-0" />
+        </div>
+      </div>
+
+      <div className="surface-card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border/40 px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-4 w-4 rounded-md" />
+          </div>
+          <Skeleton className="h-6 w-20 rounded-md" />
         </div>
 
-        {/* date row — same as "text-xs text-muted-foreground" line-height ~12px */}
-        <Skeleton className="h-3 w-24" />
+        <div className="flex flex-col gap-1 p-1">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-3 rounded-lg px-2.5 py-2"
+            >
+              <Skeleton className="size-8 shrink-0 rounded-lg" />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Skeleton className="h-3.5 w-32" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+              <Skeleton className="size-4 shrink-0" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

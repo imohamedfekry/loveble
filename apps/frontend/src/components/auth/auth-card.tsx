@@ -19,8 +19,8 @@ export function AuthCard({
   return (
     <BrandPageShell>
       <Card className="surface-card w-full shadow-lg ring-border/40">
-        <CardHeader className="gap-1">
-          <CardTitle>{title}</CardTitle>
+        <CardHeader className="gap-1 text-center">
+          <CardTitle className="text-center">{title}</CardTitle>
           {description && <CardDescription>{description}</CardDescription>}
         </CardHeader>
         <CardContent>{children}</CardContent>

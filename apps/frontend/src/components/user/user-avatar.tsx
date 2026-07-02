@@ -13,6 +13,7 @@ import {
 import { SettingsIcon, LogOutIcon } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
 import { useUserStore } from "@/store/user.store";
+import { useSettings } from "@/components/settings/use-settings";
 import { useGithubAccount } from "./hooks/useGithubAccount";
 
 const triggerClassName =
@@ -21,6 +22,7 @@ const triggerClassName =
 export function UserAvatarButton() {
   const user = useUserStore((s) => s.user);
   const { github, connectGithub } = useGithubAccount();
+  const { openSettings } = useSettings();
 
   const avatarUrl =
     github?.avatar_url ??
@@ -58,6 +60,7 @@ export function UserAvatarButton() {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
 
+{/* 
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
@@ -66,9 +69,9 @@ export function UserAvatarButton() {
               <FaGithub className="size-4" />
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm">GitHub Connected</span>
-                {/* <span className="text-xs text-muted-foreground">
-                  {github.providerId}
-                </span> */}
+                <span className="text-xs text-muted-foreground">
+                  {github.username}
+                </span>
               </div>
             </DropdownMenuLabel>
           ) : (
@@ -77,14 +80,14 @@ export function UserAvatarButton() {
               Connect GitHub
             </DropdownMenuItem>
           )}
-        </DropdownMenuGroup>
+        </DropdownMenuGroup> */}
 
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => openSettings("account", "profile")}>
             <SettingsIcon className="size-4" />
-            Manage account
+            Settings
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive">
             <LogOutIcon className="size-4" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Navbar } from "./navbar";
+import { ProjectNavbar } from "./project-navbar";
 import { useRealtimeProjects } from "@/lib/hooks/projects/useRealtimeProjects";
 import { useLoadUser } from "@/lib/hooks/user/useLoadUser";
 
@@ -16,7 +16,7 @@ export const ProjectIdLayout = ({
 
   return (
     <div className="flex h-screen w-full flex-col">
-      <Navbar projectId={projectId} />
+      <ProjectNavbar projectId={projectId} />
       <div className="flex flex-1 overflow-hidden">{children}</div>
     </div>
   );

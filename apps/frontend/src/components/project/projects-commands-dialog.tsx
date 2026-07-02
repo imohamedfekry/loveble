@@ -6,12 +6,14 @@ import {
   CommandDialog,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
 import { getProjects } from "@/lib/api/projects";
 import type { Project } from "@/lib/types/types";
+import { InputGroup, InputGroupAddon } from "../ui/input-group";
+import { SearchIcon } from "lucide-react";
+import { Command as CommandPrimitive } from "cmdk"
 
 interface ProjectsCommandDialogProps {
   open: boolean;
@@ -100,7 +102,20 @@ export const ProjectsCommandDialog = ({
       description="Search and navigate to your projects"
     >
       <Command>
-        <CommandInput placeholder="Search projects..." />
+        <InputGroup className="flex justify-between h-8! rounded-lg! border-input/30 bg-input/30 shadow-none! *:data-[slot=input-group-addon]:ps-2!">
+
+          <InputGroupAddon>
+            <SearchIcon className="size-4 shrink-0 opacity-50" />
+
+          <CommandPrimitive.Input
+            placeholder="Search projects..."
+            className="w-full text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          </InputGroupAddon>
+          <kbd className="inline-flex h-5 items-center rounded-md border bg-background px-1.5 text-[10px] font-medium text-muted-foreground mr-1">
+            ESC
+          </kbd>
+        </InputGroup>
         <CommandList>
           <CommandEmpty>No projects found.</CommandEmpty>
           <CommandGroup heading="Projects">
