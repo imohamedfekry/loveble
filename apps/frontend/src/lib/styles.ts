@@ -1,5 +1,5 @@
-export const actionCardClassName =
-  "surface-card surface-card-hover h-auto items-start justify-start p-4 flex flex-col gap-6 w-full";
-
 export const surfacePanelClassName =
   "surface-card flex items-center justify-between p-4";
+
+export const iconBadgeClassName =
+  "flex shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/50 text-muted-foreground";

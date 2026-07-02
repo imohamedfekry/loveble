@@ -27,7 +27,7 @@ const font = Poppins({
   weight: ["400", "500", "600", "700"],
 });
 
-export function Navbar({ projectId }: { projectId: string }) {
+export function ProjectNavbar({ projectId }: { projectId: string }) {
   const { project, loading } = useLoadProject(projectId);
 
   const projectName = project?.name ?? "";
