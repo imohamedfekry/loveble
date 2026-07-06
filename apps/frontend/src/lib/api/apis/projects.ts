@@ -1,5 +1,5 @@
-import { API_BASE_URL } from "../api";
-import type { ApiResponse, PaginatedProjects } from "../types/types";
+import { API_BASE_URL } from "../../api";
+import type { ApiResponse, PaginatedProjects } from "../../types/types";
 
 export type GetProjectsParams = {
   page?: number;

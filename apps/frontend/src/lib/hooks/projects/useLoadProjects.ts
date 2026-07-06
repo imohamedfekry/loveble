@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { getProjects, type GetProjectsParams } from "@/lib/api/projects";
+import { useEffect, useMemo, useRef } from "react";
+import { getProjects, type GetProjectsParams } from "@/lib/api/apis/projects";
 import { useProjectsStore } from "@/store/project.store";
+import { ProjectFileType } from "@/lib/api/apis/files/types";
 
 export const useLoadProjects = (params?: GetProjectsParams) => {
   const setProjects = useProjectsStore((s) => s.setProjects);

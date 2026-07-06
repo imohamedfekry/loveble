@@ -3,7 +3,13 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa";
+import { Allotment } from "allotment";
+import { FileExplorer } from "./file-explorer";
 
+const MIN_SIDEBAR_WIDTH = 200;
+const MAX_SIDEBAR_WIDTH = 800;
+const DEFAULT_SIDEBAR_WIDTH = 350;
+const DEFAULT_MAIN_SIZE = 1000;
 const Tab = ({
     lable,
     isActive,
@@ -40,10 +46,10 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                 />
                 <div className="flex-1 flex justify-end h-full ">
                     <div className="flex items-center gap-1.5 h-full px-3 cursor-pointer text-muted-foreground border-l hover:bg-accent/30">
-                    <FaGithub className="size3.5" />
-                    <span className="text-sm">
-                        Export
-                    </span>
+                        <FaGithub className="size3.5" />
+                        <span className="text-sm">
+                            Export
+                        </span>
                     </div>
                 </div>
             </nav>
@@ -52,10 +58,22 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                     ("absolute inset-0",
                         activeView === "editor" ? "visible" : "invisible"
                     )}>
+                    <Allotment defaultSizes={[DEFAULT_SIDEBAR_WIDTH, DEFAULT_MAIN_SIZE]}>
+                        <Allotment.Pane
+                            snap
+                            minSize={MIN_SIDEBAR_WIDTH}
+                            maxSize={MAX_SIDEBAR_WIDTH}
+                            preferredSize={DEFAULT_SIDEBAR_WIDTH}
+                        >
+                            <FileExplorer projectId={projectId} />
+                        </Allotment.Pane>
 
-                    <div>
-                        editor : {projectId}
-                    </div>
+                        <Allotment.Pane>
+                            <p>
+                                editor view : {projectId}
+                            </p>
+                        </Allotment.Pane>
+                    </Allotment>
                 </div>
 
                 <div className={cn

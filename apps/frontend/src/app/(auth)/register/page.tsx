@@ -8,7 +8,7 @@ import { AuthCard } from '@/components/auth/auth-card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { FormError } from '@/components/auth/form-error'
-import { requestOtp } from '@/lib/api/auth'
+import { requestOtp } from '@/lib/api/apis/auth'
 import { emailSchema } from '@/lib/validators/register'
 
 
