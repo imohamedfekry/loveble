@@ -3,6 +3,7 @@ import { Auth } from 'src/common/decorator/auth-user.decorator';
 import { projectService } from './project.service';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import { ProjectDto, ProjectQueryDto, UpdateProjectDto } from './dto/project.dto';
+import { ParseSnowflakePipe } from 'src/common/Global/security/validator/isId.validator';
 
 @Controller('projects')
 @Auth()
@@ -10,8 +11,10 @@ export class ProjectController {
   constructor(private readonly projectService: projectService) {}
 
   @Get('project/:id')
-  getProjectById(@Param('id') projectId: string, @Req() req: AuthenticatedRequest) {
-    return this.projectService.findById(BigInt(projectId), req);
+  getProjectById(
+    @Param('id', ParseSnowflakePipe) projectId: bigint,
+    @Req() req: AuthenticatedRequest) {
+    return this.projectService.findById(projectId, req);
   }
 
   @Get('all')
@@ -29,7 +32,7 @@ export class ProjectController {
 
   @Put()
   updateProject(
-    @Query('id') projectId: bigint,
+    @Query('id', ParseSnowflakePipe) projectId: bigint,
     @Body() body: UpdateProjectDto,
     @Req() req: AuthenticatedRequest,
   ) {
@@ -37,7 +40,7 @@ export class ProjectController {
   }
 
   @Delete()
-  deleteProject(@Query('id') projectId: bigint, @Req() req: AuthenticatedRequest) {
+  deleteProject(@Query('id', ParseSnowflakePipe) projectId: bigint, @Req() req: AuthenticatedRequest) {
     return this.projectService.delete(projectId, req);
   }
 }

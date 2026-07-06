@@ -138,4 +138,27 @@ export const RESPONSE_MESSAGES = {
       message: 'Project updated successfully.',
     }
   },
+  FILE: {
+    CREATED: {
+      code: 'FILE_CREATED',
+      message: 'File created successfully.',
+    },
+    DUPLICATE_NAME: {
+      code: 'FILE_DUPLICATE_NAME',
+      message: 'A file with the same name already exists in this folder.',
+    },
+    UPDATED:{
+      code:"FILE_UPDATED",
+      message:"File updated successfully"
+    },
+    DLETED:{
+      code:"FILE_DELETED_",
+      message:"File deleted successfully"
+    },
+    NOT_FOUND: {
+      code: 'FILE_NOT_FOUND',
+      message: 'File not found.',
+    },
+
+  }
 } as const;

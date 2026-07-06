@@ -66,11 +66,11 @@ async findByUserIdPaginated(
     },
   };
 }
-  async findById(id: bigint): Promise<Project | null> {
+  async findById(id: bigint | string): Promise<Project | null> {
     const result = await this.db
       .select()
       .from(projects)
-      .where(eq(projects.id, id))
+      .where(eq(projects.id, BigInt(id)))
       .limit(1);
 
     return result[0] ?? null;
