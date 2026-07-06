@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckIcon, Loader2Icon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { githubCallback } from "@/lib/api/auth";
+import { githubCallback } from "@/lib/api/apis/auth";
 import { BrandPageShell } from "@/components/layout/brand-page-shell";
 
 type Status = "loading" | "success" | "error";

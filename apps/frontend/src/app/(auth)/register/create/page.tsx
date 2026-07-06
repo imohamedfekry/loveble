@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { createSchema } from '@/lib/validators/register'
-import { createAccount } from '@/lib/api/auth'
+import { createAccount } from '@/lib/api/apis/auth'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthCard } from '@/components/auth/auth-card'
-import { verifyOtp } from '@/lib/api/auth'
+import { verifyOtp } from '@/lib/api/apis/auth'
 import { OTPInput } from '@/components/ui/otp-input'
 import * as v from 'valibot'
 import { otpSchema } from '@/lib/validators/register'

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useUserStore } from "@/store/user.store";
-import { getMe } from "../../api/user";
+import { getMe } from "@/lib/api/index";
 
 export const useLoadUser = () => {
   const setUser = useUserStore((s) => s.setUser);

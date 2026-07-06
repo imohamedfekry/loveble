@@ -1,4 +1,5 @@
-import { API_BASE_URL } from "../api"
+import { API_BASE_URL } from "@/lib/api";
+
 export async function loginUser(data: any) {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',

@@ -1,0 +1,31 @@
+import { Project } from "@/lib/types/types";
+
+export type FileType = "file" | "folder";
+
+export interface ProjectFileType {
+    id: string;
+    projectId: string;
+    parentId: string | null;
+    name: string;
+    type: FileType;
+    storageKey: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateFileRequest {
+    parentId?: string | null;
+    name: string;
+    type: "file" | "folder";
+}
+
+export interface UpdateFile {
+    parentId?: string | null;
+    name: string;
+}
+
+
+// Response InterFace
+export interface GetFilesResponse {
+  files: ProjectFileType[];
+}

@@ -9,7 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { getProjects } from "@/lib/api/projects";
+import { getProjects } from "@/lib/api/apis/projects";
 import type { Project } from "@/lib/types/types";
 import { InputGroup, InputGroupAddon } from "../ui/input-group";
 import { SearchIcon } from "lucide-react";

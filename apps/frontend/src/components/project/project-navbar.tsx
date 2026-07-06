@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/breadcrumb";
 
 import { useLoadProject } from "@/lib/hooks/projects/useLoadProject";
-import { updateProjectName } from "@/lib/api/projects";
+import { updateProjectName } from "@/lib/api/apis/projects";
 import { cn } from "@/lib/utils";
 import { UserAvatarButton } from "../user/user-avatar";
 import { CloudCheckIcon, LoaderIcon } from "lucide-react";

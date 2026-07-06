@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../api";
+import { API_BASE_URL } from "../../api";
 
 export function redirectToGithubConnect() {
   window.location.href = `${API_BASE_URL}/auth/github/connect`;

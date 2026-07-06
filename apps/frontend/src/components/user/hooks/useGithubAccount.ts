@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { redirectToGithubConnect } from "@/lib/api/auth";
+import { redirectToGithubConnect } from "@/lib/api/apis/auth";
 import { useUserStore } from "@/store/user.store";
 
 export function useGithubAccount() {
