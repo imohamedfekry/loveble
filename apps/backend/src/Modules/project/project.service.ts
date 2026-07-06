@@ -6,7 +6,6 @@ import { RESPONSE_MESSAGES } from 'src/common/utils/response-messages';
 import { fail, success } from 'src/common/utils/response.util';
 import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
 import { PROJECT_EVENTS } from '../realtime/events/project.events';
-import { serializeBigInt } from 'src/common/utils/snowflake';
 
 @Injectable()
 export class projectService {
@@ -39,7 +38,7 @@ export class projectService {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
     return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
-      project: serializeBigInt(project),
+      project: project,
     });
   }
   async create(body: ProjectDto, req: AuthenticatedRequest) {
@@ -50,10 +49,10 @@ export class projectService {
     this.realtimeEmitService.toUser(
       req.user.id.toString(),
       PROJECT_EVENTS.CREATED,
-      serializeBigInt(project),
+      project,
     );
     return success(RESPONSE_MESSAGES.PROJECT.CREATE.SUCCESS, {
-      project: serializeBigInt(project),
+      project: project,
     });
   }
   async update(
@@ -72,10 +71,10 @@ export class projectService {
     this.realtimeEmitService.toUser(
       req.user.id.toString(),
       PROJECT_EVENTS.UPDATED,
-      serializeBigInt(updatedProject),
+      updatedProject,  
     );
     return success(RESPONSE_MESSAGES.PROJECT.UPDATE_SUCCESS, {
-      project: serializeBigInt(updatedProject),
+      project: updatedProject,
     });
   }
   async delete(projectId: bigint, req: AuthenticatedRequest) {
@@ -87,7 +86,7 @@ export class projectService {
     this.realtimeEmitService.toUser(
       req.user.id.toString(),
       PROJECT_EVENTS.DELETED,
-      serializeBigInt(project),
+      project,
     );
     return success(RESPONSE_MESSAGES.PROJECT.DELETE_SUCCESS);
   }

@@ -6,8 +6,9 @@ import { RedisModule } from './common/redis/redis.module';
 import { AuthModule } from './Modules/auth/auth.module';
 import { projectModule } from './Modules/project/project.module';
 import { RealtimeModule } from './Modules/realtime/realtime.module';
+import { FileModule } from './Modules/files/files.module';
 
 @Module({
-  imports: [CoreModule, UserModule, DefaultModule, RedisModule, AuthModule, projectModule, RealtimeModule],
+  imports: [CoreModule, UserModule, DefaultModule, RedisModule, AuthModule, projectModule, RealtimeModule,FileModule],
 })
 export class AppModule { }

@@ -5,9 +5,7 @@ import { RealtimeGateway } from './realtime.gateway';
 export class RealtimeEmitService {
   constructor(private readonly gateway: RealtimeGateway) {}
 
-  toUser(userId: string, event: string, data: any) {
-    console.log(userId,event,data);
-    
+  toUser(userId: string, event: string, data: any) {    
     this.gateway.server.to(`user:${userId}`).emit(event, data);
   }
 

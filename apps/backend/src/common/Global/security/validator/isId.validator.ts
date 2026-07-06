@@ -1,31 +1,19 @@
-// import {
-//   registerDecorator,
-//   ValidationArguments,
-//   ValidationOptions,
-//   ValidatorConstraint,
-//   ValidatorConstraintInterface,
-// } from 'class-validator';
+import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
+import * as v from 'valibot';
 
-// @ValidatorConstraint({ async: false })
-// export class IsIdConstraint implements ValidatorConstraintInterface {
-//   validate(value: any): boolean {
-//     const str = String(value);
-//     return /^\d{16,19}$/.test(str);
-//   }
+export const snowflakeId = v.pipe(
+  v.string('ID must be a string'),
+  v.regex(/^\d{16,19}$/, 'Invalid ID'),
+  v.transform((value) => BigInt(value)),
+);
 
-//   defaultMessage(args: ValidationArguments) {
-//     return `${args.property} must be a valid ID (16-19 digits)`;
-//   }
-// }
+@Injectable()
+export class ParseSnowflakePipe implements PipeTransform<string, bigint> {
+  transform(value: string): bigint {
+    if (!/^\d{16,19}$/.test(value)) {
+      throw new BadRequestException('Invalid ID');
+    }
 
-// export function IsId(validationOptions?: ValidationOptions) {
-//   return function (object: object, propertyName: string) {
-//     registerDecorator({
-//       target: object.constructor,
-//       propertyName,
-//       options: validationOptions,
-//       constraints: [],
-//       validator: IsIdConstraint,
-//     });
-//   };
-// }
+    return BigInt(value);
+  }
+}
