@@ -1,11 +1,16 @@
 import {
-  WebSocketGateway,
-  WebSocketServer,
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+
 import { ConnectionHandler } from './connection.handler';
+import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
 
 @WebSocketGateway({
   namespace: '/realtime',
@@ -20,13 +25,62 @@ export class RealtimeGateway
   @WebSocketServer()
   server!: Server;
 
-  constructor(private readonly connectionHandler: ConnectionHandler) {}
+  constructor(
+    private readonly connectionHandler: ConnectionHandler,
+    private readonly projectRepository: ProjectRepository,
+  ) {}
 
   handleConnection(socket: Socket) {
-    this.connectionHandler.handleConnect(socket);
+    return this.connectionHandler.handleConnect(socket);
   }
 
   handleDisconnect(socket: Socket) {
-    this.connectionHandler.handleDisconnect(socket);
+    return this.connectionHandler.handleDisconnect(socket);
+  }
+
+  @SubscribeMessage('project:subscribe')
+  async subscribeToProject(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() projectId: string,
+  ) {
+    const userId = socket.data.userId;
+
+    const project = await this.projectRepository.findById(projectId);
+
+    if (!project) {
+      socket.emit('project:error', {
+        message: 'Project not found',
+      });
+
+      return;
+    }
+
+    if (project.userId != userId) {
+      console.log(project.userId , userId);
+      
+      socket.emit('project:error', {
+        message: 'Unauthorized',
+      });
+      return;
+    }
+
+    await socket.join(`project:${projectId}`);
+    console.log(`user ${socket.data.userId} Connected To Project ${projectId}`);
+    
+    socket.emit('project:subscribed', {
+      projectId,
+    });
+  }
+
+  @SubscribeMessage('project:unsubscribe')
+  async unsubscribeFromProject(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() projectId: string,
+  ) {
+    await socket.leave(`project:${projectId}`);
+
+    socket.emit('project:unsubscribed', {
+      projectId,
+    });
   }
 }

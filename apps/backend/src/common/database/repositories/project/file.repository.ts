@@ -85,7 +85,7 @@ export class FileRepository extends BaseRepository {
 async updateFile(
   fileId: bigint,
   projectId: bigint,
-  data: Pick<File, "name" | "parentId">,
+ data: Partial<Pick<File, "name" | "parentId">>
 ): Promise<File | undefined> {
   const [file] = await this.db
     .update(files)
