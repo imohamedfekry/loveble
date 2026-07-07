@@ -3,7 +3,6 @@ import { ChevronRightIcon } from "lucide-react";
 import { FileIcon, FolderIcon } from "@react-symbols/icons/utils";
 import { cn } from "@/lib/utils";
 import type { CreateFileRequest, ProjectFileType, UpdateFile } from "@/lib/api/apis/files/types";
-import { LoadingRow } from "./loading-row";
 import { CreateInput } from "./create-input";
 import {
     useCreateFile,
@@ -13,6 +12,7 @@ import {
 } from "@/lib/hooks/file/useFiles";
 import { TreeItemWrapper } from "./tree-item-wrapper";
 import { RenameInput } from "./rename-input";
+import { TreeItemWrapperSkeleton } from "./TreeItemWrapperSkeleton";
 
 export const Tree = ({
     item,
@@ -26,29 +26,38 @@ export const Tree = ({
     const [isOpen, setIsOpen] = useState(false);
     const [creating, setCreating] = useState<"file" | "folder" | null>(null);
     const [isRenaming, setIsRenaming] = useState(false);
-    const { updateFile } = useUpdateFile();
-    const { createFile } = useCreateFile();
-    const { deleteFile } = useDeleteFile();
+    const { updateFile, loading: renaming } = useUpdateFile();
+    const { createFile, loading: creatingFile } = useCreateFile();
+    const { deleteFile, loading: deleting } = useDeleteFile();
     const filename = item.name
     const { files: children, loading } = useLoadFolderContent(
         projectId,
         item.id,
         isOpen && item.type === "folder",
     );
-    const handleRename = (data: UpdateFile) => {
-        setIsRenaming(false);
-
+    const handleRename = async (data: UpdateFile) => {
         if (data.name === filename) {
+            setIsRenaming(false);
             return;
         }
 
-        updateFile(projectId, item.id, data);
+        await updateFile(projectId, item.id, data);
+        setIsRenaming(false);
     };
 
-    const handleCreate = (data: CreateFileRequest) => {
-        setCreating(null);
-        createFile(projectId, { ...data, parentId: item.id });
+    const handleCreate = async (data: CreateFileRequest) => {
         setIsOpen(true);
+
+        await createFile(projectId, { ...data, parentId: item.id });
+        setCreating(null);
+    };
+
+    const handleDelete = async () => {
+        try {
+            await deleteFile(projectId, item.id);
+        } catch (err) {
+            console.log("Delete failed", err);
+        }
     };
 
     if (item.type === "file") {
@@ -56,7 +65,8 @@ export const Tree = ({
             return <RenameInput
                 type="file"
                 isOpen={true}
-                defultValue={filename}
+                loading={renaming}
+                defaultValue={filename}
                 level={level}
                 onSubmit={handleRename}
                 onCancel={() => setIsRenaming(false)}
@@ -67,7 +77,10 @@ export const Tree = ({
                 item={item}
                 level={level}
                 isActive={false}
-                onDelete={() => deleteFile(projectId, item.id)}
+                loading={deleting}
+                onDelete={() => {
+                    void handleDelete();
+                }}
                 onRename={() => setIsRenaming(true)}
             >
                 <FileIcon fileName={filename} autoAssign className="size-4 shrink-0" />
@@ -76,72 +89,77 @@ export const Tree = ({
         );
     }
 
-return (
-    <>
-        {isRenaming ? (
-            <RenameInput
-                type="folder"
-                isOpen={isOpen}
-                defultValue={filename}
-                level={level}
-                onSubmit={handleRename}
-                onCancel={() => setIsRenaming(false)}
-            />
-        ) : (
-            <TreeItemWrapper
-                item={item}
-                level={level}
-                onClick={() => setIsOpen((open) => !open)}
-                onRename={() => setIsRenaming(true)}
-                onCreateFile={() => {
-                    setCreating("file");
-                    setIsOpen(true);
-                }}
-                onCreateFolder={() => {
-                    setCreating("folder");
-                    setIsOpen(true);
-                }}
-                onDelete={() => deleteFile(projectId, item.id)}
-            >
-                <ChevronRightIcon
-                    className={cn(
-                        "size-4 shrink-0 text-muted-foreground",
-                        isOpen && "rotate-90",
+    return (
+        <>
+            {isRenaming ? (
+                <RenameInput
+                    type="folder"
+                    isOpen={isOpen}
+                    loading={renaming}
+                    defaultValue={filename}
+                    level={level}
+                    onSubmit={handleRename}
+                    onCancel={() => setIsRenaming(false)}
+                />
+            ) : (
+                <TreeItemWrapper
+                    item={item}
+                    level={level}
+                    loading={deleting}
+                    onClick={() => setIsOpen((open) => !open)}
+                    onRename={() => setIsRenaming(true)}
+                    onCreateFile={() => {
+                        setCreating("file");
+                        setIsOpen(true);
+                    }}
+                    onCreateFolder={() => {
+                        setCreating("folder");
+                        setIsOpen(true);
+                    }}
+                    onDelete={() => {
+                        void handleDelete();
+                    }}
+                >
+                    <ChevronRightIcon
+                        className={cn(
+                            "size-4 shrink-0 text-muted-foreground",
+                            isOpen && "rotate-90",
+                        )}
+                    />
+                    <FolderIcon
+                        folderName={filename}
+                        className="size-4 shrink-0"
+                    />
+                    <span className="truncate text-sm">
+                        {filename}
+                    </span>
+                </TreeItemWrapper>
+            )}
+
+            {isOpen && (
+                <>
+                    {loading && <TreeItemWrapperSkeleton level={level + 1} />}
+
+                    {creating && (
+                        <CreateInput
+                            type={creating}
+                            level={level + 1}
+                            loading={creatingFile}
+                            onSubmit={handleCreate}
+                            onCancel={() => setCreating(null)}
+                        />
                     )}
-                />
-                <FolderIcon
-                    folderName={filename}
-                    className="size-4 shrink-0"
-                />
-                <span className="truncate text-sm">
-                    {filename}
-                </span>
-            </TreeItemWrapper>
-        )}
 
-        {isOpen && (
-            <>
-                {loading && <LoadingRow level={level + 1} />}
-
-                {creating && (
-                    <CreateInput
-                        type={creating}
-                        level={level + 1}
-                        onSubmit={handleCreate}
-                        onCancel={() => setCreating(null)}
-                    />
-                )}
-
-                {children.map((child) => (
-                    <Tree
-                        key={child.id}
-                        item={child}
-                        level={level + 1}
-                        projectId={projectId}
-                    />
-                ))}
-            </>
-        )}
-    </>
-);
+                    {children.map((child) => (
+                        <Tree
+                            key={child.id}
+                            item={child}
+                            level={level + 1}
+                            projectId={projectId}
+                        />
+                    ))}
+                </>
+            )}
+        </>
+    );
 };

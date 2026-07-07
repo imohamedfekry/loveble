@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SettingsProvider } from "@/components/settings/settings-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SocketProvider } from "@/lib/socket/socketProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -46,7 +47,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SettingsProvider>{children}</SettingsProvider>
+          {/* <SocketProvider> */}
+            <SettingsProvider>{children}</SettingsProvider>
+          {/* </SocketProvider> */}
         </ThemeProvider>
       </body>
     </html>

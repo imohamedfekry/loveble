@@ -3,8 +3,7 @@ import React, { useState } from "react";
 import { cn } from "@/lib/utils"
 import { CreateFileRequest } from "@/lib/api/apis/files/types";
 import { useLoadProject } from "@/lib/hooks/projects/useLoadProject";
-import { createFile } from "@/lib/api/apis/files/files";
-import { useLoadFiles, useLoadFolderContent } from "@/lib/hooks/file/useFiles";
+import { useCreateFile, useLoadFiles, useLoadFolderContent, useReloadFiles } from "@/lib/hooks/file/useFiles";
 import { Button } from "@/components/ui/button";
 import { CreateInput } from "./create-input";
 import { ScrollArea } from "../../ui/scroll-area"
@@ -14,9 +13,12 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
     const [isOpen, setIsOpen] = useState(true);
     const [collapseKey, setCollapseKey] = useState(0);
     const [creating, setCreating] = useState<"file" | "folder" | null>(null);
-    const handleCreateFile = (data: CreateFileRequest) => {
+    const { createFile, loading: creatingFile } = useCreateFile();
+    const { reload, loading: refreshing } = useReloadFiles();
+    const handleCreateFile = async (data: CreateFileRequest) => {
+        setIsOpen(true);
+        await createFile(projectId, data);
         setCreating(null);
-        createFile(projectId, data);
     };
     const { project, loading } = useLoadProject(projectId);
 
@@ -93,10 +95,12 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
                             </Button>
 
                             <Button
-                                onClick={(e) => {
+                                disabled={refreshing}
+                                onClick={async (e) => {
                                     e.stopPropagation();
                                     e.preventDefault();
-                                    // Refresh the file explorer
+                                    await reload(projectId);
+                                    setCollapseKey((prev) => prev + 1);
                                 }}
                                 variant="highlight"
                                 size="icon-xs"
@@ -120,6 +124,7 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
                                 <CreateInput
                                     type={creating}
                                     level={0}
+                                    loading={creatingFile}
                                     onSubmit={handleCreateFile}
                                     onCancel={() => setCreating(null)}
                                 />

@@ -18,6 +18,7 @@ type TreeItemWrapperProps = {
     children: ReactNode;
     level: number;
     isActive?: boolean;
+    loading?: boolean;
     onClick?: () => void;
     onDoubleClick?: () => void;
     onRename?: () => void;
@@ -31,6 +32,7 @@ export const TreeItemWrapper = ({
     children,
     level,
     isActive = false,
+    loading = false,
     onClick,
     onDoubleClick,
     onRename,
@@ -40,60 +42,63 @@ export const TreeItemWrapper = ({
 }: TreeItemWrapperProps) => {
 
     return (
-<ContextMenu>
-    <ContextMenuTrigger asChild>
-        <button
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
-            onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    onRename?.();
-                }
-            }}
-            className={cn(
-                "group flex h-5.5 w-full items-center gap-1 outline-none hover:bg-accent/30 focus:ring-1 focus:ring-inset focus:ring-ring",
-                isActive && "bg-accent/30",
-            )}
-            style={{
-                paddingLeft: getItemPadding(level, item.type === "file"),
-            }}
-        >
-            {children}
-        </button>
-    </ContextMenuTrigger>
+        <ContextMenu>
+            <ContextMenuTrigger asChild>
+                <button
+                    disabled={loading}
+                    onClick={onClick}
+                    onDoubleClick={onDoubleClick}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            onRename?.();
+                        }
+                    }}
+                    className={cn(
+                        "group flex h-5.5 w-full items-center gap-1 outline-none transition-opacity duration-200 hover:bg-accent/30 focus:ring-1 focus:ring-inset focus:ring-ring",
+                        isActive && "bg-accent/30",
+                        loading && "cursor-progress opacity-70",
+                    )}
+                    style={{
+                        paddingLeft: getItemPadding(level, item.type === "file"),
+                    }}
+                >
+                    {children}
+                </button>
+            </ContextMenuTrigger>
 
-    <ContextMenuContent
-        onCloseAutoFocus={(e) => e.preventDefault()}
-        className="w-64"
-    >
-        {item.type === "folder" && (
-            <>
-                <ContextMenuItem onSelect={onCreateFile}>
-                    New File...
+            <ContextMenuContent
+                onCloseAutoFocus={(e) => e.preventDefault()}
+                className="w-64"
+            >
+                {item.type === "folder" && (
+                    <>
+                        <ContextMenuItem onSelect={onCreateFile}>
+                            New File...
+                        </ContextMenuItem>
+
+                        <ContextMenuItem onSelect={onCreateFolder}>
+                            New Folder...
+                        </ContextMenuItem>
+
+                        <ContextMenuSeparator />
+                    </>
+                )}
+
+                <ContextMenuItem disabled={loading} onSelect={onRename}>
+                    Rename
+                    <ContextMenuShortcut>f2</ContextMenuShortcut>
                 </ContextMenuItem>
 
-                <ContextMenuItem onSelect={onCreateFolder}>
-                    New Folder...
+                <ContextMenuItem
+                    disabled={loading}
+                    variant="destructive"
+                    onSelect={onDelete}
+                >
+                    Delete Permanently
+                    <ContextMenuShortcut>⌘Backspace</ContextMenuShortcut>
                 </ContextMenuItem>
-
-                <ContextMenuSeparator />
-            </>
-        )}
-
-        <ContextMenuItem onSelect={onRename}>
-            Rename
-            <ContextMenuShortcut>f2</ContextMenuShortcut>
-        </ContextMenuItem>
-
-        <ContextMenuItem
-            variant="destructive"
-            onSelect={onDelete}
-        >
-            Delete Permanently
-            <ContextMenuShortcut>⌘Backspace</ContextMenuShortcut>
-        </ContextMenuItem>
-    </ContextMenuContent>
-</ContextMenu>
+            </ContextMenuContent>
+        </ContextMenu>
     );
 };

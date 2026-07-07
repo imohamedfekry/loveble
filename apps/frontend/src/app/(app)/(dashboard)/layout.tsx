@@ -2,8 +2,8 @@
 
 import { Navbar } from "@/components/layout/navbar";
 import { useLoadProjects } from "@/lib/hooks/projects/useLoadProjects";
-import { useRealtimeProjects } from "@/lib/hooks/projects/useRealtimeProjects";
 import { useLoadUser } from "@/lib/hooks/user/useLoadUser";
+import { useRealtimeProjects } from "@/lib/socket/hooks/useRealtimeProjects";
 
 export default function DashboardLayout({
   children,

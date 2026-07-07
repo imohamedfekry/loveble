@@ -29,3 +29,7 @@ export interface UpdateFile {
 export interface GetFilesResponse {
   files: ProjectFileType[];
 }
+
+export interface FileResponse {
+  file: ProjectFileType;
+}

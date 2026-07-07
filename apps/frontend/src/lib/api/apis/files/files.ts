@@ -1,5 +1,5 @@
 import { apiFetch } from "../../api-fetch";
-import { CreateFileRequest, GetFilesResponse, ProjectFileType, UpdateFile } from "./types";
+import { CreateFileRequest, FileResponse, GetFilesResponse, ProjectFileType, UpdateFile } from "./types";
 
 
 
@@ -19,7 +19,7 @@ export function updateFile(
     fileID: string,
     body: UpdateFile,
 ) {
-    return apiFetch<ProjectFileType>(
+    return apiFetch<FileResponse>(
         `/projects/${projectId}/files/${fileID}`,
         {
             method: "PATCH",
@@ -35,7 +35,7 @@ export function createFile(
     projectId: string,
     body: CreateFileRequest,
 ) {
-    return apiFetch<ProjectFileType>(
+    return apiFetch<FileResponse>(
         `/projects/${projectId}/files`,
         {
             method: "POST",

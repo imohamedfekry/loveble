@@ -71,16 +71,34 @@ export const useFilesStore = create<FilesState>((set) => ({
     })),
 
   addFile: (projectId, file) =>
-    set((state) => ({
-      files: {
-        ...state.files,
-        [projectId]: [
-          ...(state.files[projectId] ?? []),
-          file,
-        ],
-      },
-    })),
+    set((state) => {
 
+      const current =
+        state.files[projectId] ?? [];
+
+
+      const exists =
+        current.some(
+          item => item.id === file.id
+        );
+
+
+      if (exists) {
+        return state;
+      }
+
+
+      return {
+        files: {
+          ...state.files,
+          [projectId]: [
+            ...current,
+            file
+          ]
+        }
+      };
+
+    }),
   updateFile: (projectId, file) =>
     set((state) => ({
       files: {
