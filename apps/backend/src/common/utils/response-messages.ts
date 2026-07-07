@@ -145,7 +145,7 @@ export const RESPONSE_MESSAGES = {
     },
     DUPLICATE_NAME: {
       code: 'FILE_DUPLICATE_NAME',
-      message: 'A file with the same name already exists in this folder.',
+      message: 'This file or folder already exists at this location. Please choose a different name.',
     },
     UPDATED:{
       code:"FILE_UPDATED",

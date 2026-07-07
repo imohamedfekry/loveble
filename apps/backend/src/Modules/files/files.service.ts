@@ -6,7 +6,7 @@ import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
 import { FileRepository } from 'src/common/database/repositories/project/file.repository';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
 import { CreateFileDto, UpdateFileDto } from './dto/file.dto';
-import { DefaultGeneratedFile } from 'ai';
+import { FILE_EVENTES } from '../realtime/events/files.events';
 
 @Injectable()
 export class FileService {
@@ -23,7 +23,6 @@ export class FileService {
     const files = await this.fileRepository.getAllFilesWithProjectId(projectId);
 
     return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
-      // project: project,
       files: files,
     });
   }
@@ -32,20 +31,18 @@ export class FileService {
     if (!project || project.userId !== req.user.id) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
-    const data = await this.fileRepository.getFolderContents(projectId, folderId)
-    // check if folder id type is folder and check is same project
-    const file = await this.fileRepository.getFile(folderId)
+    const data = await this.fileRepository.getFolderContents(projectId, folderId);
+    const file = await this.fileRepository.getFile(folderId);
     if (!file) {
-      throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND),);
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
     }
-    if (file?.type !== "folder" || file.projectId !== folderId) {
-      throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND),);
+    if (file.type !== 'folder' || file.projectId !== projectId || file.id !== folderId) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
     }
     if (!data) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND),);
     }
     return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
-      project: project,
       files: data,
     });
   }
@@ -55,20 +52,26 @@ export class FileService {
     if (!project || project.userId !== req.user.id) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
-    let created
+    let created;
     try {
       created = await this.fileRepository.createFile({
         ...body,
-        projectId
-      })
+        projectId,
+      });
     } catch (error: any) {
-      if (error.cause.code === '23505' && error.cause.constraint === 'files_unique_name_per_folder_idx') {
-        throw new ConflictException(
-          fail(RESPONSE_MESSAGES.FILE.DUPLICATE_NAME),
-        );
+      if (
+        error?.cause?.code === '23505' &&
+        error?.cause?.constraint === 'files_unique_name_per_folder_idx'
+      ) {
+        throw new ConflictException(fail(RESPONSE_MESSAGES.FILE.DUPLICATE_NAME));
       }
+      throw error;
     }
-
+    this.realtimeEmitService.toProject(
+      projectId.toString(),
+      FILE_EVENTES.CREATED,
+      created
+    );
     return success(RESPONSE_MESSAGES.FILE.CREATED, { file: created });
   }
   async updateFile(
@@ -81,15 +84,33 @@ export class FileService {
     if (!project || project.userId !== req.user.id) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
-    const updatedFile = await this.fileRepository.updateFile(fileId, projectId, {
-      ...body,
-      parentId: body.parentId ?? null,
-    });
-    if (!updatedFile) {
-      throw new NotFoundException(
-        fail(RESPONSE_MESSAGES.FILE.NOT_FOUND),
-      );
+    let updatedFile;
+    try {
+      updatedFile = await this.fileRepository.updateFile(fileId, projectId, {
+        ...body,
+        ...(body.parentId !== undefined && {
+          parentId: body.parentId,
+        }),
+      });
+    } catch (error: any) {
+      if (
+        error?.cause?.code === '23505' &&
+        error?.cause?.constraint === 'files_unique_name_per_folder_idx'
+      ) {
+        throw new ConflictException(fail(RESPONSE_MESSAGES.FILE.DUPLICATE_NAME));
+      }
+      throw error;
     }
+
+    if (!updatedFile) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
+    }
+
+    this.realtimeEmitService.toProject(
+      projectId.toString(),
+      FILE_EVENTES.UPDATED,
+      updatedFile,
+    );
     return success(RESPONSE_MESSAGES.FILE.UPDATED, { file: updatedFile });
   }
   async deleteFile(
@@ -101,10 +122,16 @@ export class FileService {
     if (!project || project.userId !== req.user.id) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
-    const deletedFile = this.fileRepository.deleteFile(fileId, projectId)
+    const deletedFile = await this.fileRepository.deleteFile(fileId, projectId);
     if (!deletedFile) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
     }
+
+    this.realtimeEmitService.toProject(
+      projectId.toString(),
+      FILE_EVENTES.DELETED,
+      deletedFile,
+    );
 
     return success(RESPONSE_MESSAGES.FILE.DLETED, { file: deletedFile });
   }
