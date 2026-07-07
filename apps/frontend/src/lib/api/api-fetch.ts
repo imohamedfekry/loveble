@@ -12,9 +12,7 @@ export async function apiFetch<T>(
         ...init,
     });
 
-    const body = await res.json() as ApiResponse<T>;
-    console.log("resbonse",body);
-    
+    const body = await res.json() as ApiResponse<T>;    
     if (!body.success) {
         body.errors?.forEach(({ field, message }) => {
             console.error(`${field}: ${message}`);

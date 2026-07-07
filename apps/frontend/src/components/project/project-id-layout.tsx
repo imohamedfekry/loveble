@@ -1,8 +1,9 @@
 "use client";
 
+import { useProjectRealtime } from "@/lib/socket/hooks/useProjectRealtime";
 import { ProjectNavbar } from "./project-navbar";
-import { useRealtimeProjects } from "@/lib/hooks/projects/useRealtimeProjects";
 import { useLoadUser } from "@/lib/hooks/user/useLoadUser";
+import { useRealtimeProjects } from "@/lib/socket/hooks/useRealtimeProjects";
 
 export const ProjectIdLayout = ({
   children,
@@ -12,6 +13,7 @@ export const ProjectIdLayout = ({
   projectId: string;
 }) => {
   useLoadUser();
+  useProjectRealtime(projectId)
   useRealtimeProjects();
 
   return (

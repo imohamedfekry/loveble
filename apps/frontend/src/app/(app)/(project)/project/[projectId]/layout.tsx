@@ -1,5 +1,5 @@
 import { ProjectIdLayout } from "@/components/project/project-id-layout";
-import { ProjectSplitLayout } from "../../../../components/project/project-split-layout";
+import { ProjectSplitLayout } from "../../../../../components/project/project-split-layout";
 
 export default async function Layout({
   children,

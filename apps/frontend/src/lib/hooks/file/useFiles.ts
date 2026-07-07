@@ -95,11 +95,8 @@ export const useCreateFile = () => {
   ) => {
     try {
       setLoading(true);
-
-      const res = await createFile(projectId, body);
-
-      addFile(projectId, res.data);
-
+      const res = await createFile(projectId, body);      
+      addFile(projectId, res.data.file);
       return res.data;
     } finally {
       setLoading(false);
@@ -123,11 +120,10 @@ export const useUpdateFile = () => {
   ) => {
     try {
       setLoading(true);
-
       const res = await updateFile(projectId, fileId, body);
+      updateFileInStore(projectId, res.data.file);
 
-      updateFileInStore(projectId, res.data);
-
+      console.log("dataaaaa",res.data.file);      
       return res.data;
     } finally {
       setLoading(false);

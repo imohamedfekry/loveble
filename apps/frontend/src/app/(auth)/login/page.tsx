@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { AuthCard } from '@/components/auth/auth-card'
 import { loginSchema, LoginSchema } from '@/lib/validators/login'
-import { loginUser } from '@/lib/api/user'
+import { loginUser } from '@/lib/api/apis'
 
 export default function LoginPage() {
   const router = useRouter()
