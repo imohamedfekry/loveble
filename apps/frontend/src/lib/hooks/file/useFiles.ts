@@ -1,42 +1,53 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { createFile, deleteFile, getFiles, updateFile } from "@/lib/api/apis/files/files";
+import { socket } from "@/lib/socket/socket";
 import { useFilesStore } from "@/store/file.store";
 import { CreateFileRequest, UpdateFile } from "@/lib/api/apis/files/types";
 
-const inflightLoads = new Map<string, Promise<void>>();
+// Track active requests per projectId to avoid duplicate requests within same instance
+const activeRequests = new Map<string, AbortController>();
 
 async function loadProjectFiles(
   projectId: string,
   options?: { force?: boolean },
 ) {
-  if (!options?.force) {
-    const existing = inflightLoads.get(projectId);
-    if (existing) return existing;
-
-    const { files } = useFilesStore.getState();
-    if (projectId in files) return;
-  } else {
-    inflightLoads.delete(projectId);
+  // Cancel previous request if force is true
+  if (options?.force && activeRequests.has(projectId)) {
+    activeRequests.get(projectId)?.abort();
+    activeRequests.delete(projectId);
   }
 
-  const promise = (async () => {
-    const { setLoading, setFiles } = useFilesStore.getState();
+  // Check if already loading
+  if (activeRequests.has(projectId) && !options?.force) {
+    return;
+  }
 
-    try {
-      setLoading(projectId, true);
+  // Check cache
+  const { files } = useFilesStore.getState();
+  if (!options?.force && projectId in files) {
+    return;
+  }
 
-      const res = await getFiles(projectId);
-      setFiles(projectId, res.data.files);
-    } finally {
-      setLoading(projectId, false);
-      inflightLoads.delete(projectId);
+  const controller = new AbortController();
+  activeRequests.set(projectId, controller);
+
+  const { setLoading, setFiles } = useFilesStore.getState();
+
+  try {
+    setLoading(projectId, true);
+
+    const res = await getFiles(projectId);
+    setFiles(projectId, res.data.files);
+  } catch (error: any) {
+    if (error.name !== 'AbortError') {
+      console.error(`[loadProjectFiles] Error loading files for ${projectId}:`, error);
     }
-  })();
-
-  inflightLoads.set(projectId, promise);
-  return promise;
+  } finally {
+    setLoading(projectId, false);
+    activeRequests.delete(projectId);
+  }
 }
 
 export function reloadProjectFiles(projectId: string) {
@@ -48,22 +59,45 @@ export const useLoadFiles = (projectId: string, enabled: boolean = true) => {
     (s) => s.loadingProjects[projectId] ?? false,
   );
 
+  const requestIdRef = useRef(0);
+  const [hasAttempted, setHasAttempted] = useState(false);
+
   useEffect(() => {
     if (!enabled || !projectId) return;
 
-    const { files } = useFilesStore.getState();
-    if (projectId in files) return;
-
     let cancelled = false;
+    const requestId = ++requestIdRef.current;
 
-    loadProjectFiles(projectId).catch((err) => {
-      if (!cancelled) {
-        console.error(err);
+    const load = async () => {
+      try {
+        await loadProjectFiles(projectId);
+        if (!cancelled && requestId === requestIdRef.current) {
+          setHasAttempted(true);
+        }
+      } catch (err) {
+        if (!cancelled && requestId === requestIdRef.current) {
+          console.error("[useLoadFiles] Error:", err);
+          setHasAttempted(true);
+        }
       }
-    });
+    };
+
+    load();
+
+    const onConnect = () => {
+      if (!cancelled && requestId === requestIdRef.current) {
+        const { files } = useFilesStore.getState();
+        if (!(projectId in files)) {
+          load();
+        }
+      }
+    };
+
+    socket.on("connect", onConnect);
 
     return () => {
       cancelled = true;
+      socket.off("connect", onConnect);
     };
   }, [enabled, projectId]);
 
@@ -82,7 +116,7 @@ export const useReloadFiles = () => {
     }
   };
 
-  return { reload, loading };
+  return { loading, reload };
 };
 
 export const useCreateFile = () => {
@@ -123,7 +157,7 @@ export const useUpdateFile = () => {
       const res = await updateFile(projectId, fileId, body);
       updateFileInStore(projectId, res.data.file);
 
-      console.log("dataaaaa",res.data.file);      
+      console.log("dataaaaa", res.data.file);      
       return res.data;
     } finally {
       setLoading(false);

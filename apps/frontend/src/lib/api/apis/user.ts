@@ -12,12 +12,36 @@ export async function loginUser(data: any) {
 
   return res.json()
 }
+
 export async function getMe() {
-  const res = await fetch(`${API_BASE_URL}/user/@me`, {
-    credentials: 'include',
-  });
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-  const json = await res.json();
+    try {
+      const res = await fetch(`${API_BASE_URL}/user/@me`, {
+        credentials: 'include',
+        signal: controller.signal,
+      });
 
-  return json.data.user; 
+      if (!res.ok) {
+        console.error(`[getMe] HTTP ${res.status}:`, res.statusText);
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const json = await res.json();
+
+      if (!json.data?.user) {
+        console.error("[getMe] No user data in response:", json);
+        throw new Error("No user data");
+      }
+
+      return json.data.user;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  } catch (error) {
+    console.error("[getMe] Error:", error);
+    throw error;
+  }
 }

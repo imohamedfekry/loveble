@@ -10,6 +10,7 @@ const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 800;
 const DEFAULT_SIDEBAR_WIDTH = 350;
 const DEFAULT_MAIN_SIZE = 1000;
+
 const Tab = ({
     lable,
     isActive,
@@ -19,21 +20,26 @@ const Tab = ({
     isActive: boolean;
     onClick: () => void
 }) => {
-    return <div
-        onClick={onClick}
-        className={cn(
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                "flex h-full items-center gap-2 border-r px-3 text-muted-foreground transition-colors hover:bg-accent/30 active:scale-[0.96]",
+                isActive && "bg-background text-foreground",
+            )}
+        >
+            <span className="text-sm text-pretty">{lable}</span>
+        </button>
+    );
+};
 
-            "flex items-center gap-2 h-full px-3 cursor-pointer text-muted-foreground border-r hover:bg-accent/30 ", isActive && "bg-background text-foreground "
-        )}
-    >
-        <span className="text-sm">{lable}</span>
-    </div>
-}
 export const ProjectIdView = ({ projectId }: { projectId: string }) => {
     const [activeView, setActiveView] = useState<"editor" | "preview">("editor");
+
     return (
-        <div className="h-full flex flex-col ">
-            <nav className="h-8.75 flex items-center bg-sidebar border-b">
+        <div className="flex h-full flex-col">
+            <nav className="flex h-8.75 items-center border-b bg-sidebar">
                 <Tab
                     lable="Code"
                     isActive={activeView === "editor"}
@@ -44,20 +50,21 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                     isActive={activeView === "preview"}
                     onClick={() => { setActiveView("preview") }}
                 />
-                <div className="flex-1 flex justify-end h-full ">
-                    <div className="flex items-center gap-1.5 h-full px-3 cursor-pointer text-muted-foreground border-l hover:bg-accent/30">
-                        <FaGithub className="size3.5" />
-                        <span className="text-sm">
-                            Export
-                        </span>
-                    </div>
+                <div className="flex h-full flex-1 justify-end">
+                    <button
+                        type="button"
+                        className="flex h-full items-center gap-1.5 border-l px-3 text-muted-foreground transition-colors hover:bg-accent/30 active:scale-[0.96]"
+                    >
+                        <FaGithub className="size-3.5" />
+                        <span className="text-sm">Export</span>
+                    </button>
                 </div>
             </nav>
-            <div className="flex-1 relative">
-                <div className={cn
-                    ("absolute inset-0",
-                        activeView === "editor" ? "visible" : "invisible"
-                    )}>
+            <div className="relative flex-1">
+                <div className={cn(
+                    "absolute inset-0",
+                    activeView === "editor" ? "visible" : "invisible",
+                )}>
                     <Allotment defaultSizes={[DEFAULT_SIDEBAR_WIDTH, DEFAULT_MAIN_SIZE]}>
                         <Allotment.Pane
                             snap
@@ -69,23 +76,22 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                         </Allotment.Pane>
 
                         <Allotment.Pane>
-                            <p>
+                            <p className="p-4 text-sm text-muted-foreground">
                                 editor view : {projectId}
                             </p>
                         </Allotment.Pane>
                     </Allotment>
                 </div>
 
-                <div className={cn
-                    ("absolute inset-0",
-                        activeView === "preview" ? "visible" : "invisible"
-                    )}>
-                    <div>
+                <div className={cn(
+                    "absolute inset-0",
+                    activeView === "preview" ? "visible" : "invisible",
+                )}>
+                    <div className="p-4 text-sm text-muted-foreground">
                         preview : {projectId}
                     </div>
                 </div>
             </div>
-            {/* project id: {projectId} */}
         </div>
-    )
-}
+    );
+};

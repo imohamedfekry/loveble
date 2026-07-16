@@ -6,6 +6,7 @@ type BrandPageShellProps = {
   showBrand?: boolean;
   className?: string;
   contentClassName?: string;
+  variant?: "viewport" | "fill";
 };
 
 export function BrandPageShell({
@@ -13,11 +14,13 @@ export function BrandPageShell({
   showBrand = true,
   className,
   contentClassName,
+  variant = "viewport",
 }: BrandPageShellProps) {
   return (
     <div
       className={cn(
-        "page-gradient flex min-h-screen flex-col items-center justify-center p-6",
+        "page-gradient flex w-full flex-col items-center justify-center overflow-y-auto p-6",
+        variant === "fill" ? "h-full min-h-0" : "min-h-screen",
         className,
       )}
     >

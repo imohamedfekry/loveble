@@ -5,6 +5,7 @@ export type GetProjectsParams = {
   page?: number;
   limit?: number;
   recent?: boolean;
+  signal?: AbortSignal;
 };
 
 export async function getProjects(
@@ -39,6 +40,7 @@ export async function getProjects(
         "Content-Type": "application/json",
       },
       credentials: "include",
+      signal: params?.signal,
     }
   );
 

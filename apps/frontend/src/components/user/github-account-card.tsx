@@ -58,13 +58,13 @@ export function GithubAccountCard() {
           <AvatarFallback>{fallback}</AvatarFallback>
         </Avatar>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex flex-col items-center">
           {github ? (
             <>
               <p className="truncate text-sm font-semibold">
                 Hello,{" "}{github.displayName?.trim().split(/\s+/)[0] || github.username}
               </p>
-              <Badge variant="secondary" className="bg-green-500/10 text-green-600 hover:bg-green-500/10">
+              <Badge variant="secondary" className="bg-green-500/10 text-green-600 hover:bg-green-500/10 rounded-md">
                 Github Connected
               </Badge>
             </>

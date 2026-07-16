@@ -73,7 +73,7 @@ export const ProjectItem = ({ data, className }: ProjectItemProps) => {
     <li>
       <Link
         className={cn(
-          "group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 transition-all hover:bg-accent/40",
+          "group flex w-full items-center gap-3 px-2.5 py-2 transition-colors hover:bg-accent/40",
           className,
         )}
         href={`/project/${data.id}`}
@@ -95,7 +95,7 @@ export const ProjectItem = ({ data, className }: ProjectItemProps) => {
               {updatedAt}
             </span>
           )}
-          <ChevronRightIcon className="size-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
+          <ChevronRightIcon className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
         </div>
       </Link>
     </li>

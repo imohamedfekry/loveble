@@ -21,7 +21,7 @@ const font = Poppins({
 
 export function Navbar() {
   return (
-    <nav className="flex items-center justify-between gap-x-2 border-b border-border/50 bg-sidebar/80 px-3 py-2 backdrop-blur-md">
+    <nav className="flex items-center justify-between gap-x-2 border-b border-border/50 bg-sidebar/80 px-3 py-2 backdrop-blur-md sticky top-0 z-99">
       <div className="flex items-center gap-x-2">
         <Breadcrumb>
           <BreadcrumbList className="gap-0!">
@@ -37,6 +37,7 @@ export function Navbar() {
                       alt="Logo"
                       width={20}
                       height={20}
+                      className="rounded-sm"
                     />
 
                     <span

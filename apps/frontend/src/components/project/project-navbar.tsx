@@ -96,6 +96,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                       alt="Logo"
                       width={20}
                       height={20}
+                      className="outline outline-1 outline-black/10 dark:outline-white/10 rounded-sm"
                     />
 
                     <span

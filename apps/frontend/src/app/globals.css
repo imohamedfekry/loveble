@@ -131,7 +131,7 @@
 
 @layer utilities {
   .surface-card {
-    @apply rounded-xl border border-border/50 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200;
+    @apply rounded-xl border border-border/50 bg-background/80 shadow-sm backdrop-blur-sm transition-[border-color,background-color,box-shadow] duration-200;
   }
 
   .surface-card-hover {

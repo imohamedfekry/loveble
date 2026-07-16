@@ -9,7 +9,6 @@ import { ProjectsList } from "./projects-list";
 import { useCallback, useState } from "react";
 import { ProjectsCommandDialog } from "./projects-commands-dialog";
 import { ProjectActionCard } from "./project-action-card";
-import { Navbar } from "../layout/navbar";
 
 export const ProjectsView = ({
   githubSection,
@@ -30,12 +29,16 @@ export const ProjectsView = ({
         open={commandDialogOpen}
         onOpenChange={setCommandDialogOpen}
       />
-      <BrandPageShell showBrand={true} contentClassName="gap-4">
+      <BrandPageShell
+        showBrand={true}
+        variant="fill"
+        contentClassName="w-full gap-4"
+      >
         <div className="flex w-full flex-col gap-4">
           {githubSection}
 
           <section className="flex flex-col gap-2">
-            <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase text-balance">
               Get started
             </span>
 

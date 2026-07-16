@@ -21,7 +21,7 @@ export const ContinueCard = ({ data }: ContinueCardProps) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase text-balance">
         Continue
       </span>
 

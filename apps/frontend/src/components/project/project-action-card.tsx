@@ -43,7 +43,7 @@ export function ProjectActionCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "surface-card surface-card-hover group flex h-full min-w-0 w-full flex-col gap-2.5 p-3.5 text-left",
+        "surface-card surface-card-hover group flex h-full min-w-0 w-full flex-col gap-2.5 p-3.5 text-left active:scale-[0.96] transition-transform",
         className,
       )}
     >

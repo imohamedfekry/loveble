@@ -16,7 +16,7 @@ export const ProjectsList = ({ onViewAll }: ProjectListProps) => {
   const { projects, loading } = useProjectsStore();
   const recentProjects = projects.slice(1, 5);
 
-  if (loading) {
+  if (loading && projects.length === 0) {
     return <ContinueCardSkeleton />;
   }
 
@@ -64,7 +64,7 @@ export const ProjectsList = ({ onViewAll }: ProjectListProps) => {
             </button>
           </div>
 
-          <ul className="flex flex-col p-1">
+          <ul className="flex flex-col">
             {recentProjects.map((project) => (
               <ProjectItem key={project.id} data={project} />
             ))}

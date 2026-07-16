@@ -50,7 +50,7 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
                                     ? "Loading..."
                                     : "Unknown project")}
                         </p>
-                        <div className="shrink-0 opacity-0 group-hover/project:opacity-100 transition-none duration-0 flex items-center gap-0.5 ml-auto">
+                        <div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-200 group-hover/project:opacity-100">
                             <Button
                                 onClick={async (e) => {
                                     e.stopPropagation();
@@ -113,14 +113,14 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
                     </div>
                     {isOpen && (
                         <>
-                            {loading &&
+                            {(loading || filesLoading) &&
                                 Array.from({ length: 4 }).map((_, index) => (
                                     <TreeItemWrapperSkeleton
                                         key={index}
                                         level={0}
                                     />
                                 ))}
-                            {creating && (
+                            {!loading && !filesLoading && creating && (
                                 <CreateInput
                                     type={creating}
                                     level={0}
@@ -130,7 +130,7 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
                                 />
 
                             )}
-                            {files.map((item) => (
+                            {!loading && !filesLoading && files.map((item) => (
             
                                     <Tree
                                         key={`${item.id}-${collapseKey}`}
