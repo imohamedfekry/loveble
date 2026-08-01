@@ -1,5 +1,3 @@
-"use client";
-
 import { SocketProvider } from "@/lib/socket/socketProvider";
 
 export default function AppLayout({

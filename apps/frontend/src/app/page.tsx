@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { BrandPageShell } from "@/components/layout/brand-page-shell";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <BrandPageShell contentClassName="max-w-md gap-8">
       <div className="surface-card w-full space-y-5 p-6 text-center shadow-lg">
         <div className="space-y-3">
           <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
@@ -27,7 +25,6 @@ export default function Home() {
           No setup required · Fast · Minimal · Developer friendly
         </p>
       </div>
-    </BrandPageShell>
   );
 }
 

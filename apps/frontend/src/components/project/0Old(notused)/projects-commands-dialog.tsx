@@ -1,6 +1,5 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ProjectIcon } from "./project.item";
 import {
   Command,
   CommandDialog,
@@ -10,10 +9,25 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { getProjects } from "@/lib/api/apis/projects";
-import type { Project } from "@/lib/types/types";
-import { InputGroup, InputGroupAddon } from "../ui/input-group";
-import { SearchIcon } from "lucide-react";
+import type { ImportStatus, Project } from "@/lib/types/types";
+import { InputGroup, InputGroupAddon } from "../../ui/input-group";
+import { AlertCircleIcon, GlobeIcon, Loader2Icon, SearchIcon } from "lucide-react";
 import { Command as CommandPrimitive } from "cmdk"
+import { FaGithub } from "react-icons/fa";
+const ProjectIcon = ({ status }: { status: ImportStatus }) => {
+  switch (status) {
+    case "completed":
+      return <FaGithub className="size-3.5 shrink-0" />;
+    case "failed":
+      return <AlertCircleIcon className="size-3.5 shrink-0 text-destructive" />;
+    case "importing":
+      return (
+        <Loader2Icon className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
+      );
+    default:
+      return <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" />;
+  }
+};
 
 interface ProjectsCommandDialogProps {
   open: boolean;
@@ -107,10 +121,10 @@ export const ProjectsCommandDialog = ({
           <InputGroupAddon>
             <SearchIcon className="size-4 shrink-0 opacity-50" />
 
-          <CommandPrimitive.Input
-            placeholder="Search projects..."
-            className="w-full text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
-          />
+            <CommandPrimitive.Input
+              placeholder="Search projects..."
+              className="w-full text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+            />
           </InputGroupAddon>
           <kbd className="inline-flex h-5 items-center rounded-md border bg-background px-1.5 text-[10px] font-medium text-muted-foreground mr-1">
             ESC

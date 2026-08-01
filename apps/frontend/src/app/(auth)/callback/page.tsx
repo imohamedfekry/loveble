@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CheckIcon, Loader2Icon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { githubCallback } from "@/lib/api/apis/auth";
-import { BrandPageShell } from "@/components/layout/brand-page-shell";
 
 type Status = "loading" | "success" | "error";
 
@@ -77,7 +76,6 @@ export default function CallbackPage() {
   const Icon = config.icon;
 
   return (
-    <BrandPageShell>
       <div className="surface-card w-full space-y-5 p-6 text-center shadow-lg">
         <div
           className={cn(
@@ -101,6 +99,5 @@ export default function CallbackPage() {
           </div>
         )}
       </div>
-    </BrandPageShell>
   );
 }

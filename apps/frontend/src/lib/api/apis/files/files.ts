@@ -1,8 +1,5 @@
 import { apiFetch } from "../../api-fetch";
 import { CreateFileRequest, FileResponse, GetFilesResponse, ProjectFileType, UpdateFile } from "./types";
-
-
-
 export function getFiles(projectId: string) {
     return apiFetch<GetFilesResponse>(
         `/projects/${projectId}/files`,

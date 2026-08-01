@@ -1,118 +1,133 @@
-// import { create } from "zustand";
+import { create } from "zustand";
 
-// interface TabState {
-//   openTabs: Id<"files">[];
-//   activeTabId: Id<"files"> | null;
-//   previewTabId: Id<"files"> | null;
-// };
+export interface TabState {
+    openTabs: string[];
+    activeTabId: string | null;
+    previewTabId: string | null;
+}
 
-// const defaultTabState: TabState = {
-//   openTabs: [],
-//   activeTabId: null,
-//   previewTabId: null,
-// };
+const defaultTabState: TabState = {
+    openTabs: [],
+    activeTabId: null,
+    previewTabId: null,
+};
 
-// interface EditorStore {
-//   tabs: Map<Id<"projects">, TabState>;
-//   getTabState: (projectId: Id<"projects">) => TabState;
-//   openFile: (
-//     projectId: Id<"projects">,
-//     fileId: Id<"files">,
-//     options: { pinned: boolean }
-//   ) => void;
-//   closeTab: (projectId: Id<"projects">, fileId: Id<"files">) => void;
-//   closeAllTabs: (projectId: Id<"projects">) => void;
-//   setActiveTab: (projectId: Id<"projects">, fileId: Id<"files">) => void;
-// };
+interface EditorStore {
+    tabs: Map<string, TabState>;
 
-// export const useEditorStore = create<EditorStore>()((set, get) => ({
-//   tabs: new Map(),
+    getTabState: (projectId: string) => TabState;
 
-//   getTabState: (projectId) => {
-//     return get().tabs.get(projectId) ?? defaultTabState;
-//   },
+    openFile: (
+        projectId: string,
+        fileId: string,
+        options: {
+            pinned: boolean;
+        },
+    ) => void;
 
-//   openFile: (projectId, fileId, { pinned }) => {
-//     const tabs = new Map(get().tabs);
-//     const state = tabs.get(projectId) ?? defaultTabState;
-//     const { openTabs, previewTabId } = state;
-//     const isOpen = openTabs.includes(fileId);
+    closeTab: (
+        projectId: string,
+        fileId: string,
+    ) => void;
 
-//     // Case 1: Opening as preview - replace existing preview or add new
-//     if (!isOpen && !pinned) {
-//       const newTabs = previewTabId
-//         ? openTabs.map((id) => (id === previewTabId) ? fileId : id)
-//         : [...openTabs, fileId]
+    closeAllTabs: (
+        projectId: string,
+    ) => void;
 
-//       tabs.set(projectId, {
-//         openTabs: newTabs,
-//         activeTabId: fileId,
-//         previewTabId: fileId,
-//       });
-//       set({ tabs });
-//       return;
-//     }
+    setActiveTab: (
+        projectId: string,
+        fileId: string,
+    ) => void;
+}
 
-//     // Case 2: Opening as pinned - add new tab
-//     if (!isOpen && pinned) {
-//       tabs.set(projectId, {
-//         ...state,
-//         openTabs: [...openTabs, fileId],
-//         activeTabId: fileId,
-//       });
-//       set({ tabs });
-//       return;
-//     }
+export const useEditorStore = create<EditorStore>()((set, get) => ({
+  tabs: new Map(),
 
-//     // Case 3: File already open - just activate (and pin if double-clicked)
-//     const shouldPin = pinned && previewTabId === fileId;
-//     tabs.set(projectId, {
-//       ...state,
-//       activeTabId: fileId,
-//       previewTabId: shouldPin ? null : previewTabId,
-//     });
-//     set({ tabs });
-//   },
+  getTabState: (projectId) => {
+    return get().tabs.get(projectId) ?? defaultTabState;
+  },
 
-//   closeTab: (projectId, fileId) => {
-//     const tabs = new Map(get().tabs);
-//     const state = tabs.get(projectId) ?? defaultTabState;
-//     const { openTabs, activeTabId, previewTabId } = state;
-//     const tabIndex = openTabs.indexOf(fileId);
+  openFile: (projectId, fileId, { pinned }) => {
+    const tabs = new Map(get().tabs);
+    const state = tabs.get(projectId) ?? defaultTabState;
+    const { openTabs, previewTabId } = state;
+    const isOpen = openTabs.includes(fileId);
 
-//     if (tabIndex === -1) return;
+    // Case 1: Opening as preview - replace existing preview or add new
+    if (!isOpen && !pinned) {
+      const newTabs = previewTabId
+        ? openTabs.map((id) => (id === previewTabId) ? fileId : id)
+        : [...openTabs, fileId]
 
-//     const newTabs = openTabs.filter((id) => id !== fileId);
+      tabs.set(projectId, {
+        openTabs: newTabs,
+        activeTabId: fileId,
+        previewTabId: fileId,
+      });
+      set({ tabs });
+      return;
+    }
 
-//     let newActiveTabId = activeTabId;
-//     if (activeTabId === fileId) {
-//       if (newTabs.length === 0) {
-//         newActiveTabId = null;
-//       } else if (tabIndex >= newTabs.length) {
-//         newActiveTabId = newTabs[newTabs.length - 1];
-//       } else {
-//         newActiveTabId = newTabs[tabIndex];
-//       }
-//     }
+    // Case 2: Opening as pinned - add new tab
+    if (!isOpen && pinned) {
+      tabs.set(projectId, {
+        ...state,
+        openTabs: [...openTabs, fileId],
+        activeTabId: fileId,
+      });
+      set({ tabs });
+      return;
+    }
 
-//     tabs.set(projectId, {
-//       openTabs: newTabs,
-//       activeTabId: newActiveTabId,
-//       previewTabId: previewTabId === fileId ? null : previewTabId,
-//     });
-//     set({ tabs });
-//   },
+    // Case 3: File already open - just activate (and pin if double-clicked)
+    const shouldPin = pinned && previewTabId === fileId;
+    tabs.set(projectId, {
+      ...state,
+      activeTabId: fileId,
+      previewTabId: shouldPin ? null : previewTabId,
+    });
+    set({ tabs });
+  },
 
-//   closeAllTabs: (projectId) => {
-//     const tabs = new Map(get().tabs);
-//     tabs.set(projectId, defaultTabState);
-//     set({ tabs });
-//   },
+  closeTab: (projectId, fileId) => {
+    const tabs = new Map(get().tabs);
+    const state = tabs.get(projectId) ?? defaultTabState;
+    const { openTabs, activeTabId, previewTabId } = state;
+    const tabIndex = openTabs.indexOf(fileId);
 
-//   setActiveTab: (projectId, fileId) => {
-//     const tabs = new Map(get().tabs);
-//     const state = tabs.get(projectId) ?? defaultTabState;
-//     tabs.set(projectId, { ...state, activeTabId: fileId });
-//     set({ tabs });
-//   },
-// }));
+    if (tabIndex === -1) return;
+
+    const newTabs = openTabs.filter((id) => id !== fileId);
+
+    let newActiveTabId = activeTabId;
+    if (activeTabId === fileId) {
+      if (newTabs.length === 0) {
+        newActiveTabId = null;
+      } else if (tabIndex >= newTabs.length) {
+        newActiveTabId = newTabs[newTabs.length - 1];
+      } else {
+        newActiveTabId = newTabs[tabIndex];
+      }
+    }
+
+    tabs.set(projectId, {
+      openTabs: newTabs,
+      activeTabId: newActiveTabId,
+      previewTabId: previewTabId === fileId ? null : previewTabId,
+    });
+    set({ tabs });
+  },
+
+  closeAllTabs: (projectId) => {
+    const tabs = new Map(get().tabs);
+    tabs.set(projectId, defaultTabState);
+    set({ tabs });
+  },
+
+  setActiveTab: (projectId, fileId) => {
+    const tabs = new Map(get().tabs);
+    const state = tabs.get(projectId) ?? defaultTabState;
+    tabs.set(projectId, { ...state, activeTabId: fileId });
+    set({ tabs });
+  },
+}));

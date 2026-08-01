@@ -33,6 +33,9 @@ export const useLoadProjects = (params?: GetProjectsParams) => {
         const timeoutId = setTimeout(() => controller.abort(), 12000);
 
         try {
+          // #region agent log
+          fetch('http://127.0.0.1:7644/ingest/4ee6c70f-604f-41ee-ad41-991110d55c8b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8d0fd6'},body:JSON.stringify({sessionId:'8d0fd6',location:'useLoadProjects.ts:start',message:'useLoadProjects fetch start',data:{requestId,attempt:loadAttemptRef.current},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
+          // #endregion
           const response = await getProjects({ recent, page, limit, signal: controller.signal });
 
           if (cancelled || requestId !== requestIdRef.current) {
@@ -41,6 +44,9 @@ export const useLoadProjects = (params?: GetProjectsParams) => {
 
           if (response.success && Array.isArray(response.data?.items)) {
             setProjects(response.data.items);
+            // #region agent log
+            fetch('http://127.0.0.1:7644/ingest/4ee6c70f-604f-41ee-ad41-991110d55c8b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8d0fd6'},body:JSON.stringify({sessionId:'8d0fd6',location:'useLoadProjects.ts:success',message:'useLoadProjects fetch success',data:{count:response.data.items.length,requestId},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
           } else {
             console.warn("[useLoadProjects] Invalid response:", response);
           }
