@@ -7,8 +7,8 @@ import { useKeyboardShortcut } from "@/lib/hooks/useKeyboardShortcut";
 import { BrandPageShell } from "@/components/layout/brand-page-shell";
 import { ProjectsList } from "./projects-list";
 import { useCallback, useState } from "react";
-import { ProjectsCommandDialog } from "./projects-commands-dialog";
 import { ProjectActionCard } from "./project-action-card";
+import { ProjectsCommandDialog } from "./0Old(notused)/projects-commands-dialog";
 
 export const ProjectsView = ({
   githubSection,

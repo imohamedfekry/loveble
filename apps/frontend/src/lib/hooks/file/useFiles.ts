@@ -1,53 +1,42 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFile, deleteFile, getFiles, updateFile } from "@/lib/api/apis/files/files";
-import { socket } from "@/lib/socket/socket";
 import { useFilesStore } from "@/store/file.store";
-import { CreateFileRequest, UpdateFile } from "@/lib/api/apis/files/types";
+import { CreateFileRequest, ProjectFileType, UpdateFile } from "@/lib/api/apis/files/types";
 
-// Track active requests per projectId to avoid duplicate requests within same instance
-const activeRequests = new Map<string, AbortController>();
+const inflightLoads = new Map<string, Promise<void>>();
 
 async function loadProjectFiles(
   projectId: string,
   options?: { force?: boolean },
 ) {
-  // Cancel previous request if force is true
-  if (options?.force && activeRequests.has(projectId)) {
-    activeRequests.get(projectId)?.abort();
-    activeRequests.delete(projectId);
+  if (!options?.force) {
+    const existing = inflightLoads.get(projectId);
+    if (existing) return existing;
+
+    const { files } = useFilesStore.getState();
+    if (projectId in files) return;
+  } else {
+    inflightLoads.delete(projectId);
   }
 
-  // Check if already loading
-  if (activeRequests.has(projectId) && !options?.force) {
-    return;
-  }
+  const promise = (async () => {
+    const { setLoading, setFiles } = useFilesStore.getState();
 
-  // Check cache
-  const { files } = useFilesStore.getState();
-  if (!options?.force && projectId in files) {
-    return;
-  }
+    try {
+      setLoading(projectId, true);
 
-  const controller = new AbortController();
-  activeRequests.set(projectId, controller);
-
-  const { setLoading, setFiles } = useFilesStore.getState();
-
-  try {
-    setLoading(projectId, true);
-
-    const res = await getFiles(projectId);
-    setFiles(projectId, res.data.files);
-  } catch (error: any) {
-    if (error.name !== 'AbortError') {
-      console.error(`[loadProjectFiles] Error loading files for ${projectId}:`, error);
+      const res = await getFiles(projectId);
+      setFiles(projectId, res.data.files);
+    } finally {
+      setLoading(projectId, false);
+      inflightLoads.delete(projectId);
     }
-  } finally {
-    setLoading(projectId, false);
-    activeRequests.delete(projectId);
-  }
+  })();
+
+  inflightLoads.set(projectId, promise);
+  return promise;
 }
 
 export function reloadProjectFiles(projectId: string) {
@@ -59,45 +48,22 @@ export const useLoadFiles = (projectId: string, enabled: boolean = true) => {
     (s) => s.loadingProjects[projectId] ?? false,
   );
 
-  const requestIdRef = useRef(0);
-  const [hasAttempted, setHasAttempted] = useState(false);
-
   useEffect(() => {
     if (!enabled || !projectId) return;
 
+    const { files } = useFilesStore.getState();
+    if (projectId in files) return;
+
     let cancelled = false;
-    const requestId = ++requestIdRef.current;
 
-    const load = async () => {
-      try {
-        await loadProjectFiles(projectId);
-        if (!cancelled && requestId === requestIdRef.current) {
-          setHasAttempted(true);
-        }
-      } catch (err) {
-        if (!cancelled && requestId === requestIdRef.current) {
-          console.error("[useLoadFiles] Error:", err);
-          setHasAttempted(true);
-        }
+    loadProjectFiles(projectId).catch((err) => {
+      if (!cancelled) {
+        console.error(err);
       }
-    };
-
-    load();
-
-    const onConnect = () => {
-      if (!cancelled && requestId === requestIdRef.current) {
-        const { files } = useFilesStore.getState();
-        if (!(projectId in files)) {
-          load();
-        }
-      }
-    };
-
-    socket.on("connect", onConnect);
+    });
 
     return () => {
       cancelled = true;
-      socket.off("connect", onConnect);
     };
   }, [enabled, projectId]);
 
@@ -116,7 +82,7 @@ export const useReloadFiles = () => {
     }
   };
 
-  return { loading, reload };
+  return { reload, loading };
 };
 
 export const useCreateFile = () => {
@@ -157,7 +123,7 @@ export const useUpdateFile = () => {
       const res = await updateFile(projectId, fileId, body);
       updateFileInStore(projectId, res.data.file);
 
-      console.log("dataaaaa", res.data.file);      
+      console.log("dataaaaa",res.data.file);      
       return res.data;
     } finally {
       setLoading(false);
@@ -217,4 +183,18 @@ export const useLoadFolderContent = (
     files: folderContents,
     loading,
   };
+};
+export const useFile = (
+  projectId: string,
+  fileId: string | null | undefined,
+) => {
+  const files = useFilesStore(
+    (state) => state.files[projectId] ?? [],
+  );
+
+  return useMemo(() => {
+    if (!fileId) return undefined;
+
+    return files.find((file) => file.id === fileId);
+  }, [files, fileId]);
 };

@@ -1,12 +1,10 @@
 "use client";
-
-import { ProjectsView } from "@/components/project/projects-view";
-import { GithubAccountCard } from "@/components/user/github-account-card";
-
+import { Dashboard } from "@/components/layout/dashboard";
 export default function DashboardPage() {
   return (
-    <>
-      <ProjectsView githubSection={<GithubAccountCard />} />
-    </>
+<div className="min-h-screen bg-[#0d0d12] p-3">
+  <Dashboard />
+</div>
+    
   );
 }
