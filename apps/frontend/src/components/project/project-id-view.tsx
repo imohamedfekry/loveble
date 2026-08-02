@@ -26,8 +26,9 @@ const Tab = ({
             type="button"
             onClick={onClick}
             className={cn(
-                "flex h-full items-center gap-2 border-r px-3 text-muted-foreground transition-colors hover:bg-accent/30 active:scale-[0.96]",
-                isActive && "bg-background text-foreground",
+                "relative flex h-full items-center gap-2 border-r border-white/[0.06] px-3 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground active:scale-[0.96]",
+                isActive &&
+                    "bg-background text-foreground after:absolute after:inset-x-0 after:top-0 after:h-0.5 after:bg-primary",
             )}
         >
             <span className="text-sm text-pretty">{lable}</span>
@@ -40,7 +41,7 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
 
     return (
         <div className="flex h-full flex-col">
-            <nav className="flex h-8.75 items-center border-b bg-sidebar">
+            <nav className="flex h-8.75 items-center border-b border-white/[0.06] bg-[#141419]">
                 <Tab
                     lable="Code"
                     isActive={activeView === "editor"}
@@ -54,7 +55,7 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                 <div className="flex h-full flex-1 justify-end">
                     <button
                         type="button"
-                        className="flex h-full items-center gap-1.5 border-l px-3 text-muted-foreground transition-colors hover:bg-accent/30 active:scale-[0.96]"
+                        className="flex h-full items-center gap-1.5 border-l border-white/[0.06] px-3 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground active:scale-[0.96]"
                     >
                         <FaGithub className="size-3.5" />
                         <span className="text-sm">Export</span>

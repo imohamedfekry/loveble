@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Poppins } from "next/font/google";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   Breadcrumb,
@@ -22,11 +21,6 @@ import { CloudCheckIcon, LoaderIcon } from "lucide-react";
 import { TooltipContent, TooltipTrigger, Tooltip } from "../ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
 
-const font = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
 export function ProjectNavbar({ projectId }: { projectId: string }) {
   const { project, loading } = useLoadProject(projectId);
 
@@ -34,11 +28,13 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(projectName);
+  const [prevProjectName, setPrevProjectName] = useState(projectName);
 
-  useEffect(() => {
+  if (prevProjectName !== projectName) {
+    setPrevProjectName(projectName);
     setName(projectName);
-  }, [projectName]);
+  }
 
   const handleSave = async () => {
     const trimmed = name.trim();
@@ -79,7 +75,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
   };
 
   return (
-    <nav className="flex items-center justify-between gap-x-2 border-b border-border/50 bg-sidebar/80 px-3 py-2 backdrop-blur-md">
+    <nav className="flex items-center justify-between gap-x-2 border-b border-white/[0.06] bg-[#141419]/85 px-3 py-2 backdrop-blur-md">
       <div className="flex items-center gap-x-2">
         <Breadcrumb>
           <BreadcrumbList className="gap-0!">
@@ -89,20 +85,19 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                 render={
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-1.5"
+                    className="group flex items-center gap-1.5 rounded-md transition-opacity hover:opacity-80"
                   >
                     <Image
                       src="/logo.svg"
                       alt="Logo"
                       width={20}
                       height={20}
-                      className="outline outline-1 outline-black/10 dark:outline-white/10 rounded-sm"
+                      className="rounded-sm outline outline-1 outline-black/10 dark:outline-white/10"
                     />
 
                     <span
                       className={cn(
-                        "text-sm font-medium",
-                        font.className
+                        "text-sm font-semibold text-foreground transition-colors group-hover:text-primary"
                       )}
                     >
                       Squadra
@@ -131,7 +126,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                         handleCancel();
                       }
                     }}
-                    className="h-7 w-56 rounded-md border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                    className="h-7 w-56 rounded-md border border-white/10 bg-[#1a1a20] px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/30"
                   />
                 ) : (
                   <div

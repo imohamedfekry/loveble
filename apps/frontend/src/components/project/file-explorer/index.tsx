@@ -37,14 +37,14 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
                     <div
                         role="button"
                         onClick={() => setIsOpen(!isOpen)}
-                        className="group/project cursor-pointer w-full min-w-0 text-left flex items-center gap-0.5 h-5.5 bg-accent font-bold"
+                        className="group/project cursor-pointer w-full min-w-0 text-left flex items-center gap-0.5 h-5.5 bg-[#1a1a20] transition-colors hover:bg-white/5"
                     >
                         <ChevronRightIcon
                             className={cn(
-                                "size-4 shrink-0 text-muted-foreground ", isOpen && "rotate-90"
+                                "size-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-90"
                             )}
                         />
-                        <p className="min-w-0 flex-1 text-xs uppercase line-clamp-1">
+                        <p className="min-w-0 flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground line-clamp-1 transition-colors group-hover/project:text-foreground">
                             {project?.name ||
                                 (loading
                                     ? "Loading..."
