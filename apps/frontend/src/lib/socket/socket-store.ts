@@ -8,7 +8,7 @@ type SocketStore = {
 };
 
 export const useSocketStore = create<SocketStore>((set) => ({
-  status: "connecting",
+  status: "disconnected",
   setStatus: (status) => set({ status }),
 }));
 

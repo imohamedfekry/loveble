@@ -27,18 +27,22 @@ export const ProjectIdLayout = ({
   const isReady = !projectLoading;
 
   return (
-    <div className="flex h-screen w-full flex-col">
-      <ProjectNavbar projectId={projectId} />
-      <div className="flex flex-1 overflow-hidden">
-        {!isReady ? (
-          <ConnectionLoading
-            className="flex-1"
-            message="Loading project…"
-          />
-        ) : (
-          children
+    <>
+      {!isReady ? (
+        <ConnectionLoading
+          className="flex-1"
+          message="Loading project…"
+        />
+
+      )
+        : (
+          <div className="flex h-screen w-full flex-col">
+            <ProjectNavbar projectId={projectId} />
+            <div className="flex flex-1 overflow-hidden">
+              {children}
+            </div>
+          </div>
         )}
-      </div>
-    </div>
+    </>
   );
 };

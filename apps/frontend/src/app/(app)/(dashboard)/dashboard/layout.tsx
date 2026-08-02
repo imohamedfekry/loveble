@@ -1,0 +1,62 @@
+"use client";
+
+import { useState } from "react";
+
+import { ConnectionLoading } from "@/components/layout/connection-loading";
+import { AppSidebar } from "@/components/layout/sidebar/AppSidebar";
+
+import { useLoadProjects } from "@/lib/hooks/projects/useLoadProjects";
+import { useLoadUser } from "@/lib/hooks/user/useLoadUser";
+import { useRealtimeProjects } from "@/lib/socket/hooks/useRealtimeProjects";
+import { useProjectsStore } from "@/store/project.store";
+import { useUserStore } from "@/store/user.store";
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+    console.log("A");
+
+  console.log("DashboardLayout render", useLoadUser);
+  console.log("1");
+  debugger;
+
+  console.log("DashboardLayout");
+  useLoadUser();
+
+  console.log("2");
+  useLoadProjects({ recent: true });
+
+  console.log("3");
+  useRealtimeProjects();
+
+  console.log("4");
+
+  const userLoading = useUserStore((s) => s.isLoading);
+  const projectsLoading = useProjectsStore((s) => s.loading);
+  const projectsCount = useProjectsStore((s) => s.projects.length);
+
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  console.log("DashboardLayout state: sidebarOpen:", sidebarOpen, "userLoading:", userLoading, "projectsLoading:", projectsLoading, "projectsCount:", projectsCount);
+  const isInitialLoading =
+    (userLoading || (projectsLoading && projectsCount === 0));
+  console.log("DashboardLayout rendered , isInitialLoading:", isInitialLoading, "userLoading:", userLoading, "projectsLoading:", projectsLoading, "projectsCount:", projectsCount);
+
+  return (
+    <>
+      {isInitialLoading ? (
+        <ConnectionLoading className="flex-1" message="Loading..." />
+      ) : (
+        <div className="flex h-screen bg-[#0d0d12]">
+          <AppSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+              {children}
+            </div>
+          </main>
+        </div>
+      )}
+    </>
+  );
+}
