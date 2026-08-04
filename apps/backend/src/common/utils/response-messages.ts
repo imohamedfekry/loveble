@@ -139,6 +139,10 @@ export const RESPONSE_MESSAGES = {
     }
   },
   FILE: {
+    FETCH_SUCCESS: {
+      code: 'FILE_FETCH_SUCCESS',
+      message: 'File retrieved successfully.',
+    },
     CREATED: {
       code: 'FILE_CREATED',
       message: 'File created successfully.',

@@ -5,16 +5,33 @@ import { fail, success } from 'src/common/utils/response.util';
 import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
 import { FileRepository } from 'src/common/database/repositories/project/file.repository';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
-import { CreateFileDto, UpdateFileDto } from './dto/file.dto';
+import { CreateFileDto, UpdateFileContentDto, UpdateFileDto } from './dto/file.dto';
 import { FILE_EVENTES } from '../realtime/events/files.events';
-
+import * as v from "valibot";
+import { FileStandard } from './dto/file.dto';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { ConfigService } from '@nestjs/config';
+import { StorageService } from '../storage/storage.service';
 @Injectable()
 export class FileService {
   constructor(
     private readonly fileRepository: FileRepository,
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
+    private readonly storageService: StorageService,
+    // private readonly S3client: S3Client,
+    private readonly config: ConfigService,
   ) { }
+  async getRootFiles(projectId: bigint, req: AuthenticatedRequest) {
+    const project = await this.projectRepository.findById(projectId);
+    if (!project || project.userId !== req.user.id) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
+    }
+    const files = await this.fileRepository.getProjectRootFiles(projectId);
+    return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
+      files: v.parse(v.array(FileStandard), files),
+    });
+  }
   async findByProjectId(projectId: bigint, req: AuthenticatedRequest) {
     const project = await this.projectRepository.findById(projectId);
     if (!project || project.userId !== req.user.id) {
@@ -23,9 +40,27 @@ export class FileService {
     const files = await this.fileRepository.getAllFilesWithProjectId(projectId);
 
     return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
-      files: files,
+      files: v.parse(v.array(FileStandard), files),
     });
   }
+  async getFileContent(projectId: bigint, fileId: bigint, req: AuthenticatedRequest) {
+    const project = await this.projectRepository.findById(projectId);
+    if (!project || project.userId !== req.user.id) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
+    }
+    const file = await this.fileRepository.getFile(fileId);
+    if (!file || file.projectId !== projectId) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
+    }
+    const storageKey = file.storageKey;
+    const content = await this.storageService.getFileContent(storageKey);
+    return success(RESPONSE_MESSAGES.FILE.FETCH_SUCCESS, {
+      file: {
+        content: content,
+      },
+    });
+  }
+
   async findFolderContent(projectId: bigint, folderId: bigint, req: AuthenticatedRequest) {
     const project = await this.projectRepository.findById(projectId);
     if (!project || project.userId !== req.user.id) {
@@ -47,7 +82,6 @@ export class FileService {
     });
   }
   async createFile(body: CreateFileDto, projectId: bigint, req: AuthenticatedRequest) {
-
     const project = await this.projectRepository.findById(projectId);
     if (!project || project.userId !== req.user.id) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
@@ -67,6 +101,7 @@ export class FileService {
       }
       throw error;
     }
+    console.log("created file", created);
     this.realtimeEmitService.toProject(
       projectId.toString(),
       FILE_EVENTES.CREATED,
@@ -113,6 +148,49 @@ export class FileService {
     );
     return success(RESPONSE_MESSAGES.FILE.UPDATED, { file: updatedFile });
   }
+  async updateFileContent(
+    projectId: bigint,
+    fileId: bigint,
+    req: AuthenticatedRequest,
+    body: UpdateFileContentDto,
+  ) {
+    const project = await this.projectRepository.findById(projectId);
+
+    if (!project || project.userId !== req.user.id) {
+      throw new NotFoundException(
+        fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND),
+      );
+    }
+
+    const file = await this.fileRepository.getFile(fileId);
+
+    if (!file || file.projectId !== projectId) {
+      throw new NotFoundException(
+        fail(RESPONSE_MESSAGES.FILE.NOT_FOUND),
+      );
+    }
+
+    if (file.type !== "file") {
+      throw new NotFoundException(
+        fail(RESPONSE_MESSAGES.FILE.NOT_FOUND),
+      );
+    }
+
+    await this.storageService.updateFileContent(
+      file.storageKey,
+      body.content,
+    );
+
+    this.realtimeEmitService.toProject(
+      projectId.toString(),
+      FILE_EVENTES.CONTENT_UPDATED,
+      {
+        fileId: file.id,
+      },
+    );
+
+    return success(RESPONSE_MESSAGES.FILE.UPDATED);
+  }
   async deleteFile(
     projectId: bigint,
     fileId: bigint,
@@ -126,7 +204,7 @@ export class FileService {
     if (!deletedFile) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
     }
-
+    await this.storageService.delete(deletedFile.storageKey);
     this.realtimeEmitService.toProject(
       projectId.toString(),
       FILE_EVENTES.DELETED,

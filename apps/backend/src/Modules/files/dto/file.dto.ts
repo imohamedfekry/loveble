@@ -30,5 +30,22 @@ const updateFileSchema = v.object({
   parentId: v.optional(snowflakeId),
 })
 
+
+
+export const FileStandard = v.object({
+  id: v.bigint(),
+  projectId: v.bigint(),
+  parentId: v.nullable(v.bigint()),
+  name: v.string(),
+  type: v.picklist(["file", "folder"]),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
+export const updateFileContentSchema = v.object({
+  content: v.string("Content must be a string"),
+});
+
+export type FileStandard = v.InferOutput<typeof FileStandard>;
 export class UpdateFileDto extends createStandardDto(updateFileSchema) { }
+export class UpdateFileContentDto extends createStandardDto(updateFileContentSchema) { }
 export class CreateFileDto extends createStandardDto(createFileSchema) { }

@@ -7,8 +7,9 @@ import { AuthModule } from './Modules/auth/auth.module';
 import { projectModule } from './Modules/project/project.module';
 import { RealtimeModule } from './Modules/realtime/realtime.module';
 import { FileModule } from './Modules/files/files.module';
+import { StorageModule } from './Modules/storage/storage.module';
 
 @Module({
-  imports: [CoreModule, UserModule, DefaultModule, RedisModule, AuthModule, projectModule, RealtimeModule,FileModule],
+  imports: [CoreModule, UserModule, DefaultModule, RedisModule, AuthModule, projectModule, RealtimeModule,FileModule,StorageModule],
 })
 export class AppModule { }

@@ -8,10 +8,12 @@ import {
     integer,
     uniqueIndex,
     unique,
+    uuid
 } from 'drizzle-orm/pg-core';
 
 import { nextSnowflakeId } from 'src/common/utils/snowflake';
 import { projects } from './project.schema';
+import { sql } from 'drizzle-orm';
 
 export const fileTypeEnum = pgEnum('file_type_enum', [
     'file',
@@ -38,7 +40,7 @@ export const files = pgTable(
         }).references((): any => files.id, { onDelete: 'cascade', }),
         name: varchar('name', { length: 255, }).notNull(),
         type: fileTypeEnum('type').notNull(),
-        storageKey: varchar('storage_key', { length: 1024, }),
+        storageKey: uuid("storage_key").default(sql`gen_random_uuid()`).notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
     },

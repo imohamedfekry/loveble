@@ -1,0 +1,1 @@
+export const S3 = Symbol("S3");

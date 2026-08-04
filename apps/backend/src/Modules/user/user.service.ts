@@ -14,7 +14,6 @@ export class UserService {
     // private readonly tempUserRepository: TempUserRepository,
   ) { }
   async getMe(req: AuthenticatedRequest) {
-    const safeUser = v.parse(UserProfileSchema, req.user);
-    return success(RESPONSE_MESSAGES.USER.FETCH_SUCCESS, { user: safeUser });
+    return success(RESPONSE_MESSAGES.USER.FETCH_SUCCESS, { user:  v.parse(UserProfileSchema, req.user) });
   }
 }
