@@ -32,7 +32,7 @@ const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 const SIDEBAR_TRANSITION =
-  "duration-(--duration-slow) group-data-[state=collapsed]:duration-(--duration-medium) ease-(--ease-smooth-out) motion-reduce:transition-none"
+  "duration-(--duration-fast) ease-(--ease-smooth-out) motion-reduce:transition-none"
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -232,7 +232,7 @@ function Sidebar({
         data-slot="sidebar-container"
         data-side={side}
         className={cn(
-          `fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[transform,width] will-change-transform ${SIDEBAR_TRANSITION} data-[side=left]:left-0 data-[side=right]:right-0 group-data-[collapsible=offcanvas]:-translate-x-full md:flex`,
+          `fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[width] will-change-transform ${SIDEBAR_TRANSITION} data-[side=left]:left-0 data-[side=right]:right-0 group-data-[collapsible=offcanvas]:-translate-x-full md:flex`,
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
@@ -291,7 +291,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
       onClick={toggleSidebar}
       title="Toggle Sidebar"
       className={cn(
-        `absolute inset-y-0 z-20 hidden w-4 transition-transform ${SIDEBAR_TRANSITION} group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2`,
+        `absolute inset-y-0 z-20 hidden w-4 transition-none group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2`,
         "in-data-[side=left]:cursor-w-resize rtl:in-data-[side=left]:cursor-e-resize in-data-[side=right]:cursor-e-resize rtl:in-data-[side=right]:cursor-w-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize rtl:[[data-side=left][data-state=collapsed]_&]:cursor-w-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize rtl:[[data-side=right][data-state=collapsed]_&]:cursor-e-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 rtl:group-data-[collapsible=offcanvas]:-translate-x-0 group-data-[collapsible=offcanvas]:after:start-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
@@ -402,7 +402,7 @@ function SidebarGroupLabel({
     props: mergeProps<"div">(
       {
         className: cn(
-          `flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 ring-sidebar-ring outline-hidden transition-[max-height,opacity] duration-(--duration-quick) ease-in-out motion-reduce:transition-none max-h-8 group-data-[collapsible=icon]:max-h-0 group-data-[collapsible=icon]:opacity-0 focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0`,
+          `flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 ring-sidebar-ring outline-hidden transition-[max-height,opacity] duration-(--duration-fast) ease-in-out motion-reduce:transition-none max-h-8 group-data-[collapsible=icon]:max-h-0 group-data-[collapsible=icon]:opacity-0 focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0`,
           className
         ),
       },

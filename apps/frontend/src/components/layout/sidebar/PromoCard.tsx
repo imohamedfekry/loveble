@@ -17,9 +17,9 @@ export function PromoCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg transition-[max-height,opacity] duration-(--duration-medium) group-data-[open=true]/sidebar:duration-(--duration-slow) ease-(--ease-smooth-out) motion-reduce:transition-none",
+        "overflow-hidden rounded-lg transition-[max-height,opacity] duration-(--duration-fast) ease-(--ease-smooth-out)",
         open
-          ? "max-h-24 border border-neutral-800 bg-[#141419] opacity-100 delay-(--duration-micro)"
+          ? "max-h-24 border border-neutral-800 bg-[#141419] opacity-100"
           : "max-h-0 opacity-0",
         className || ""
       )}
