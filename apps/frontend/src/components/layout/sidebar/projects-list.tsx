@@ -3,7 +3,7 @@ import { useProjectsStore } from "@/store/project.store";
 import { ProjectItem } from "./project.item";
 import { ProjectItemSkeleton } from "./project-item.skeleton";
 export const ProjectsList = () => {
-  let { projects, loading } = useProjectsStore();
+  const { projects, loading } = useProjectsStore();
   const recentProjects = projects.slice(0, 5);
   if (loading && projects.length === 0) {
     return <ProjectItemSkeleton />;

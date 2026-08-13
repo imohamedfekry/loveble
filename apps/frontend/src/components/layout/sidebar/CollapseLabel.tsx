@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 export function CollapseLabel({
   open,
   className = "",
@@ -9,9 +11,16 @@ export function CollapseLabel({
 }) {
   return (
     <span
-      className={`grid overflow-hidden transition-[grid-template-columns,opacity] duration-450 ease-[cubic-bezier(0.22,1,0.36,1)] ${open ? "[grid-template-columns:1fr] opacity-100" : "[grid-template-columns:0fr] opacity-0"} ${className}`}
+      className={cn(
+        "inline-block w-40 overflow-hidden whitespace-nowrap text-left",
+        "transition-[opacity,transform] duration-(--duration-quick) ease-in-out will-change-[opacity,transform] motion-reduce:transition-none",
+        open
+          ? "translate-x-0 opacity-100 delay-(--duration-micro)"
+          : "-translate-x-1 opacity-0 pointer-events-none",
+        className
+      )}
     >
-      <span className="min-w-0 whitespace-nowrap">{children}</span>
+      {children}
     </span>
   );
 }

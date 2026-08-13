@@ -79,7 +79,7 @@ export default function CallbackPage() {
       <div className="surface-card w-full space-y-5 p-6 text-center shadow-lg">
         <div
           className={cn(
-            "mx-auto flex size-16 items-center justify-center rounded-full transition-colors duration-500",
+            "mx-auto flex size-16 items-center justify-center rounded-full transition-colors duration-(--duration-very-slow)",
             config.ringClassName,
           )}
         >

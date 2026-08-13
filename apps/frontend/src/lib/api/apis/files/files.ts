@@ -71,3 +71,14 @@ export function getFolderContent(
         },
     );
 }
+export function getFileContent(projectId: string, fileId: string) {
+    return apiFetch<ProjectFileType[]>(
+        `/projects/${projectId}/files/${fileId}/content`,
+        {
+            method: "Get",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        },
+    );
+}

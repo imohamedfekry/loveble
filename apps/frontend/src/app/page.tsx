@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { BrandPageShell } from "@/components/layout/brand-page-shell";
 
 export default function Home() {
   return (
-      <div className="surface-card w-full space-y-5 p-6 text-center shadow-lg">
+    <BrandPageShell contentClassName="max-w-md">
+      <div className="surface-card w-full space-y-5 p-6 text-center">
         <div className="space-y-3">
           <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-            Build your vibe projects faster
+            Build your{" "}
+            <span className="text-primary-pulse">vibe</span> projects
+            faster
           </h2>
           <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
             A minimal AI-powered workspace to create, manage, and deploy your
@@ -25,6 +29,6 @@ export default function Home() {
           No setup required · Fast · Minimal · Developer friendly
         </p>
       </div>
+    </BrandPageShell>
   );
 }
-

@@ -14,14 +14,9 @@ export async function loginUser(data: any) {
 }
 
 export async function getMe() {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
     try {
       const res = await fetch(`${API_BASE_URL}/user/@me`, {
         credentials: 'include',
-        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -37,11 +32,8 @@ export async function getMe() {
       }
 
       return json.data.user;
-    } finally {
-      clearTimeout(timeoutId);
+    } catch (err) {
+      console.error("[getMe] Error fetching user:", err);
+      throw err;
     }
-  } catch (error) {
-    console.error("[getMe] Error:", error);
-    throw error;
   }
-}

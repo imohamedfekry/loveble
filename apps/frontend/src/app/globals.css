@@ -98,6 +98,30 @@
   --sidebar-accent-foreground: #1c1c1c;
   --sidebar-border: #e7e3da;
   --sidebar-ring: #4b73ff;
+
+  /* Motion tokens — transitions.dev scale */
+  --duration-stagger: 40ms;
+  --duration-micro: 80ms;
+  --duration-quick: 150ms;
+  --duration-fast: 250ms;
+  --duration-medium: 350ms;
+  --duration-slow: 400ms;
+  --duration-very-slow: 500ms;
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-bounce-strong: cubic-bezier(0.34, 3.85, 0.64, 1);
+  --distance-micro: 4px;
+  --distance-small: 6px;
+  --distance-base: 8px;
+  --distance-medium: 12px;
+  --distance-large: 30px;
+  --scale-large: 0.96;
+  --scale-medium: 0.97;
+  --scale-small: 0.98;
+  --scale-tiny: 0.99;
+  --blur-small: 2px;
+  --blur-medium: 3px;
+  --blur-large: 8px;
 }
 
 .dark {
@@ -152,6 +176,14 @@
   body {
     @apply bg-background text-foreground select-none;
   }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
 }
 
 @layer base {
@@ -163,11 +195,20 @@
 
 @layer utilities {
   .surface-card {
-    @apply rounded-xl border border-border/50 bg-background/80 shadow-sm backdrop-blur-sm transition-[border-color,background-color,box-shadow] duration-200;
+    @apply rounded-xl border border-border/50 bg-background/80 backdrop-blur-sm transition-[border-color,background-color,box-shadow,scale,transform] duration-(--duration-quick) ease-out;
+    @apply shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_-1px_rgba(0,0,0,0.06),0_2px_4px_0px_rgba(0,0,0,0.04)];
+  }
+
+  .dark .surface-card {
+    @apply shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_1px_2px_-1px_rgba(255,255,255,0.05)];
   }
 
   .surface-card-hover {
-    @apply hover:border-ring/25 hover:bg-accent/40 hover:shadow-md;
+    @apply hover:border-ring/20 hover:bg-accent/40 hover:shadow-[0_0_0_1px_rgba(0,0,0,0.09),0_2px_6px_-1px_rgba(0,0,0,0.09),0_12px_28px_-10px_rgba(0,0,0,0.2)];
+  }
+
+  .dark .surface-card-hover {
+    @apply hover:border-ring/20 hover:bg-accent/45 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14),0_12px_32px_-16px_rgba(0,0,0,0.7)];
   }
 
   .page-gradient {
@@ -265,4 +306,31 @@
 .split-view-sash-hovered,
 .split-view-sash-active {
   background-color: rgb(255 255 255 / 14%);
+}
+
+.composer-editor {
+  width: 100%;
+  min-height: 36px;
+  max-height: 220px;
+  overflow-y: auto;
+  outline: none;
+  caret-color: #4b73ff;
+  font-size: 17px;
+  line-height: 28px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.composer-editor p {
+  margin: 0;
+}
+
+.composer-editor .composer-placeholder::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: #737373;
+  font-size: inherit;
+  line-height: inherit;
 }

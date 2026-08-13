@@ -49,19 +49,20 @@ export const ProjectsList = ({ onViewAll }: ProjectListProps) => {
               <span className="text-xs font-medium text-foreground">
                 Recent projects
               </span>
-              <span className="rounded-md bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {recentProjects.length}
-              </span>
-            </div>
+                  <span className="rounded-md bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground tabular-nums">
+                    {recentProjects.length}
+                  </span>
+                </div>
 
-            <button
-              type="button"
-              onClick={onViewAll}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
-            >
-              <span>View all</span>
-              <ShortcutKbd keyLetter="K" />
-            </button>
+
+              <button
+                type="button"
+                onClick={onViewAll}
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-[background-color,color,transform] duration-(--duration-fast) ease-out hover:bg-accent/40 hover:text-foreground active:scale-[0.96]"
+              >
+                <span>View all</span>
+                <ShortcutKbd keyLetter="K" />
+              </button>
           </div>
 
           <ul className="flex flex-col">

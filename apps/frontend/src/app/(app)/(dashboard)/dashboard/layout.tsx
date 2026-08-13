@@ -16,32 +16,19 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-    console.log("A");
-
-  console.log("DashboardLayout render", useLoadUser);
-  console.log("1");
-  debugger;
-
-  console.log("DashboardLayout");
   useLoadUser();
 
-  console.log("2");
   useLoadProjects({ recent: true });
 
-  console.log("3");
   useRealtimeProjects();
-
-  console.log("4");
 
   const userLoading = useUserStore((s) => s.isLoading);
   const projectsLoading = useProjectsStore((s) => s.loading);
   const projectsCount = useProjectsStore((s) => s.projects.length);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  console.log("DashboardLayout state: sidebarOpen:", sidebarOpen, "userLoading:", userLoading, "projectsLoading:", projectsLoading, "projectsCount:", projectsCount);
   const isInitialLoading =
     (userLoading || (projectsLoading && projectsCount === 0));
-  console.log("DashboardLayout rendered , isInitialLoading:", isInitialLoading, "userLoading:", userLoading, "projectsLoading:", projectsLoading, "projectsCount:", projectsCount);
 
   return (
     <>

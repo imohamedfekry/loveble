@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import type { IconType } from "./types";
 
 export function PromoCard({
@@ -5,17 +6,25 @@ export function PromoCard({
   icon: Icon,
   title,
   subtitle,
+  className
 }: {
   open: boolean;
   icon: IconType;
   title: string;
   subtitle: string;
+  className?: string;
 }) {
   return (
     <div
-      className={`overflow-hidden rounded-lg border border-neutral-800 bg-[#141419] transition-[max-height,opacity,padding,margin] duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${open ? "max-h-24 opacity-100 px-2 py-2 delay-150" : "max-h-0 opacity-0 px-2 py-0 border-transparent"}`}
+      className={cn(
+        "overflow-hidden rounded-lg transition-[max-height,opacity] duration-(--duration-medium) group-data-[open=true]/sidebar:duration-(--duration-slow) ease-(--ease-smooth-out) motion-reduce:transition-none",
+        open
+          ? "max-h-24 border border-neutral-800 bg-[#141419] opacity-100 delay-(--duration-micro)"
+          : "max-h-0 opacity-0",
+        className || ""
+      )}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between p-2">
         <div className="min-w-0">
           <div className="text-xs font-semibold text-neutral-200 whitespace-nowrap">{title}</div>
           <div className="text-[11px] text-neutral-500 whitespace-nowrap">{subtitle}</div>

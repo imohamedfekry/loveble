@@ -17,7 +17,7 @@ import { useSettings } from "@/components/settings/use-settings";
 import { useGithubAccount } from "./hooks/useGithubAccount";
 
 const triggerClassName =
-  "cursor-pointer rounded-full outline-none border-none bg-transparent p-0 ring-2 ring-transparent transition-all hover:opacity-90 hover:ring-border/50";
+  "cursor-pointer rounded-full outline-none border-none bg-transparent p-0 ring-2 ring-transparent hover:opacity-90 hover:ring-border/50";
 
 export function UserAvatarButton() {
   const user = useUserStore((s) => s.user);

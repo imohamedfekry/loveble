@@ -3,7 +3,6 @@ import { useEffect, useRef } from "react";
 
 // import { CodeEditor } from "./code-editor";
 import { FileBreadcrumbs } from "./file-breadcrumbs";
-import { AlertTriangleIcon } from "lucide-react";
 import { TopNavigation } from "./top-navigation";
 import { useEditor } from "@/lib/hooks/use-editor";
 import { useFile } from "@/lib/hooks/file/useFiles";
@@ -46,21 +45,21 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
           </div>
         )}
         {/* {isActiveFileText && (
-          <CodeEditor
-            key={activeFile._id}
-            fileName={activeFile.name}
-            initialValue={activeFile.content}
-            onChange={(content: string) => {
-              if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-              }
+          // <CodeEditor
+          //   key={activeFile._id}
+          //   fileName={activeFile.name}
+          //   initialValue={activeFile.content}
+          //   onChange={(content: string) => {
+          //     if (timeoutRef.current) {
+          //       clearTimeout(timeoutRef.current);
+          //     }
 
-              timeoutRef.current = setTimeout(() => {
-                updateFile({ id: activeFile._id, content });
-              }, DEBOUNCE_MS);
-            }}
-          />
-        )} */}
+          //     timeoutRef.current = setTimeout(() => {
+          //       updateFile({ id: activeFile._id, content });
+          //     }, DEBOUNCE_MS);
+          //   }}
+          // />
+        )}
         {/* {isActiveFileBinary && (
           <div className="size-full flex items-center justify-center">
             <div className="flex flex-col items-center gap-2.5 max-w-md text-center">

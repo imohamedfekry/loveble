@@ -184,17 +184,18 @@ export const useLoadFolderContent = (
     loading,
   };
 };
+const EMPTY_FILES: ProjectFileType[] = [];
+
 export const useFile = (
   projectId: string,
   fileId: string | null | undefined,
 ) => {
   const files = useFilesStore(
-    (state) => state.files[projectId] ?? [],
+    (state) => state.files[projectId] ?? EMPTY_FILES,
   );
 
   return useMemo(() => {
     if (!fileId) return undefined;
-
     return files.find((file) => file.id === fileId);
   }, [files, fileId]);
 };

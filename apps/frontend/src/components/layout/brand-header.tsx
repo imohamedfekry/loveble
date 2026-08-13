@@ -22,7 +22,7 @@ export function BrandHeader({ className }: BrandHeaderProps) {
       <img
         src="/logo.svg"
         alt="Squadra"
-        className="size-9 transition-transform duration-300 group-hover/logo:scale-105 md:size-11"
+        className="size-9 rounded-xl outline outline-1 -outline-offset-1 outline-black/10 opacity-90 transition-transform duration-(--duration-fast) ease-(--ease-smooth-out) motion-reduce:transition-none group-hover/logo:scale-105 group-hover/logo:opacity-100 md:size-11"
       />
       <h1
         className={cn(

@@ -73,7 +73,7 @@ export const ProjectItem = ({ data, className }: ProjectItemProps) => {
     <li>
       <Link
         className={cn(
-          "group flex w-full items-center gap-3 px-2.5 py-2 transition-colors hover:bg-accent/40",
+          "group flex w-full items-center gap-3 px-2.5 py-2 transition-colors duration-(--duration-quick) ease-out hover:bg-accent/40",
           className,
         )}
         href={`/project/${data.id}`}
