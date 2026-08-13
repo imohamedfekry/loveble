@@ -54,9 +54,17 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
             >
               {displayName}&apos;s Squadra
             </CollapseLabel>
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform duration-(--duration-fast) ease-in-out ${menuOpen ? "rotate-180" : "rotate-0"} ${!open ? "hidden" : ""}`}
-            />
+<ChevronDown
+  className={`
+    h-4 w-4 shrink-0
+    text-neutral-500
+    transition-[transform,opacity]
+    duration-(--duration-fast)
+    ease-(--ease-smooth-out)
+    ${menuOpen ? "rotate-180" : "rotate-0"}
+    ${open ? "opacity-100" : "pointer-events-none opacity-0"}
+  `}
+/>
           </button>
         }
       />

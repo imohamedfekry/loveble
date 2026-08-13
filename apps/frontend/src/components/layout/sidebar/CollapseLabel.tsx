@@ -12,11 +12,11 @@ export function CollapseLabel({
   return (
     <span
       className={cn(
-        "inline-block w-40 overflow-hidden whitespace-nowrap text-left",
-        "transition-[opacity,transform] duration-(--duration-quick) ease-in-out will-change-[opacity,transform] motion-reduce:transition-none",
+        "inline-block min-w-0 whitespace-nowrap text-left",
+        "transition-opacity duration-(--duration-fast) ease-(--ease-smooth-out)",
         open
-          ? "translate-x-0 opacity-100 delay-(--duration-micro)"
-          : "-translate-x-1 opacity-0 pointer-events-none",
+          ? "opacity-100"
+          : "pointer-events-none opacity-0",
         className
       )}
     >
