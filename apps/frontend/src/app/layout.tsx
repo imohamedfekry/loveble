@@ -17,8 +17,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Squadra - AI-Powered App Development",
-  description: "Squadra is an AI-powered platform that helps you build, test, and deploy applications faster than ever. With Squadra, you can leverage the power of AI to automate your development workflow and focus on what matters most - building great software.",
+  title: "loveble - AI-Powered App Development",
+  description: "loveble is an AI-powered platform that helps you build, test, and deploy applications faster than ever. With loveble, you can leverage the power of AI to automate your development workflow and focus on what matters most - building great software.",
 };
 
 export default function RootLayout({

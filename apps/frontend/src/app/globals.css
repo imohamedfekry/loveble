@@ -103,7 +103,7 @@
   --duration-stagger: 40ms;
   --duration-micro: 80ms;
   --duration-quick: 150ms;
-  --duration-fast: 250ms;
+  --duration-fast: 300ms;
   --duration-medium: 350ms;
   --duration-slow: 400ms;
   --duration-very-slow: 500ms;
@@ -124,8 +124,9 @@
   --blur-large: 8px;
 }
 
+
 .dark {
-  --background: #0d0d12;
+  --background: #171716;
   --foreground: #f4f4f5;
 
   --card: #141419;
@@ -262,7 +263,7 @@
   @apply rounded-full bg-border border border-transparent border-solid bg-clip-padding;
 }
 
-@keyframes squadra-pulse {
+@keyframes loveble-pulse {
   0%,100% {
     transform: scale(0.96);
   }

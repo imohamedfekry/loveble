@@ -100,7 +100,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                         "text-sm font-semibold text-foreground transition-colors group-hover:text-primary"
                       )}
                     >
-                      Squadra
+                      loveble
                     </span>
                   </Link>
                 }

@@ -11,8 +11,8 @@ const NoiseBackground = () => {
       <filter id="noiseFilter">
         <feTurbulence
           type="fractalNoise"
-          baseFrequency="0.8"
-          numOctaves="4"
+          baseFrequency="0.9"
+          numOctaves="2"
           stitchTiles="stitch"
         />
       </filter>

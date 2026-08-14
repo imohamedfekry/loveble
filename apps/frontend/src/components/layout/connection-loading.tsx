@@ -6,7 +6,7 @@ type ConnectionLoadingProps = {
   className?: string;
 };
 export function ConnectionLoading({
-  message = "Loading Squadra...",
+  message = "Loading loveble...",
   className,
 }: ConnectionLoadingProps) {
   return (
@@ -22,9 +22,9 @@ export function ConnectionLoading({
 
   <img
     src="/logo.svg"
-    alt="Squadra"
+    alt="loveble"
     draggable={false}
-    className="relative z-10 size-16 select-none animate-[squadra-pulse_2s_ease-in-out_infinite]"
+    className="relative z-10 size-16 select-none animate-[loveble-pulse_2s_ease-in-out_infinite]"
   />
 
   <h1 className="relative z-10 text-primary-pulse flex items-center gap-1 text-2xl font-medium leading-tight opacity-100 transition-opacity duration-(--duration-very-slow) ease-(--ease-smooth-out) motion-reduce:transition-none md:gap-0 md:text-3xl">

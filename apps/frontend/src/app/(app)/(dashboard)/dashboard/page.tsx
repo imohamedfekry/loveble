@@ -2,7 +2,7 @@
 import { Dashboard } from "@/components/layout/dashboard";
 export default function DashboardPage() {
   return (
-<div className="min-h-screen bg-[#0d0d12] py-2">
+<div className="flex min-h-full flex-1 flex-col bg-[#171716] py-1.5 pr-1.5">
   <Dashboard />
 </div>
     

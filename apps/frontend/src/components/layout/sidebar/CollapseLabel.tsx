@@ -13,7 +13,6 @@ export function CollapseLabel({
     <span
       className={cn(
         "inline-block min-w-0 whitespace-nowrap text-left",
-        "transition-opacity duration-(--duration-fast) ease-(--ease-smooth-out)",
         open
           ? "opacity-100"
           : "pointer-events-none opacity-0",

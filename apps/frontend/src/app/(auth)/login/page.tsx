@@ -37,7 +37,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthCard title="Login" description="Welcome back to Squadra">
+    <AuthCard title="Login" description="Welcome back to loveble">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <Input placeholder="Email" {...register('email')} />

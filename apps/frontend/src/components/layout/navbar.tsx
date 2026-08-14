@@ -46,7 +46,7 @@ export function Navbar() {
                         font.className
                       )}
                     >
-                      Squadra
+                      loveble
                     </span>
                   </Link>
                 }

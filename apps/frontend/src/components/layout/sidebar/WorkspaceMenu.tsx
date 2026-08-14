@@ -41,12 +41,15 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
           <button
             aria-label="Open workspace menu"
             aria-expanded={menuOpen}
-            className={`group flex h-8 w-full items-center gap-2 rounded-md bg-[#141419] px-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${menuOpen ? "bg-neutral-800/80" : "hover:bg-neutral-800/60"}`}
-          >
+            className={`group flex h-8 w-full items-center gap-2 rounded-lg px-1 text-left
+  shadow-[0_0_0.0px_1px_rgba(115,115,115,0.35)]
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60
+  ${menuOpen ? "bg-neutral-800/80" : "hover:bg-neutral-800/60"}
+`}          >
             <AvatarImage
               src={avatarUrl}
               alt={displayName}
-              className="h-5 w-5 shrink-0 rounded-sm object-cover text-[10px] ring-1 ring-white/10"
+              className="h-6 w-6 shrink-0 rounded-sm object-cover text-[10px] shadow-[0_0_0.0px_1px_rgba(115,115,115,0.35)] "
             />
             <CollapseLabel
               open={open}
@@ -54,17 +57,17 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
             >
               {displayName}&apos;s Squadra
             </CollapseLabel>
-<ChevronDown
-  className={`
+            <ChevronDown
+              className={`
     h-4 w-4 shrink-0
     text-neutral-500
-    transition-[transform,opacity]
+    transition-transform
     duration-(--duration-fast)
     ease-(--ease-smooth-out)
     ${menuOpen ? "rotate-180" : "rotate-0"}
     ${open ? "opacity-100" : "pointer-events-none opacity-0"}
   `}
-/>
+            />
           </button>
         }
       />
