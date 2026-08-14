@@ -41,7 +41,7 @@ function AccountSection() {
 
             <SettingsRow
               label="Username"
-              description="Your display name across Squadra."
+              description="Your display name across loveble."
             >
               <span className="text-sm text-muted-foreground">
                 {user?.username ?? "—"}
@@ -192,13 +192,13 @@ function AppearanceSection() {
       <section className="space-y-4">
         <SettingsSectionHeader
           title="Theme"
-          description="Customize how Squadra looks on your device."
+          description="Customize how loveble looks on your device."
         />
 
         <div className="space-y-2">
           <SettingsRow
             label="Dark mode"
-            description="Squadra uses dark theme by default."
+            description="loveble uses dark theme by default."
           >
             <Switch defaultChecked disabled />
           </SettingsRow>

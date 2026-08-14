@@ -21,7 +21,7 @@ export function BrandHeader({ className }: BrandHeaderProps) {
     >
       <img
         src="/logo.svg"
-        alt="Squadra"
+        alt="loveble"
         className="size-9 rounded-xl outline outline-1 -outline-offset-1 outline-black/10 opacity-90 transition-transform duration-(--duration-fast) ease-(--ease-smooth-out) motion-reduce:transition-none group-hover/logo:scale-105 group-hover/logo:opacity-100 md:size-11"
       />
       <h1
@@ -30,7 +30,7 @@ export function BrandHeader({ className }: BrandHeaderProps) {
           brandFont.className,
         )}
       >
-        Squadra
+        loveble
       </h1>
     </div>
   );

@@ -1,30 +1,44 @@
 import { cn } from "@/lib/utils";
 import { CollapseLabel } from "./CollapseLabel";
-import type { IconType } from "./types";
+import { HugeiconsIcon } from "@hugeicons/react";
 
 export function NavItem({
-  icon: Icon,
+  icon,
   label,
   shortcut,
   active,
   open,
 }: {
-  icon: IconType;
+  icon: any;
   label: string;
   shortcut?: string;
   active?: boolean;
   open: boolean;
 }) {
+  const Icon = icon;
+  const isHugeIcon = Array.isArray(Icon);
+
   return (
     <button
       title={label}
+      onClick={(e) => {
+        if (!open) e.stopPropagation();
+      }}
       className={cn(
         "flex h-8 w-full items-center rounded-md px-2 text-sm text-white",
         "transition-colors duration-(--duration-fast) ease-(--ease-smooth-out)",
-        active ? "bg-neutral-800" : "hover:bg-neutral-800/60"
+        active ? "bg-neutral-800" : "hover:bg-neutral-800/60",
+        !open && "cursor-pointer"
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      {isHugeIcon ? (
+        <HugeiconsIcon
+          icon={Icon}
+          className="h-4.5 w-4.5 shrink-0"
+        />
+      ) : (
+        <Icon className="h-4 w-4 shrink-0" />
+      )}
 
       <CollapseLabel
         open={open}
@@ -38,8 +52,9 @@ export function NavItem({
           className={cn(
             "ml-auto rounded bg-neutral-800 px-1.5 py-0.5",
             "text-[10px] whitespace-nowrap text-neutral-400",
-            "transition-opacity duration-(--duration-fast) ease-(--ease-smooth-out)",
-            open ? "opacity-100" : "pointer-events-none opacity-0"
+            open
+              ? "opacity-100"
+              : "pointer-events-none opacity-0"
           )}
         >
           {shortcut}

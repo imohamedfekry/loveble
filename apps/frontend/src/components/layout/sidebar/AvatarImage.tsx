@@ -21,6 +21,6 @@ export function AvatarImage({
     );
   }
 
-  return <img src={src} alt={alt} className={cn(className, "outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10")} style={{ ...style }} />;
+  return <img src={src} alt={alt} className={cn(className)} style={{ ...style }} />;
 
 }

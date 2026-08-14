@@ -10,10 +10,9 @@ export function SectionLabel({
   return (
     <div
       className={cn(
-        "mt-5 mb-1.5 overflow-hidden px-5",
+        "mt-5 mb-1.5 overflow-hidden px-4",
         "text-[11px] font-medium uppercase tracking-wider text-neutral-500",
         "whitespace-nowrap",
-        "transition-opacity duration-(--duration-fast) ease-(--ease-smooth-out)",
         open
           ? "opacity-100"
           : "pointer-events-none opacity-0"

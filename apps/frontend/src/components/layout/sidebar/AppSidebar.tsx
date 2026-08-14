@@ -1,23 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import {
-  Gift,
   Inbox,
   PanelLeftClose,
   PanelLeftOpen,
-  Zap,
+  StarIcon,
+  UsersRoundIcon,
 } from "lucide-react";
+
+import {
+  FolderLibraryIcon,
+  Home12Icon,
+  Navigation04Icon,
+  Search01Icon,
+  User03Icon,
+  WorkflowSquare09Icon,
+} from "@hugeicons/core-free-icons";
+
 import { NavItem } from "./NavItem";
-import { PromoCard } from "./PromoCard";
 import { SectionLabel } from "./SectionLabel";
-import { NAV_MAIN, NAV_PROJECTS } from "./nav-config";
 import { ProjectsList } from "@/components/layout/sidebar/projects-list";
-import { TooltipContent, TooltipTrigger, Tooltip } from "../../ui/tooltip";
+import { cn } from "@/lib/utils";
+
+import {
+  TooltipContent,
+  TooltipTrigger,
+  Tooltip,
+} from "../../ui/tooltip";
+
 import { useGithubAccount } from "@/components/user/hooks/useGithubAccount";
 import { useUserStore } from "@/store/user.store";
 import { AvatarImage } from "./AvatarImage";
 import { WorkspaceMenu } from "./WorkspaceMenu";
+
+const iconSwapMotion =
+  "transition-[opacity,transform] duration-(--duration-fast) ease-(--ease-in-out) motion-reduce:transition-none";
 
 export function AppSidebar({
   open,
@@ -26,136 +45,337 @@ export function AppSidebar({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const [isClosing, setIsClosing] = useState(false);
+
   const { github } = useGithubAccount();
   const user = useUserStore((s) => s.user);
 
-  const [hoverEmpty, setHoverEmpty] = useState(false);
-
   const avatarUrl = github?.avatar_url;
-  const displayName = (github?.displayName || user?.username || "User").split(" ")[0];
+
+  const displayName = (
+    github?.displayName ||
+    user?.username ||
+    "User"
+  ).split(" ")[0];
+
+  /*
+   * If the sidebar gets opened while it was closing,
+   * immediately cancel the closing state.
+   */
+  useEffect(() => {
+    if (open && isClosing) {
+      setIsClosing(false);
+    }
+  }, [open, isClosing]);
+
+  const showExpandedChrome = open || isClosing;
+
+  const handleClose = () => {
+    setIsClosing(true);
+    onOpenChange(false);
+  };
+
+  const handleOpen = () => {
+    setIsClosing(false);
+    onOpenChange(true);
+  };
+
+  const handleSidebarTransitionEnd = (
+    e: React.TransitionEvent<HTMLElement>
+  ) => {
+    if (e.propertyName !== "width") return;
+
+    if (!open) {
+      setIsClosing(false);
+    }
+  };
 
   return (
     <aside
       data-open={open}
-      style={{ width: open ? 256 : 48 }}
-      onClick={open ? undefined : () => onOpenChange(true)}
-      onMouseMove={(e) => setHoverEmpty(e.target === e.currentTarget)}
-      onMouseLeave={() => setHoverEmpty(false)}
+      style={{
+        width: open ? 256 : 48,
+      }}
+      onTransitionEnd={handleSidebarTransitionEnd}
+      onClick={open ? undefined : handleOpen}
       role={open ? undefined : "button"}
       aria-label={open ? undefined : "Open sidebar"}
-      className={`group/sidebar hidden md:flex shrink-0 flex-col bg-[#0d0d12] py-4 overflow-hidden transition-[width] duration-(--duration-fast) ease-(--ease-smooth-out) will-change-[width] ${open ? "" : hoverEmpty ? "cursor-e-resize" : ""}`}
+      className={cn(
+        "group/sidebar hidden shrink-0 flex-col overflow-hidden bg-[#171716] py-2",
+        "transition-[width] duration-(--duration-fast) ease-(--ease-smooth-out) md:flex",
+        !open && "cursor-e-resize"
+      )}
     >
-      {/* Logo + toggle */}
-      <div className="mb-3 flex h-8 items-center px-2">
+      {/* ================================================== */}
+      {/* Header */}
+      {/* ================================================== */}
+
+      <div
+        className="
+          mb-4
+          flex
+          h-8
+          shrink-0
+          items-center
+          px-2
+        "
+      >
+        {/* ================================================== */}
+        {/* Logo / Open */}
+        {/* ================================================== */}
+
         <Tooltip>
           <TooltipTrigger
             render={
               <button
-                onClick={() => (open ? undefined : onOpenChange(true))}
-                aria-label={open ? "Logo" : "Open sidebar"}
-                className="group/logo relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md cursor-e-resize"
-                tabIndex={open ? -1 : 0}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+
+                  if (!open) {
+                    handleOpen();
+                  }
+                }}
+                aria-label={open ? "Loveble" : "Open sidebar"}
+                className={cn(
+                  "group/logo grid h-8 w-8 shrink-0 place-items-center rounded-md",
+                  "hover:bg-neutral-800/60",
+                  open ? "cursor-default" : "cursor-e-resize"
+                )}
               >
                 <img
                   src="/logo.svg"
-                  alt="Squadra"
-                  className={`h-7 w-7 rounded-md object-contain transition-opacity duration-(--duration-fast) ease-(--ease-smooth-out) ${open ? "" : "group-hover/sidebar:opacity-0"}`}
+                  alt="loveble"
+                  className={cn(
+                    iconSwapMotion,
+                    "col-start-1 row-start-1 h-4 w-4 object-contain",
+                    showExpandedChrome
+                      ? "scale-100 opacity-100"
+                      : cn(
+                          "scale-100 opacity-100",
+                          "group-hover/sidebar:scale-75 group-hover/sidebar:opacity-0"
+                        )
+                  )}
                 />
+
                 {!open && (
-                  <PanelLeftOpen className="absolute h-4 w-4 text-neutral-200 opacity-0 transition-opacity duration-(--duration-fast) ease-(--ease-smooth-out) group-hover/sidebar:opacity-100" />
+                  <PanelLeftOpen
+                    aria-hidden={isClosing}
+                    className={cn(
+                      iconSwapMotion,
+                      "col-start-1 row-start-1 h-4 w-4 text-neutral-200",
+                      isClosing
+                        ? "scale-75 opacity-0"
+                        : cn(
+                            "scale-75 opacity-0",
+                            "group-hover/sidebar:scale-100 group-hover/sidebar:opacity-100"
+                          )
+                    )}
+                  />
                 )}
               </button>
             }
           />
-          <TooltipContent>Open sidebar (Ctrl B)</TooltipContent>
+
+          <TooltipContent>
+            {open
+              ? "Loveble"
+              : "Open sidebar (Ctrl B)"}
+          </TooltipContent>
         </Tooltip>
 
-        <span
-          className={`ml-2 text-sm font-semibold text-neutral-100 whitespace-nowrap transition-opacity duration-(--duration-fast) ease-(--ease-smooth-out) ${
-            open ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          Squadra
-        </span>
+        {/* ================================================== */}
+        {/* Close */}
+        {/* ================================================== */}
 
-        <Tooltip>
-          <TooltipTrigger
-            className="ml-auto"
-            render={
-              <button
-                onClick={() => onOpenChange(false)}
-className={`ml-auto cursor-e-resize rounded-md p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 transition-[opacity,background-color,color] duration-(--duration-fast) ease-(--ease-smooth-out) ${
-  open ? "opacity-100" : "pointer-events-none opacity-0"
-}`}
-                aria-label="Close sidebar"
-                tabIndex={open ? 0 : -1}
-              >
-                <PanelLeftClose className="h-4 w-4" />
-              </button>
-            }
-          />
-          <TooltipContent>Open sidebar (Ctrl B)</TooltipContent>
-        </Tooltip>
+        {showExpandedChrome && (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClose();
+                  }}
+                  aria-label="Close sidebar"
+                  className={cn(
+                    "ml-auto flex h-8 w-8 shrink-0 cursor-e-resize items-center justify-center rounded-md text-neutral-400",
+                    "transition-[opacity,background-color,color] duration-200 ease-out",
+                    "hover:bg-neutral-800 hover:text-neutral-200",
+                    open ? "opacity-100" : "pointer-events-none opacity-0"
+                  )}
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </button>
+              }
+            />
+
+            <TooltipContent>
+              Close sidebar (Ctrl B)
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
+      {/* ================================================== */}
       {/* Workspace */}
-      <div className="mb-4 px-2" onClick={(e) => e.stopPropagation()}>
+      {/* ================================================== */}
+
+      <div
+        className={cn("mb-2 px-2", !open && "cursor-pointer")}
+        onClick={(e) => e.stopPropagation()}
+      >
         <WorkspaceMenu open={open} />
       </div>
 
-      {/* Nav */}
+      {/* ================================================== */}
+      {/* Main Navigation */}
+      {/* ================================================== */}
+
       <nav className="space-y-0.5 px-2">
-        {NAV_MAIN.map((item) => (
-          <NavItem key={item.label} open={open} {...item} />
-        ))}
+        <NavItem
+          open={open}
+          icon={Home12Icon}
+          label="Dashboard"
+          active
+        />
+
+        <NavItem
+          open={open}
+          icon={Search01Icon}
+          label="Search"
+          shortcut="Ctrl K"
+        />
+
+        <NavItem
+          open={open}
+          icon={Navigation04Icon}
+          label="Resources"
+        />
+
+        <NavItem
+          open={open}
+          icon={WorkflowSquare09Icon}
+          label="Connectors"
+        />
       </nav>
 
-      <SectionLabel open={open}>Projects</SectionLabel>
+      {/* ================================================== */}
+      {/* Projects */}
+      {/* ================================================== */}
+
+      <SectionLabel open={open}>
+        Projects
+      </SectionLabel>
+
       <nav className="space-y-0.5 px-2">
-        {NAV_PROJECTS.map((item) => (
-          <NavItem key={item.label} open={open} {...item} />
-        ))}
+        <NavItem
+          open={open}
+          icon={FolderLibraryIcon}
+          label="All projects"
+        />
+
+        <NavItem
+          open={open}
+          icon={StarIcon}
+          label="Starred"
+        />
+
+        <NavItem
+          open={open}
+          icon={User03Icon}
+          label="Created by me"
+        />
+
+        <NavItem
+          open={open}
+          icon={UsersRoundIcon}
+          label="Shared with me"
+        />
       </nav>
 
-      <SectionLabel open={open}>Recents</SectionLabel>
+      {/* ================================================== */}
+      {/* Recents */}
+      {/* ================================================== */}
+
+      <SectionLabel open={open}>
+        Recents
+      </SectionLabel>
+
       <div
-        className={`overflow-hidden transition-[max-height,opacity] duration-(--duration-fast) ease-(--ease-smooth-out) ${
-          open ? "max-h-45 opacity-100" : "max-h-0 opacity-0"
-        }`}
-
+        className={`${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        onClick={(e) => e.stopPropagation()}
+        aria-hidden={!open}
       >
         <div className="space-y-0.5 px-2">
           <ProjectsList />
         </div>
       </div>
 
+      {!open && (
+        <div
+          className="min-h-6 flex-1 cursor-e-resize"
+          aria-hidden
+        />
+      )}
+
+      {/* ================================================== */}
       {/* Bottom */}
-      <div className="mt-auto space-y-1 px-2 pt-6">
-        <div className="relative h-20 overflow-hidden">
-          {/* Avatar moves up when sidebar collapses */}
+      {/* ================================================== */}
+
+      <div className="mt-auto shrink-0 px-2 pt-6">
+        <div className="relative h-8">
+          {/* Avatar */}
+
           <AvatarImage
             src={avatarUrl}
             alt={displayName}
             className={`
-              absolute bottom-1 left-1
-              h-6 w-6 shrink-0 rounded-full object-cover text-xs
-              ring-1 ring-neutral-700
+              absolute
+              bottom-1
+              left-1
+              h-6
+              w-6
+              shrink-0
+              rounded-full
+              object-cover
+              text-xs
+              ring-1
+              ring-neutral-700
               transition-transform
-              duration-(--duration-fast)
-              ease-(--ease-smooth-out)
-              ${open ? "translate-y-0" : "-translate-y-12"}
+              duration-200
+              ease-out
+
+              ${
+                open
+                  ? "translate-y-0"
+                  : "-translate-y-12"
+              }
             `}
           />
 
-          {/* Inbox stays fixed */}
-          <div className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center">
+          {/* Inbox */}
+
+          <div className="absolute bottom-0 right-0">
             <button
+              type="button"
               aria-label="Inbox"
+              onClick={(e) => {
+                if (!open) e.stopPropagation();
+              }}
               className="
-                flex h-8 w-8 items-center justify-center
-                rounded-md text-neutral-400
+                flex
+                h-8
+                w-8
+                cursor-pointer
+                items-center
+                justify-center
+                rounded-md
+                text-neutral-400
                 transition-colors
-                hover:bg-neutral-800 hover:text-neutral-200
+                hover:bg-neutral-800
+                hover:text-neutral-200
               "
             >
               <Inbox className="h-4 w-4" />

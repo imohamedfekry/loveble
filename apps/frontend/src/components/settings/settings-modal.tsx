@@ -35,7 +35,7 @@ export function SettingsModal() {
       >
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">
-          Manage your Squadra account and preferences.
+          Manage your loveble account and preferences.
         </DialogDescription>
 
         <SettingsSidebar />

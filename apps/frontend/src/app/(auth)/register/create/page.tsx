@@ -39,7 +39,7 @@ export default function CreatePage() {
   }
 
   return (
-    <AuthCard title="Complete Profile" description="Set up your Squadra account">
+    <AuthCard title="Complete Profile" description="Set up your loveble account">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
         <div>
