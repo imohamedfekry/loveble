@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createFile, deleteFile, getFiles, updateFile } from "@/lib/api/apis/files/files";
+import { createFile, deleteFile, getFiles, moveFile, updateFile } from "@/lib/api/apis/files/files";
 import { useFilesStore } from "@/store/file.store";
 import { CreateFileRequest, ProjectFileType, UpdateFile } from "@/lib/api/apis/files/types";
 
@@ -132,6 +132,31 @@ export const useUpdateFile = () => {
 
   return {
     updateFile: mutate,
+    loading,
+  };
+};
+
+export const useMoveFile = () => {
+  const updateFileInStore = useFilesStore((s) => s.updateFile);
+  const [loading, setLoading] = useState(false);
+
+  const mutate = async (
+    projectId: string,
+    fileId: string,
+    parentId: string | null,
+  ) => {
+    try {
+      setLoading(true);
+      const res = await moveFile(projectId, fileId, { parentId });
+      updateFileInStore(projectId, res.data.file);
+      return res.data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    moveFile: mutate,
     loading,
   };
 };

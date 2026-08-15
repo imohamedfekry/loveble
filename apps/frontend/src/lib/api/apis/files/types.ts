@@ -19,7 +19,11 @@ export interface CreateFileRequest {
 
 export interface UpdateFile {
     parentId?: string | null;
-    name: string;
+    name?: string;
+}
+
+export interface MoveFileRequest {
+    parentId: string | null;
 }
 
 

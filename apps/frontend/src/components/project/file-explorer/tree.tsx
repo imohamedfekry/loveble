@@ -78,6 +78,7 @@ export const Tree = ({
             <TreeItemWrapper
                 item={item}
                 level={level}
+                projectId={projectId}
                 isActive={isActive}
                 loading={deleting}
                 onClick={() => openFile(item.id, { pinned: false })}
@@ -110,6 +111,7 @@ export const Tree = ({
                 <TreeItemWrapper
                     item={item}
                     level={level}
+                    projectId={projectId}
                     loading={deleting}
                     onClick={() => setIsOpen((open) => !open)}
                     onRename={() => setIsRenaming(true)}
