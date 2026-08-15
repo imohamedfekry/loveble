@@ -31,13 +31,12 @@ export function ComposerAttachments({
           key={attachment.id}
           className={cn(
             "group flex h-7 items-center gap-1.5",
-            "bg-neutral-900 px-1.5 py-1",
-            "text-[11.5px] text-neutral-300",
-            "shadow-[0_0_0_1px_rgba(255,255,255,0.05)]",
+            "bg-card border border-border px-1.5 py-1",
+            "text-[11.5px] text-foreground",
             pill ? "rounded-full" : "rounded-lg"
           )}
         >
-          <FileText className="h-3 w-3 shrink-0 text-neutral-400" />
+          <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
 
           <span className="max-w-36 truncate">
             {attachment.file.name}
@@ -49,8 +48,8 @@ export function ComposerAttachments({
             onClick={() => onRemove(attachment.id)}
             className={cn(
               "flex h-4 w-4 items-center justify-center",
-              "text-neutral-500 transition-colors",
-              "hover:bg-neutral-800 hover:text-neutral-200",
+              "text-muted-foreground transition-colors",
+              "hover:bg-foreground/5 hover:text-foreground",
               pill ? "rounded-full" : "rounded"
             )}
           >

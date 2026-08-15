@@ -299,14 +299,14 @@
 }
 
 .split-view-sash {
-  background-color: rgb(255 255 255 / 6%);
+  background-color: var(--separator-border);
   transition: background-color 150ms ease-out;
 }
 
 .split-view-sash:hover,
 .split-view-sash-hovered,
 .split-view-sash-active {
-  background-color: rgb(255 255 255 / 14%);
+  background-color: var(--border);
 }
 
 .composer-editor {
@@ -315,7 +315,7 @@
   max-height: 220px;
   overflow-y: auto;
   outline: none;
-  caret-color: #4b73ff;
+  caret-color: var(--ring);
   font-size: 17px;
   line-height: 28px;
   white-space: pre-wrap;
@@ -331,7 +331,7 @@
   float: left;
   height: 0;
   pointer-events: none;
-  color: #737373;
+  color: var(--muted-foreground);
   font-size: inherit;
   line-height: inherit;
 }

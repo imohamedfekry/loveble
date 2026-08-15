@@ -35,7 +35,7 @@ export default function DashboardLayout({
       {isInitialLoading ? (
         <ConnectionLoading className="flex-1" message="Loading..." />
       ) : (
-        <div className="flex h-screen bg-[#171716]">
+        <div className="flex h-screen bg-background">
           <AppSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
           <main className="flex min-w-0 flex-1 flex-col overflow-hidden ">
             <div className="flex min-h-0 flex-1 flex-col overflow-auto ">

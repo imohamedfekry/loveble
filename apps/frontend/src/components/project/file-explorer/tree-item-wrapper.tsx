@@ -55,8 +55,8 @@ export const TreeItemWrapper = ({
                         }
                     }}
                     className={cn(
-                        "group flex h-5.5 w-full items-center gap-1 outline-none transition-colors duration-150 hover:bg-white/5 focus:ring-1 focus:ring-inset focus:ring-ring",
-                        isActive && "bg-white/[0.07]",
+                        "group flex h-5.5 w-full items-center gap-1 outline-none transition-colors duration-150 hover:bg-foreground/5 focus:ring-1 focus:ring-inset focus:ring-ring",
+                        isActive && "bg-accent/70",
                         loading && "cursor-progress opacity-70",
                     )}
                     style={{

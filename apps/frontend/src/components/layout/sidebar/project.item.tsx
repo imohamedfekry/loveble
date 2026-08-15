@@ -17,7 +17,7 @@ export const ProjectItem = ({
       <Link
         href={`/project/${data.id}`}
         className={cn(
-          "group flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm whitespace-nowrap text-neutral-300 transition-colors duration-(--duration-quick) ease-(--ease-smooth-out) hover:bg-neutral-800",
+          "group flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm whitespace-nowrap text-sidebar-foreground transition-colors duration-(--duration-quick) ease-(--ease-smooth-out) hover:bg-sidebar-accent",
           className
         )}
       >

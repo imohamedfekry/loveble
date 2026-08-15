@@ -37,7 +37,7 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
                     <div
                         role="button"
                         onClick={() => setIsOpen(!isOpen)}
-                        className="group/project cursor-pointer w-full min-w-0 text-left flex items-center gap-0.5 h-5.5 bg-[#1a1a20] transition-colors hover:bg-white/5"
+                        className="group/project cursor-pointer w-full min-w-0 text-left flex items-center gap-0.5 h-5.5 bg-accent transition-colors hover:bg-foreground/5"
                     >
                         <ChevronRightIcon
                             className={cn(

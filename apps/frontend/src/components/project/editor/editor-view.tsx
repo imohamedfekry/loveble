@@ -32,7 +32,7 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
         <TopNavigation projectId={projectId} />
       </div>
       {activeTabId && <FileBreadcrumbs projectId={projectId} />}
-      <div className="flex-1 min-h-0 bg-[#141419]">
+      <div className="flex-1 min-h-0 bg-card">
          {!activeFile && (
           <div className="size-full flex items-center justify-center">
             <Image

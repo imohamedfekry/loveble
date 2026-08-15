@@ -41,11 +41,11 @@ export function ComposerMenuItem({
       className={cn(
         "relative z-10 flex h-9 w-full items-center gap-2.5 rounded-lg px-2 text-left",
         "transition-colors duration-150",
-        active && "bg-white/[0.06]"
+        active && "bg-accent"
       )}
     >
       {source && (
-        <span className="flex h-5.5 w-5.5 shrink-0 items-center justify-center text-neutral-400">
+        <span className="flex h-5.5 w-5.5 shrink-0 items-center justify-center text-muted-foreground">
           {source.brand ? (
             BRANDS[source.brand]
           ) : (
@@ -56,11 +56,11 @@ export function ComposerMenuItem({
         </span>
       )}
 
-      <span className="shrink-0 text-[12.5px] font-medium text-neutral-200">
+      <span className="shrink-0 text-[12.5px] font-medium text-foreground">
         {row.name}
       </span>
 
-      <span className="min-w-0 flex-1 truncate text-xs text-neutral-500">
+      <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
         {row.desc}
       </span>
 

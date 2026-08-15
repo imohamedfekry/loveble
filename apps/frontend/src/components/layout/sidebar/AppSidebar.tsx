@@ -23,6 +23,7 @@ import { NavItem } from "./NavItem";
 import { SectionLabel } from "./SectionLabel";
 import { ProjectsList } from "@/components/layout/sidebar/projects-list";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 import {
   TooltipContent,
@@ -101,7 +102,7 @@ export function AppSidebar({
       role={open ? undefined : "button"}
       aria-label={open ? undefined : "Open sidebar"}
       className={cn(
-        "group/sidebar hidden shrink-0 flex-col overflow-hidden bg-[#171716] py-2",
+        "group/sidebar hidden shrink-0 flex-col overflow-hidden bg-sidebar py-2",
         "transition-[width] duration-(--duration-quick) ease-(--ease-smooth-out) md:flex",
         !open && "cursor-e-resize"
       )}
@@ -139,7 +140,7 @@ export function AppSidebar({
                 aria-label={open ? "Loveble" : "Open sidebar"}
                 className={cn(
                   "group/logo grid h-8 w-8 shrink-0 place-items-center rounded-md",
-                  "hover:bg-neutral-800/60",
+                  "hover:bg-sidebar-accent",
                   open ? "cursor-default" : "cursor-e-resize"
                 )}
               >
@@ -163,7 +164,7 @@ export function AppSidebar({
                     aria-hidden={isClosing}
                     className={cn(
                       iconSwapMotion,
-                      "col-start-1 row-start-1 h-4 w-4 text-neutral-200",
+                      "col-start-1 row-start-1 h-4 w-4 text-sidebar-foreground",
                       isClosing
                         ? "scale-75 opacity-0"
                         : cn(
@@ -200,9 +201,9 @@ export function AppSidebar({
                   }}
                   aria-label="Close sidebar"
                   className={cn(
-                    "ml-auto flex h-8 w-8 shrink-0 cursor-e-resize items-center justify-center rounded-md text-neutral-400",
+                    "ml-auto flex h-8 w-8 shrink-0 cursor-e-resize items-center justify-center rounded-md text-muted-foreground",
                     "transition-[opacity,background-color,color] duration-200 ease-out",
-                    "hover:bg-neutral-800 hover:text-neutral-200",
+                    "hover:bg-sidebar-accent hover:text-sidebar-foreground",
                     open ? "opacity-100" : "pointer-events-none opacity-0"
                   )}
                 >
@@ -342,7 +343,7 @@ export function AppSidebar({
               object-cover
               text-xs
               ring-1
-              ring-neutral-700
+              ring-border
               transition-transform
               duration-200
               ease-out
@@ -354,6 +355,17 @@ export function AppSidebar({
               }
             `}
           />
+
+          {/* Theme toggle */}
+
+          <div
+            className="absolute bottom-0 right-8 [&>button]:size-8 [&>button]:rounded-md [&>button]:text-muted-foreground"
+            onClick={(e) => {
+              if (!open) e.stopPropagation();
+            }}
+          >
+            <ThemeToggle />
+          </div>
 
           {/* Inbox */}
 
@@ -372,10 +384,10 @@ export function AppSidebar({
                 items-center
                 justify-center
                 rounded-md
-                text-neutral-400
+                text-muted-foreground
                 transition-colors
-                hover:bg-neutral-800
-                hover:text-neutral-200
+                hover:bg-sidebar-accent
+                hover:text-sidebar-foreground
               "
             >
               <Inbox className="h-4 w-4" />

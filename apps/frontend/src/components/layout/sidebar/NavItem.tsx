@@ -25,27 +25,27 @@ export function NavItem({
         if (!open) e.stopPropagation();
       }}
 className={cn(
-  "relative flex h-8 w-full items-center rounded-md px-2 text-sm text-white",
+  "relative flex h-8 w-full items-center rounded-md px-2 text-sm text-sidebar-foreground",
   "transition-colors duration-(--duration-quick) ease-(--ease-smooth-out)",
 
   // Normal hover
-  "hover:bg-neutral-800/90",
+  "hover:bg-sidebar-accent/80",
 
   // Indicator
   "after:absolute after:left-0 after:top-1/2",
   "after:h-[55%] after:w-[2px]",
   "after:-translate-y-1/2",
   "after:rounded-[10px]",
-  "after:bg-[#a1a1a1]",
+  "after:bg-muted-foreground",
   "after:content-['']",
   "after:opacity-0",
   "hover:after:opacity-100",
 
   // Active
-  active && "bg-neutral-700/90 after:opacity-100",
+  active && "bg-sidebar-accent after:opacity-100",
 
   // Active + Hover
-  active && "hover:bg-neutral-600/90",
+  active && "hover:bg-sidebar-accent",
 
   !open && "cursor-pointer",
 )}
@@ -69,8 +69,8 @@ className={cn(
       {shortcut && (
         <span
           className={cn(
-            "ml-auto rounded bg-neutral-800 px-1.5 py-0.5",
-            "text-[10px] whitespace-nowrap text-neutral-400",
+            "ml-auto rounded bg-sidebar-accent px-1.5 py-0.5",
+            "text-[10px] whitespace-nowrap text-muted-foreground",
             open
               ? "opacity-100"
               : "pointer-events-none opacity-0"

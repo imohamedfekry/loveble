@@ -5,7 +5,7 @@ import { FaGithub } from "react-icons/fa";
 import { MOD_KEY_CODES } from "@/lib/keyboard";
 import { useKeyboardShortcut } from "@/lib/hooks/useKeyboardShortcut";
 import { BrandPageShell } from "@/components/layout/brand-page-shell";
-import { ProjectsList } from "./projects-list";
+import { ProjectsList } from "@/components/layout/sidebar/projects-list";
 import { useCallback, useState } from "react";
 import { ProjectActionCard } from "./project-action-card";
 import { ProjectsCommandDialog } from "./0Old(notused)/projects-commands-dialog";
@@ -60,7 +60,7 @@ export const ProjectsView = ({
             </div>
           </section>
 
-          <ProjectsList onViewAll={() => setCommandDialogOpen(true)} />
+          <ProjectsList />
         </div>
       </BrandPageShell>
     </>

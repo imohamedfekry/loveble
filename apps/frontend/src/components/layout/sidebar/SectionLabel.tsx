@@ -11,7 +11,7 @@ export function SectionLabel({
     <div
       className={cn(
         "mt-5 mb-1.5 overflow-hidden px-4",
-        "text-[11px] font-medium uppercase tracking-wider text-neutral-500",
+        "text-[11px] font-medium uppercase tracking-wider text-muted-foreground",
         "whitespace-nowrap",
         open
           ? "opacity-100"

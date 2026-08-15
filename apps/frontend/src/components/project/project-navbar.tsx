@@ -75,7 +75,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
   };
 
   return (
-    <nav className="flex items-center justify-between gap-x-2 border-b border-white/[0.06] bg-[#141419]/85 px-3 py-2 backdrop-blur-md">
+    <nav className="flex items-center justify-between gap-x-2 border-b border-border bg-card/85 px-3 py-2 backdrop-blur-md">
       <div className="flex items-center gap-x-2">
         <Breadcrumb>
           <BreadcrumbList className="gap-0!">
@@ -92,7 +92,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                       alt="Logo"
                       width={20}
                       height={20}
-                      className="rounded-sm outline outline-1 outline-black/10 dark:outline-white/10"
+                      className="rounded-sm outline outline-1 outline-border"
                     />
 
                     <span
@@ -126,7 +126,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                         handleCancel();
                       }
                     }}
-                    className="h-7 w-56 rounded-md border border-white/10 bg-[#1a1a20] px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/30"
+                    className="h-7 w-56 rounded-md border border-border bg-popover px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/30"
                   />
                 ) : (
                   <div

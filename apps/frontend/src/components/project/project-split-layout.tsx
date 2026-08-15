@@ -29,8 +29,8 @@ export function ProjectSplitLayout({
           maxSize={MAX_SIDEBAR_WIDTH}
           preferredSize={DEFAULT_CONVERSATION_SIDEBAR_WIDTH}
         >
-          <div className="flex h-full flex-col border-r border-white/[0.06] bg-[#141419]">
-            <div className="flex h-8.75 shrink-0 items-center border-b border-white/[0.06] px-3">
+          <div className="flex h-full flex-col border-r border-border bg-card">
+            <div className="flex h-8.75 shrink-0 items-center border-b border-border px-3">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Conversation
               </span>
@@ -39,7 +39,7 @@ export function ProjectSplitLayout({
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
               <div className="relative">
                 <div className="absolute -inset-2 rounded-full bg-primary/10 blur-md" />
-                <div className="relative flex size-10 items-center justify-center rounded-full border border-white/10 bg-[#1a1a20]">
+                <div className="relative flex size-10 items-center justify-center rounded-full border border-border bg-popover">
                   <MessagesSquareIcon className="size-4 text-brand-accent-2" />
                 </div>
               </div>

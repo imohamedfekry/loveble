@@ -172,10 +172,10 @@ export function ChatComposer({
         <div
           className={cn(
             "relative isolate flex flex-col gap-1.5 overflow-hidden",
-            "border border-neutral-700/90 bg-neutral-800",
+            "border border-border bg-card",
             "p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.18)]",
             "transition-[border-color,border-radius] duration-150",
-            "focus-within:border-neutral-700",
+            "focus-within:border-ring",
             pill
               ? attachments.length > 0 || expanded
                 ? "rounded-3xl"
@@ -241,9 +241,9 @@ export function ChatComposer({
               className={cn(
                 "min-h-20 min-w-0 w-full resize-none",
                 "bg-transparent px-1 py-1.25",
-                "text-[15px] leading-[20px] text-neutral-100",
+                "text-[15px] leading-[20px] text-foreground",
                 "outline-none [overflow-wrap:anywhere]",
-                "placeholder:text-neutral-500",
+                "placeholder:text-muted-foreground",
                   "col-span-full col-start-1 row-start-1  "
                    
               )}
@@ -257,12 +257,12 @@ export function ChatComposer({
               onClick={openPlusMenu}
               className={cn(
                 "flex h-7 w-7 shrink-0 items-center justify-center",
-                "text-neutral-500 transition-[background-color,color,transform]",
-                "hover:bg-white/[0.05] hover:text-neutral-200",
+                "text-muted-foreground transition-[background-color,color,transform]",
+                "hover:bg-foreground/5 hover:text-foreground",
                 "active:scale-[0.94]",
                 pill ? "rounded-full" : "rounded-lg",
                 plusOpen &&
-                  "bg-white/[0.05] text-neutral-200",
+                  "bg-foreground/5 text-foreground",
                 expanded
                   ? "col-start-1 row-start-2"
                   : "col-start-1 row-start-1"
@@ -286,8 +286,8 @@ export function ChatComposer({
               className={cn(
                 "flex h-7 shrink-0 items-center gap-1",
                 "px-1.5 text-xs font-medium",
-                "text-neutral-300 transition-colors",
-                "hover:bg-white/[0.05] hover:text-neutral-100",
+                "text-muted-foreground transition-colors",
+                "hover:bg-foreground/5 hover:text-foreground",
                 pill ? "rounded-full" : "rounded-lg",
                 expanded
                   ? "col-start-2 row-start-2"
@@ -298,7 +298,7 @@ export function ChatComposer({
 
               <ChevronDown
                 className={cn(
-                  "h-3 w-3 text-neutral-500 transition-transform",
+                  "h-3 w-3 text-muted-foreground transition-transform",
                   modelOpen && "rotate-180"
                 )}
               />
@@ -320,8 +320,8 @@ export function ChatComposer({
                 "active:scale-[0.94]",
                 pill ? "rounded-full" : "rounded-lg",
                 listening
-                  ? "bg-white/[0.08] text-white"
-                  : "text-neutral-500 hover:bg-white/[0.05] hover:text-neutral-200",
+                  ? "bg-foreground/[0.08] text-foreground"
+                  : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
                 expanded
                   ? "col-start-3 row-start-2"
                   : "col-start-4 row-start-1"
@@ -362,8 +362,8 @@ export function ChatComposer({
                   ? "col-start-4 row-start-2"
                   : "col-start-5 row-start-1",
                 canSend
-                  ? "bg-white text-neutral-900 hover:bg-neutral-200"
-                  : "bg-neutral-700 text-neutral-500"
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-muted text-muted-foreground"
               )}
             >
               <ArrowUp className="h-4 w-4" />

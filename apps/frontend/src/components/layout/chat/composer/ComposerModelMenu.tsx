@@ -35,14 +35,14 @@ export function ComposerModelMenu({
       onMouseLeave={onMouseLeave}
       className={cn(
         "absolute right-0 bottom-full z-30 mb-2 w-48",
-        "rounded-xl border border-neutral-700/90 bg-neutral-800 p-1",
+        "rounded-xl border border-border bg-popover p-1",
         "shadow-2xl shadow-black/40",
         "animate-in fade-in-0 slide-in-from-bottom-1 duration-150"
       )}
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-1 rounded-lg bg-white/[0.05]"
+        className="pointer-events-none absolute inset-x-1 rounded-lg bg-foreground/5"
         style={{
           top: modelBox?.top ?? 0,
           height: modelBox?.height ?? 0,
@@ -61,11 +61,11 @@ export function ComposerModelMenu({
           onClick={() => onSelect(model)}
           className="relative z-10 flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left"
         >
-          <span className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-200">
+          <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
             {model.name}
           </span>
 
-          <span className="shrink-0 text-[11px] text-neutral-500">
+          <span className="shrink-0 text-[11px] text-muted-foreground">
             {model.tag}
           </span>
 
@@ -73,7 +73,7 @@ export function ComposerModelMenu({
             className={cn(
               "h-3.5 w-3.5 shrink-0",
               model.key === selected.key
-                ? "text-neutral-200"
+                ? "text-foreground"
                 : "invisible"
             )}
           />

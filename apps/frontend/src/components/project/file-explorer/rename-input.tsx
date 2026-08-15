@@ -52,7 +52,7 @@ export const RenameInput = ({
         <div className="flex w-full min-w-0 flex-col">
             <div
                 className={cn(
-                    "flex h-5.5 w-full min-w-0 items-center gap-1 bg-white/[0.07] transition-opacity duration-200",
+                    "flex h-5.5 w-full min-w-0 items-center gap-1 bg-accent transition-opacity duration-200",
                     loading && "cursor-progress opacity-70",
                 )}
                 style={{ paddingLeft: getItemPadding(level, type === "file") }}

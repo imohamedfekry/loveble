@@ -14,7 +14,7 @@ export function ConnectionLoading({
   role="status"
   aria-live="polite"
   className={cn(
-    "relative flex h-full w-full flex-col items-center justify-center overflow-hidden gap-5 bg-[#141419]",
+    "relative flex h-full w-full flex-col items-center justify-center overflow-hidden gap-5 bg-background",
     className
   )}
 >

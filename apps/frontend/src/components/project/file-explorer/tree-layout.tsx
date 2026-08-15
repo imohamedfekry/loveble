@@ -68,7 +68,7 @@ const TreeIndentGuide = () => (
         style={{ width: TREE_INDENT_SIZE }}
         aria-hidden
     >
-        <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-white/5" />
+        <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
     </div>
 );
 
