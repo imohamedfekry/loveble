@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUp,
   ChevronDown,
   Mic,
   Plus,
+  Upload,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -62,6 +63,8 @@ export function ChatComposer({
 
     modelHovered,
     setModelHovered,
+
+    modelRowRefs,
 
     expanded,
 
@@ -159,6 +162,52 @@ export function ChatComposer({
     selectModel(next);
   };
 
+  const [isDragging, setIsDragging] = useState(false);
+  const dragDepth = useRef(0);
+
+  const handleDragEnter = (event: React.DragEvent) => {
+    if (!event.dataTransfer.types.includes("Files")) return;
+
+    event.preventDefault();
+    dragDepth.current += 1;
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    if (!event.dataTransfer.types.includes("Files")) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    event.preventDefault();
+
+    if (event.relatedTarget === null) {
+      dragDepth.current = 0;
+      setIsDragging(false);
+      return;
+    }
+
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+
+    if (dragDepth.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    dragDepth.current = 0;
+    setIsDragging(false);
+
+    const files = Array.from(event.dataTransfer.files);
+
+    if (files.length > 0) {
+      addFiles(files);
+    }
+  };
+
   return (
     <div
       ref={composerRef}
@@ -188,23 +237,29 @@ export function ChatComposer({
           selected={model}
           hovered={modelHovered}
           modelBox={modelBox}
+          rowRefs={modelRowRefs}
           onHover={setModelHovered}
           onSelect={handleModelSelect}
           onMouseLeave={() => setModelHovered(null)}
         />
 
         <div
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           className={cn(
             "relative isolate flex flex-col gap-1.5 overflow-hidden",
             "border border-border bg-card",
             "p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.18)]",
             "transition-[border-color,border-radius] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
             "focus-within:border-ring",
+            isDragging && "border-primary/60 ring-2 ring-primary/30",
             pill
               ? attachments.length > 0 || expanded
                 ? "rounded-3xl"
                 : "rounded-full"
-              : "rounded-[22px]"
+              : "rounded-[24px]"
           )}
         >
           <ComposerAttachments
@@ -212,6 +267,15 @@ export function ChatComposer({
             variant={variant}
             onRemove={removeAttachment}
           />
+
+          {isDragging && (
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 rounded-[inherit] bg-background/80 backdrop-blur-[1px]">
+              <Upload className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">
+                Drop files here
+              </span>
+            </div>
+          )}
 
           <input
             ref={fileInputRef}
@@ -231,7 +295,7 @@ export function ChatComposer({
           <span
             ref={measureRef}
             aria-hidden
-            className="pointer-events-none absolute invisible whitespace-pre text-[13px] leading-4.5"
+            className="pointer-events-none absolute invisible whitespace-pre text-[15px] leading-[20px]"
           >
             {value}
           </span>
@@ -239,10 +303,10 @@ export function ChatComposer({
           <div
             ref={controlsRef}
             className={cn(
-              "grid items-end gap-x-1 gap-y-1.5 p-2",
+              "grid items-end gap-x-1.5 gap-y-1.5 p-2",
               expanded
-                ? "grid-cols-[minmax(0,1fr)_auto_28px_28px]"
-                : "grid-cols-[28px_minmax(0,1fr)_auto_28px_28px]"
+                ? "grid-cols-[minmax(0,1fr)_auto_32px_32px]"
+                : "grid-cols-[32px_minmax(0,1fr)_auto_32px_32px]"
             )}
           >
 
@@ -262,14 +326,15 @@ export function ChatComposer({
                   : "Write a message…"
               }
               aria-label="Prompt"
-              className={cn(
-                "min-h-20 min-w-0 w-full resize-none",
-                "bg-transparent px-1 py-1.25",
+className={cn(
+                "min-w-0 w-full resize-none",
+                "bg-transparent px-1.5 py-1.5",
                 "text-[15px] leading-[20px] text-foreground",
-                "outline-none [overflow-wrap:anywhere]",
+                "outline-none",
                 "placeholder:text-muted-foreground",
-                  "col-span-full col-start-1 row-start-1  "
-                   
+                expanded
+                  ? "col-span-full col-start-1 row-start-1 whitespace-pre-wrap [overflow-wrap:anywhere]"
+                  : "col-start-2 row-start-1 whitespace-pre overflow-x-hidden"
               )}
             />
 
@@ -280,10 +345,10 @@ export function ChatComposer({
               aria-expanded={plusOpen}
               onClick={openPlusMenu}
               className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center",
+                "flex h-8 w-8 shrink-0 items-center justify-center",
                 "text-muted-foreground transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
                 "hover:bg-foreground/5 hover:text-foreground",
-                "active:scale-[0.94]",
+                "active:scale-[0.96]",
                 pill ? "rounded-full" : "rounded-lg",
                 plusOpen &&
                   "bg-foreground/5 text-foreground",
@@ -308,10 +373,11 @@ export function ChatComposer({
                 );
               }}
               className={cn(
-                "flex h-7 shrink-0 items-center gap-1",
+                "flex h-8 shrink-0 items-center gap-1",
                 "px-1.5 text-xs font-medium",
-                "text-muted-foreground transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
+                "text-muted-foreground transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
                 "hover:bg-foreground/5 hover:text-foreground",
+                "active:scale-[0.96]",
                 pill ? "rounded-full" : "rounded-lg",
                 expanded
                   ? "col-start-2 row-start-2"
@@ -339,9 +405,9 @@ export function ChatComposer({
               aria-pressed={listening}
               onClick={startDictation}
               className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center",
+                "flex h-8 w-8 shrink-0 items-center justify-center",
                 "transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-                "active:scale-[0.94]",
+                "active:scale-[0.96]",
                 pill ? "rounded-full" : "rounded-lg",
                 listening
                   ? "bg-foreground/[0.08] text-foreground"
@@ -378,9 +444,9 @@ export function ChatComposer({
               disabled={!canSend}
               onClick={send}
               className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center",
+                "flex h-8 w-8 shrink-0 items-center justify-center",
                 "transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-                "enabled:active:scale-[0.94]",
+                "enabled:active:scale-[0.96]",
                 pill ? "rounded-full" : "rounded-lg",
                 expanded
                   ? "col-start-4 row-start-2"

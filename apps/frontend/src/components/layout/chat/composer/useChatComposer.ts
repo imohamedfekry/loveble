@@ -378,24 +378,27 @@ export function useChatComposer({
     }
 
     const fixedControlsWidth =
-      28 * 3 + modelButton.offsetWidth;
+      32 * 3 + modelButton.offsetWidth;
 
-    const inlineGaps = 4 * 4;
+    const inlineGaps = 6 * 4;
+
+    const controlsPaddingWidth = 16;
 
     const inlineInputWidth =
       controls.clientWidth -
+      controlsPaddingWidth -
       fixedControlsWidth -
       inlineGaps;
 
     const needsFullWidth =
       value.includes("\n") ||
-      measure.offsetWidth + 8 > inlineInputWidth;
+      measure.offsetWidth + 16 > inlineInputWidth;
 
     if (needsFullWidth !== expanded) {
       setExpanded(needsFullWidth);
     }
 
-    const minHeight = 28;
+    const minHeight = 32;
     const maxHeight = 100;
 
     input.style.height = "0px";

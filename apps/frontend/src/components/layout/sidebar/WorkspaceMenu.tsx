@@ -44,12 +44,12 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
             className={`group flex h-8 w-full items-center gap-2 rounded-lg px-1 text-left
   border border-border
   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60
-  ${menuOpen ? "bg-accent" : "hover:bg-accent"}
+  ${menuOpen ? "bg-foreground/10 dark:bg-foreground/15" : "hover:bg-foreground/10 dark:hover:bg-foreground/15"}
 `}          >
             <AvatarImage
               src={null}
               alt={displayName}
-              className="h-6 w-6 shrink-0 rounded-sm object-cover text-[10px] "
+              className="h-5.5 w-5.5 shrink-0 rounded-sm object-cover text-[10px] "
             />
             <CollapseLabel
               open={open}
@@ -75,7 +75,7 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
       <DropdownMenuContent
         align="start"
         sideOffset={8}
-        className="w-64 rounded-lg border border-border bg-popover p-1.5 shadow-2xl shadow-black/50"
+        className="w-64 rounded-lg border border-border bg-popover p-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_-8px_rgba(0,0,0,0.24)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_8px_24px_-8px_rgba(0,0,0,0.7)]"
       >
         <DropdownMenuGroup>
           <DropdownMenuLabel className="flex items-center gap-3 px-2 py-2 font-normal">
@@ -100,7 +100,7 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
         <DropdownMenuGroup>
           {github ? (
             <DropdownMenuItem
-              className="gap-2.5 px-2 py-1.5 focus:bg-accent focus:text-accent-foreground"
+              className="gap-2.5 px-2 py-1.5 focus:text-foreground"
               onClick={() => openSettings("integrations", "github")}
             >
               <FaGithub className="size-4 text-muted-foreground" />
@@ -114,7 +114,7 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem
-              className="gap-2.5 px-2 py-1.5 focus:bg-accent focus:text-accent-foreground"
+              className="gap-2.5 px-2 py-1.5 focus:text-foreground"
               onClick={connectGithub}
             >
               <FaGithub className="size-4 text-muted-foreground" />
@@ -127,7 +127,7 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
 
         <DropdownMenuGroup>
           <DropdownMenuItem
-            className="gap-2.5 px-2 py-1.5 focus:bg-accent focus:text-accent-foreground"
+            className="gap-2.5 px-2 py-1.5 focus:text-foreground"
             onClick={() => openSettings("account", "profile")}
           >
             <SettingsIcon className="size-4 text-muted-foreground" />

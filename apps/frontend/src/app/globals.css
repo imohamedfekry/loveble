@@ -175,9 +175,9 @@
   --sidebar-accent-foreground: #f4f4f5;
   --sidebar-border: #27272a;
   --sidebar-ring: #4b73ff;
-  --sidebar-nav-hover: oklch(1 0 0 / 5%);
-  --sidebar-nav-active: oklch(1 0 0 / 9%);
-  --sidebar-nav-active-hover: oklch(1 0 0 / 13%);
+  --sidebar-nav-hover: oklch(1 0 0 / 10%);
+  --sidebar-nav-active: oklch(1 0 0 / 15%);
+  --sidebar-nav-active-hover: oklch(1 0 0 / 20%);
 }
 @layer base {
   * {

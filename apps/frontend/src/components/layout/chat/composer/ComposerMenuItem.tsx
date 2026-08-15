@@ -41,8 +41,8 @@ export function ComposerMenuItem({
       className={cn(
         "relative z-10 flex h-9 w-full items-center gap-2.5 rounded-lg px-2 text-left",
         "transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-        "focus-visible:outline-none focus-visible:bg-foreground/10",
-        active && "bg-foreground/10"
+        "focus-visible:outline-none focus-visible:bg-foreground/10 dark:focus-visible:bg-foreground/15",
+        active && "bg-foreground/10 dark:bg-foreground/15"
       )}
     >
       {source && (

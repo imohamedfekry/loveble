@@ -24,9 +24,9 @@ export const FileBreadcrumbs = ({
 
   if (!activeTabId) {
     return (
-      <div className="p-2 bg-background pl-4 border-b">
+      <div className="flex h-8.75 items-center border-b bg-sidebar pl-4">
         <Breadcrumb>
-          <BreadcrumbList className="sm:gap-0.5 gap-0.5">
+          <BreadcrumbList className="gap-0.5">
             <BreadcrumbItem className="text-sm">
               <BreadcrumbPage>&nbsp;</BreadcrumbPage>
             </BreadcrumbItem>
@@ -39,9 +39,9 @@ export const FileBreadcrumbs = ({
   const filePath = getFilePath(files, activeTabId);
 
   return (
-    <div className="p-2 bg-background pl-4 border-b">
+    <div className="flex h-8.75 items-center border-b bg-sidebar pl-4">
       <Breadcrumb>
-        <BreadcrumbList className="sm:gap-0.5 gap-0.5">
+        <BreadcrumbList className="gap-0.5">
           {filePath.map((item, index) => {
             const isLast = index === filePath.length - 1;
 

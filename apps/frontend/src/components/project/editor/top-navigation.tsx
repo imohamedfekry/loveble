@@ -33,9 +33,10 @@ const Tab = ({
             onClick={() => setActiveTab(fileId)}
             onDoubleClick={() => openFile(fileId, { pinned: true })}
             className={cn(
-                "flex items-center gap-2 h-8.75 pl-2 pr-1.5 cursor-pointer text-muted-foreground group border-y border-x border-transparent hover:bg-foreground/5 hover:text-foreground",
+                "flex items-center gap-2 h-8.75 pl-2 pr-1.5 cursor-pointer text-muted-foreground group border-y border-x border-transparent hover:text-foreground",
+                !isActive && "hover:bg-foreground/5",
                 isActive &&
-                "bg-background text-foreground border-x-border border-b-background -mb-px drop-shadow",
+                "bg-accent text-foreground border-x-border border-b-background -mb-px",
                 isFirst && "border-l-transparent!"
             )}
         >

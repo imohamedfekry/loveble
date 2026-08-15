@@ -37,13 +37,14 @@ export function ComposerMenu({
       className={cn(
         "absolute inset-x-0 bottom-full z-30 mb-2",
         "rounded-xl border border-border bg-popover p-1",
-        "shadow-2xl shadow-black/40",
+        "shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_-8px_rgba(0,0,0,0.24)]",
+        "dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_8px_24px_-8px_rgba(0,0,0,0.7)]",
         "animate-in fade-in-0 slide-in-from-bottom-1 duration-(--duration-quick) motion-reduce:animate-none"
       )}
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-1 rounded-lg bg-foreground/10"
+        className="pointer-events-none absolute inset-x-1 rounded-lg bg-foreground/10 dark:bg-foreground/15"
         style={{
           top: rowBox?.top ?? 0,
           height: rowBox?.height ?? 0,

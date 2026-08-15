@@ -141,7 +141,7 @@ export function AppSidebar({
                 aria-label={open ? "Loveble" : "Open sidebar"}
                 className={cn(
                   "group/logo grid h-8 w-8 shrink-0 place-items-center rounded-md",
-                  "hover:bg-sidebar-accent",
+                  "hover:bg-sidebar-nav-hover",
                   open ? "cursor-default" : "cursor-e-resize"
                 )}
               >
@@ -206,7 +206,7 @@ export function AppSidebar({
                   className={cn(
                     "ml-auto flex h-8 w-8 shrink-0 cursor-e-resize items-center justify-center rounded-md text-muted-foreground",
                     "transition-[opacity,background-color,color] duration-200 ease-out",
-                    "hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                    "hover:bg-sidebar-nav-hover hover:text-sidebar-foreground",
                     open ? "opacity-100" : "pointer-events-none opacity-0"
                   )}
                 >
@@ -329,40 +329,31 @@ export function AppSidebar({
       {/* ================================================== */}
 
       <div className="mt-auto shrink-0 px-2 pt-6">
-        <div className="relative h-8">
+        <div
+          className={cn(
+            "relative transition-[height] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
+            open ? "h-8" : "h-28"
+          )}
+        >
           {/* Avatar */}
 
           <AvatarImage
             src={avatarUrl}
             alt={displayName}
-            className={`
-              absolute
-              bottom-1
-              left-1
-              h-6
-              w-6
-              shrink-0
-              rounded-full
-              object-cover
-              text-xs
-              ring-1
-              ring-border
-              transition-transform
-              duration-200
-              ease-out
-
-              ${
-                open
-                  ? "translate-y-0"
-                  : "-translate-y-12"
-              }
-            `}
+            className={cn(
+              `absolute h-6 w-6 shrink-0 rounded-full object-cover text-xs ring-1 ring-border transition-[bottom] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none`,
+              open ? "bottom-1 left-1" : "bottom-20 left-1"
+            )}
           />
 
           {/* Theme toggle */}
 
           <div
-            className="absolute bottom-0 right-8 [&>button]:size-8 [&>button]:rounded-md [&>button]:text-muted-foreground"
+            className={cn(
+              "absolute [&>button]:size-8 [&>button]:rounded-md [&>button]:text-muted-foreground",
+              "transition-[bottom,right] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
+              open ? "bottom-0 right-8" : "bottom-10 right-0"
+            )}
             onClick={(e) => {
               if (!open) e.stopPropagation();
             }}
@@ -389,7 +380,7 @@ export function AppSidebar({
                 rounded-md
                 text-muted-foreground
                 transition-colors
-                hover:bg-sidebar-accent
+                hover:bg-sidebar-nav-hover
                 hover:text-sidebar-foreground
               "
             >

@@ -33,7 +33,7 @@ export function NavItem({
 
         // Indicator — fixed geometry (2px × 55%), animated via scale + opacity only (no layout)
         "after:pointer-events-none after:absolute after:left-0 after:top-1/2",
-        "after:h-[55%] after:w-[2px] after:-translate-y-1/2",
+        "after:h-[55%] after:w-0.5 after:-translate-y-1/2",
         "after:origin-center after:rounded-full after:bg-muted-foreground after:content-['']",
         "after:scale-y-40 after:opacity-0",
         "after:transition-[opacity,scale,background-color] after:duration-(--duration-quick) after:ease-(--ease-smooth-out) motion-reduce:after:transition-none",

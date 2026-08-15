@@ -1,5 +1,7 @@
 "use client";
 
+import type { MutableRefObject } from "react";
+
 import { Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -12,6 +14,7 @@ export function ComposerModelMenu({
   selected,
   hovered,
   modelBox,
+  rowRefs,
   onHover,
   onSelect,
   onMouseLeave,
@@ -20,6 +23,7 @@ export function ComposerModelMenu({
   selected: ComposerModel;
   hovered: number | null;
   modelBox: { top: number; height: number } | null;
+  rowRefs: MutableRefObject<(HTMLButtonElement | null)[]>;
   onHover: (index: number) => void;
   onSelect: (model: ComposerModel) => void;
   onMouseLeave: () => void;
@@ -32,13 +36,14 @@ export function ComposerModelMenu({
       className={cn(
         "absolute right-0 bottom-full z-30 mb-2 w-48",
         "rounded-xl border border-border bg-popover p-1",
-        "shadow-2xl shadow-black/40",
+        "shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_-8px_rgba(0,0,0,0.24)]",
+        "dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_8px_24px_-8px_rgba(0,0,0,0.7)]",
         "animate-in fade-in-0 slide-in-from-bottom-1 duration-(--duration-quick) motion-reduce:animate-none"
       )}
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-1 rounded-lg bg-foreground/10"
+        className="pointer-events-none absolute inset-x-1 rounded-lg bg-foreground/10 dark:bg-foreground/15"
         style={{
           top: modelBox?.top ?? 0,
           height: modelBox?.height ?? 0,
@@ -51,11 +56,14 @@ export function ComposerModelMenu({
       {MODELS.map((model, index) => (
         <button
           key={model.key}
+          ref={(node) => {
+            rowRefs.current[index] = node;
+          }}
           type="button"
           onMouseDown={(event) => event.preventDefault()}
           onMouseEnter={() => onHover(index)}
           onClick={() => onSelect(model)}
-          className="relative z-10 flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none focus-visible:outline-none focus-visible:bg-accent"
+          className="relative z-10 flex h-9 w-full items-center gap-2 rounded-lg px-2 text-left transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none hover:bg-foreground/10 dark:hover:bg-foreground/15 focus-visible:outline-none focus-visible:bg-foreground/10 dark:focus-visible:bg-foreground/15"
         >
           <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
             {model.name}
