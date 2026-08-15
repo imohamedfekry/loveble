@@ -37,24 +37,34 @@ export default function CallbackPage() {
   const params = useSearchParams();
   const called = useRef(false);
 
-  const [status, setStatus] = useState<Status>("loading");
-  const [message, setMessage] = useState("Connecting your GitHub account…");
+  const code = params.get("code");
+  const state = params.get("state");
+  const hasValidParams = Boolean(code && state);
+
+  const [status, setStatus] = useState<Status>(
+    hasValidParams ? "loading" : "error",
+  );
+  const [message, setMessage] = useState(
+    hasValidParams
+      ? "Connecting your GitHub account…"
+      : "Missing OAuth parameters. Please try again.",
+  );
 
   useEffect(() => {
+    if (status !== "error") return;
+    const timeout = setTimeout(
+      () => router.replace("/dashboard?error=github_failed"),
+      2500,
+    );
+    return () => clearTimeout(timeout);
+  }, [status, router]);
+
+  useEffect(() => {
+    if (!hasValidParams) return;
     if (called.current) return;
     called.current = true;
 
-    const code = params.get("code");
-    const state = params.get("state");
-
-    if (!code || !state) {
-      setStatus("error");
-      setMessage("Missing OAuth parameters. Please try again.");
-      setTimeout(() => router.replace("/dashboard?error=github_failed"), 2500);
-      return;
-    }
-
-    githubCallback(code, state)
+    githubCallback(code!, state!)
       .then(() => {
         setStatus("success");
         setMessage("GitHub connected! Redirecting…");
@@ -65,12 +75,8 @@ export default function CallbackPage() {
         setMessage(
           err.message || "GitHub connection failed. Please try again.",
         );
-        setTimeout(
-          () => router.replace("/dashboard?error=github_failed"),
-          2500,
-        );
       });
-  }, [params, router]);
+  }, [hasValidParams, code, state, router]);
 
   const config = statusConfig[status];
   const Icon = config.icon;

@@ -26,9 +26,12 @@ const OPTIONS: { value: Theme; label: string; icon: React.ElementType }[] = [
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
 
-  React.useEffect(() => setMounted(true), []);
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const current = (theme ?? "system") as Theme;
 

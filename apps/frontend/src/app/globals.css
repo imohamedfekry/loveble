@@ -20,6 +20,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-nav-hover: var(--sidebar-nav-hover);
+  --color-sidebar-nav-active: var(--sidebar-nav-active);
+  --color-sidebar-nav-active-hover: var(--sidebar-nav-active-hover);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -98,6 +101,9 @@
   --sidebar-accent-foreground: #1c1c1c;
   --sidebar-border: #e7e3da;
   --sidebar-ring: #4b73ff;
+  --sidebar-nav-hover: oklch(0 0 0 / 6%);
+  --sidebar-nav-active: oklch(0 0 0 / 10%);
+  --sidebar-nav-active-hover: oklch(0 0 0 / 14%);
 
   /* Motion tokens — transitions.dev scale */
   --duration-stagger: 40ms;
@@ -169,6 +175,9 @@
   --sidebar-accent-foreground: #f4f4f5;
   --sidebar-border: #27272a;
   --sidebar-ring: #4b73ff;
+  --sidebar-nav-hover: oklch(1 0 0 / 5%);
+  --sidebar-nav-active: oklch(1 0 0 / 9%);
+  --sidebar-nav-active-hover: oklch(1 0 0 / 13%);
 }
 @layer base {
   * {
@@ -270,6 +279,16 @@
 
   50% {
     transform: scale(1.04);
+  }
+}
+
+@keyframes eq-bounce {
+  0%,100% {
+    transform: scaleY(0.3);
+  }
+
+  50% {
+    transform: scaleY(1);
   }
 }
 

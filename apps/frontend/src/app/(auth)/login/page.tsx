@@ -31,8 +31,10 @@ export default function LoginPage() {
       } else {
         throw new Error(res?.message || 'Login failed')
       }
-    } catch (err: any) {
-      alert(err?.message || 'حدث خطأ أثناء تسجيل الدخول. تأكد من الاتصال بالخادم.')
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : (err as { message?: string } | null)?.message;
+      alert(message || 'حدث خطأ أثناء تسجيل الدخول. تأكد من الاتصال بالخادم.')
     }
   }
 

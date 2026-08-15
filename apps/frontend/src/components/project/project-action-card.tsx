@@ -15,11 +15,9 @@ type ProjectActionCardProps = {
 
 export function ActionIconBadge({
   icon: Icon,
-  className,
   title,
 }: {
   icon: LucideIcon | React.ComponentType<{ className?: string }>;
-  className?: string;
   title: string;
 }) {
   return (

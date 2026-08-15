@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { CollapseLabel } from "./CollapseLabel";
 import { HugeiconsIcon } from "@hugeicons/react";
+import type { IconSvgElement } from "@hugeicons/react";
+import type { LucideIcon } from "lucide-react";
 
 export function NavItem({
   icon,
@@ -9,14 +11,13 @@ export function NavItem({
   active,
   open,
 }: {
-  icon: any;
+  icon: LucideIcon | IconSvgElement;
   label: string;
   shortcut?: string;
   active?: boolean;
   open: boolean;
 }) {
-  const Icon = icon;
-  const isHugeIcon = Array.isArray(Icon);
+  const Icon = icon as LucideIcon;
 
   return (
     <button
@@ -39,20 +40,20 @@ export function NavItem({
 
         // DEFAULT → quiet. HOVER (non-active) → subtle tint + soft indicator preview
         !active &&
-          "hover:bg-sidebar-accent/70 hover:after:scale-y-60 hover:after:opacity-45",
+          "hover:bg-sidebar-nav-hover hover:after:scale-y-60 hover:after:opacity-45",
 
         // ACTIVE → persistent tint + full indicator (stronger color/size/opacity than hover)
         active &&
-          "bg-sidebar-accent after:bg-sidebar-foreground after:scale-y-100 after:opacity-100",
+          "bg-sidebar-nav-active after:bg-sidebar-foreground after:scale-y-100 after:opacity-100",
 
         // ACTIVE + HOVER → keep active base, never weaken it
         active &&
-          "hover:bg-sidebar-accent hover:after:bg-sidebar-foreground hover:after:scale-y-100 hover:after:opacity-100",
+          "hover:bg-sidebar-nav-active-hover hover:after:bg-sidebar-foreground hover:after:scale-y-100 hover:after:opacity-100",
 
         !open && "cursor-pointer"
       )}
     >
-      {isHugeIcon ? (
+      {Array.isArray(Icon) ? (
         <HugeiconsIcon
           icon={Icon}
           className="h-4.5 w-4.5 shrink-0"

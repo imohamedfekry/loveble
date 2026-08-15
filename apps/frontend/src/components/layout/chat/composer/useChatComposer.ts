@@ -9,7 +9,7 @@ import {
   type KeyboardEvent,
 } from "react";
 
-import { COMMANDS, FILES, MODELS, SOURCES } from "./composer-data";
+import { COMMANDS, MODELS, SOURCES } from "./composer-data";
 import type {
   ComposerAttachment,
   ComposerMenuType,
@@ -129,10 +129,14 @@ export function useChatComposer({
   const canSend =
     value.trim().length > 0 || attachments.length > 0;
 
-  useLayoutEffect(() => {
+  const menuQueryKey = `${menu ?? ""}|${query ?? ""}|${rows.length}`;
+  const [prevMenuQueryKey, setPrevMenuQueryKey] = useState(menuQueryKey);
+
+  if (prevMenuQueryKey !== menuQueryKey) {
+    setPrevMenuQueryKey(menuQueryKey);
     setActive(0);
     setEngaged(false);
-  }, [menu, query]);
+  }
 
   useLayoutEffect(() => {
     const target = rowRefs.current[active];
@@ -241,8 +245,6 @@ export function useChatComposer({
       );
 
       if (source?.attach) {
-        const fakeFileName =
-          FILES[attachments.length % FILES.length];
 
         onChange(
           value.slice(0, token?.start ?? value.length)
@@ -269,7 +271,6 @@ export function useChatComposer({
       requestAnimationFrame(focusInput);
     },
     [
-      attachments.length,
       focusInput,
       menu,
       onChange,

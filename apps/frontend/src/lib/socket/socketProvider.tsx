@@ -48,7 +48,7 @@ export function SocketProvider({
       setStatus("disconnected");
     };
 
-    const onConnectError = (err: any) => {
+    const onConnectError = (err: unknown) => {
       console.error("[socket] CONNECT ERROR", err);
       setStatus("disconnected");
     };

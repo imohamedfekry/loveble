@@ -38,9 +38,11 @@ export default function RegisterPage() {
       } else {
         alert(res?.message || 'حدث خطأ أثناء إرسال OTP')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('requestOtp error', error)
-      alert(error?.message || 'حدث خطأ أثناء إرسال OTP. تأكد من اتصال الإنترنت.')
+      const message =
+        error instanceof Error ? error.message : (error as { message?: string } | null)?.message;
+      alert(message || 'حدث خطأ أثناء إرسال OTP. تأكد من اتصال الإنترنت.')
     }
   }
 

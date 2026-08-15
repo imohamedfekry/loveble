@@ -6,7 +6,6 @@ export default function proxy(req: NextRequest) {
 
   // cookies
   const accessToken = req.cookies.get("Authorization")?.value;
-  const refreshToken = req.cookies.get("refreshToken")?.value;
   const tempToken = req.cookies.get("temptoken")?.value;
   // console.log(req.cookies);
   

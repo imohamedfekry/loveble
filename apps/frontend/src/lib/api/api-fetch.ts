@@ -27,11 +27,11 @@ export async function apiFetch<T>(
 
         if (!res.ok) {
             const contentType = res.headers.get('content-type');
-            let body: any = { message: `HTTP ${res.status}: ${res.statusText}` };
+            let body: { message?: string } = { message: `HTTP ${res.status}: ${res.statusText}` };
             
             if (contentType?.includes('application/json')) {
                 try {
-                    body = await res.json();
+                    body = await res.json() as { message?: string };
                 } catch {
                     // ignore json parse error
                 }
@@ -53,8 +53,8 @@ export async function apiFetch<T>(
         }
 
         return body;
-    } catch (error: any) {
-        if (error.name === 'AbortError') {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') {
             console.error(`[apiFetch] Request timeout (${DEFAULT_TIMEOUT}ms) for: ${input}`);
             throw new Error(`Request timeout`);
         }

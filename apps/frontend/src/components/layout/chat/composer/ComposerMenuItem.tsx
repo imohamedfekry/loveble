@@ -40,8 +40,9 @@ export function ComposerMenuItem({
       onClick={onClick}
       className={cn(
         "relative z-10 flex h-9 w-full items-center gap-2.5 rounded-lg px-2 text-left",
-        "transition-colors duration-150",
-        active && "bg-accent"
+        "transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
+        "focus-visible:outline-none focus-visible:bg-foreground/10",
+        active && "bg-foreground/10"
       )}
     >
       {source && (
@@ -73,7 +74,7 @@ export function ComposerMenuItem({
             onConnect?.();
           }}
           className={cn(
-            "shrink-0 text-xs font-medium transition-colors",
+            "shrink-0 text-xs font-medium transition-colors duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
             connected
               ? "text-emerald-400"
               : "text-blue-400 hover:underline"

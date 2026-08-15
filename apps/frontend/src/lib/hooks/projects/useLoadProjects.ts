@@ -53,12 +53,14 @@ export const useLoadProjects = (params?: GetProjectsParams) => {
         } finally {
           clearTimeout(timeoutId);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (!cancelled && requestId === requestIdRef.current) {
-          const message = error?.name === 'AbortError'
-            ? 'Projects load timed out'
-            : error?.message || 'Failed to load projects';
-          console.error(`[useLoadProjects] ${message}:`, error);
+          const name = error instanceof Error ? error.name : undefined;
+          const message =
+            error instanceof Error ? error.message : "Failed to load projects";
+          const resolved =
+            name === "AbortError" ? "Projects load timed out" : message;
+          console.error(`[useLoadProjects] ${resolved}:`, error);
         }
       } finally {
         if (!cancelled && requestId === requestIdRef.current) {

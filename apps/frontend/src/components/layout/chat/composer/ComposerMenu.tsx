@@ -38,18 +38,18 @@ export function ComposerMenu({
         "absolute inset-x-0 bottom-full z-30 mb-2",
         "rounded-xl border border-border bg-popover p-1",
         "shadow-2xl shadow-black/40",
-        "animate-in fade-in-0 slide-in-from-bottom-1 duration-150"
+        "animate-in fade-in-0 slide-in-from-bottom-1 duration-(--duration-quick) motion-reduce:animate-none"
       )}
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-1 rounded-lg bg-foreground/5"
+        className="pointer-events-none absolute inset-x-1 rounded-lg bg-foreground/10"
         style={{
           top: rowBox?.top ?? 0,
           height: rowBox?.height ?? 0,
           opacity: rowBox && engaged && rows.length > 0 ? 1 : 0,
           transition:
-            "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
+            "top var(--duration-fast) var(--ease-smooth-out), height var(--duration-fast) var(--ease-smooth-out), opacity var(--duration-quick) var(--ease-smooth-out)",
         }}
       />
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthCard } from '@/components/auth/auth-card'
 import { verifyOtp } from '@/lib/api/apis/auth'
@@ -21,14 +21,8 @@ export default function VerifyOtpPage() {
       ? localStorage.getItem('email')
       : null
 
-  useEffect(() => {
-    if (otp.length === 7) {
-      handleVerify()
-    }
-  }, [otp])
-
-  const handleVerify = async () => {
-    const result = v.safeParse(otpSchema, { otp })
+  const handleVerify = useCallback(async (code: string) => {
+    const result = v.safeParse(otpSchema, { otp: code })
 
     if (!result.success) {
       setError(result.issues[0].message)
@@ -45,17 +39,26 @@ export default function VerifyOtpPage() {
       setLoading(true)
       setError(null)
 
-      const res = await verifyOtp(email, otp)
+      const res = await verifyOtp(email, code)
 
       if (res?.code === 'OTP_VERIFIED') {
         router.push('/register/create')
       } else {
         setError(res?.message || 'OTP غير صحيح')
       }
-    } catch (err: any) {
-      setError(err?.message || 'حصل خطأ')
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : (err as { message?: string } | null)?.message;
+      setError(message || 'حصل خطأ')
     } finally {
       setLoading(false)
+    }
+  }, [email, router])
+
+  const handleOtpChange = (next: string) => {
+    setOtp(next)
+    if (next.length === 7) {
+      handleVerify(next)
     }
   }
 
@@ -63,7 +66,7 @@ export default function VerifyOtpPage() {
     <AuthCard title="Verify OTP" description="Enter the code sent to your email">
       <div className="space-y-4">
         
-        <OTPInput value={otp} onChange={setOtp} />
+        <OTPInput value={otp} onChange={handleOtpChange} />
 
         <FormError message={error || undefined} />
 

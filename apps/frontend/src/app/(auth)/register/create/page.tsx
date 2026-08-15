@@ -22,7 +22,7 @@ export default function CreatePage() {
     resolver: valibotResolver(createSchema),
   })
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: { name: string; password: string }) => {
     try {
       const res = await createAccount(data)
       console.log('createAccount response', res)
@@ -32,9 +32,11 @@ export default function CreatePage() {
       } else {
         alert(res?.message || 'فشل إنشاء الحساب. حاول مرة أخرى.')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('createAccount error', error)
-      alert(error?.message || 'حدث خطأ أثناء إنشاء الحساب.')
+      const message =
+        error instanceof Error ? error.message : (error as { message?: string } | null)?.message;
+      alert(message || 'حدث خطأ أثناء إنشاء الحساب.')
     }
   }
 

@@ -15,8 +15,10 @@ export async function githubCallback(code: string, state: string) {
   );
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error((body as any)?.message ?? "GitHub callback failed");
+    const body = (await res.json().catch(() => ({}))) as {
+      message?: string;
+    };
+    throw new Error(body?.message ?? "GitHub callback failed");
   }
 
   return res.json() as Promise<{

@@ -11,10 +11,8 @@ import {
 import { cn } from "@/lib/utils";
 
 import { ComposerAttachments } from "./ComposerAttachments";
-import { ComposerIcon } from "./ComposerIcon";
 import { ComposerMenu } from "./ComposerMenu";
 import { ComposerModelMenu } from "./ComposerModelMenu";
-import { MODELS } from "./composer-data";
 import { useChatComposer } from "./useChatComposer";
 import type {
   ComposerModel,
@@ -42,8 +40,6 @@ export function ChatComposer({
     controlsRef,
     measureRef,
     modelRef,
-    rowRefs,
-    modelRowRefs,
 
     plusOpen,
     setPlusOpen,
@@ -96,6 +92,31 @@ export function ChatComposer({
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!plusOpen && !modelOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        composerRef.current &&
+        !composerRef.current.contains(
+          event.target as Node,
+        )
+      ) {
+        setPlusOpen(false);
+        setModelOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+
+    return () =>
+      document.removeEventListener(
+        "pointerdown",
+        onPointerDown,
+      );
+  }, [plusOpen, modelOpen, setModelOpen, setPlusOpen]);
 
   useEffect(() => {
     if (!listening) return;
@@ -139,7 +160,10 @@ export function ChatComposer({
   };
 
   return (
-    <div className="w-[95%] m-auto">
+    <div
+      ref={composerRef}
+      className="w-[95%] m-auto"
+    >
       <div className="relative">
         <ComposerMenu
           menu={menu}
@@ -174,7 +198,7 @@ export function ChatComposer({
             "relative isolate flex flex-col gap-1.5 overflow-hidden",
             "border border-border bg-card",
             "p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.18)]",
-            "transition-[border-color,border-radius] duration-150",
+            "transition-[border-color,border-radius] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
             "focus-within:border-ring",
             pill
               ? attachments.length > 0 || expanded
@@ -257,7 +281,7 @@ export function ChatComposer({
               onClick={openPlusMenu}
               className={cn(
                 "flex h-7 w-7 shrink-0 items-center justify-center",
-                "text-muted-foreground transition-[background-color,color,transform]",
+                "text-muted-foreground transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
                 "hover:bg-foreground/5 hover:text-foreground",
                 "active:scale-[0.94]",
                 pill ? "rounded-full" : "rounded-lg",
@@ -286,7 +310,7 @@ export function ChatComposer({
               className={cn(
                 "flex h-7 shrink-0 items-center gap-1",
                 "px-1.5 text-xs font-medium",
-                "text-muted-foreground transition-colors",
+                "text-muted-foreground transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
                 "hover:bg-foreground/5 hover:text-foreground",
                 pill ? "rounded-full" : "rounded-lg",
                 expanded
@@ -298,7 +322,7 @@ export function ChatComposer({
 
               <ChevronDown
                 className={cn(
-                  "h-3 w-3 text-muted-foreground transition-transform",
+                  "h-3 w-3 text-muted-foreground transition-[rotate] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
                   modelOpen && "rotate-180"
                 )}
               />
@@ -316,7 +340,7 @@ export function ChatComposer({
               onClick={startDictation}
               className={cn(
                 "flex h-7 w-7 shrink-0 items-center justify-center",
-                "transition-[background-color,color,transform]",
+                "transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
                 "active:scale-[0.94]",
                 pill ? "rounded-full" : "rounded-lg",
                 listening
@@ -355,7 +379,7 @@ export function ChatComposer({
               onClick={send}
               className={cn(
                 "flex h-7 w-7 shrink-0 items-center justify-center",
-                "transition-[background-color,color,transform] duration-200",
+                "transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
                 "enabled:active:scale-[0.94]",
                 pill ? "rounded-full" : "rounded-lg",
                 expanded

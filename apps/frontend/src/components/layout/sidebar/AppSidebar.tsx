@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
+import Image from "next/image";
 
 import {
   Inbox,
@@ -48,6 +50,15 @@ export function AppSidebar({
 }) {
   const [isClosing, setIsClosing] = useState(false);
 
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    if (open) {
+      setIsClosing(false);
+    }
+  }
+
   const { github } = useGithubAccount();
   const user = useUserStore((s) => s.user);
 
@@ -58,16 +69,6 @@ export function AppSidebar({
     user?.username ||
     "User"
   ).split(" ")[0];
-
-  /*
-   * If the sidebar gets opened while it was closing,
-   * immediately cancel the closing state.
-   */
-  useEffect(() => {
-    if (open && isClosing) {
-      setIsClosing(false);
-    }
-  }, [open, isClosing]);
 
   const showExpandedChrome = open || isClosing;
 
@@ -144,9 +145,11 @@ export function AppSidebar({
                   open ? "cursor-default" : "cursor-e-resize"
                 )}
               >
-                <img
+                <Image
                   src="/logo.svg"
                   alt="loveble"
+                  width={16}
+                  height={16}
                   className={cn(
                     iconSwapMotion,
                     "col-start-1 row-start-1 h-4 w-4 object-contain",

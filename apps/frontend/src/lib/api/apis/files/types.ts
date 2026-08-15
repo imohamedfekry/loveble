@@ -1,5 +1,3 @@
-import { Project } from "@/lib/types/types";
-
 export type FileType = "file" | "folder";
 
 export interface ProjectFileType {

@@ -4,7 +4,7 @@ import { useFile } from "@/lib/hooks/file/useFiles";
 import { useEditor } from "@/lib/hooks/use-editor";
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
-import { FileIcon, FolderIcon } from "@react-symbols/icons/utils";
+import { FileIcon } from "@react-symbols/icons/utils";
 
 const Tab = ({
     fileId,

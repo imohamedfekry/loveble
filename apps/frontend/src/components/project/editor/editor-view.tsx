@@ -7,8 +7,6 @@ import { TopNavigation } from "./top-navigation";
 import { useEditor } from "@/lib/hooks/use-editor";
 import { useFile } from "@/lib/hooks/file/useFiles";
 
-const DEBOUNCE_MS = 1500;
-
 export const EditorView = ({ projectId }: { projectId: string }) => {
   const { activeTabId } = useEditor(projectId);
   const activeFile = useFile(projectId, activeTabId);
@@ -19,9 +17,11 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
   // const isActiveFileText = activeFile && !activeFile.storageId;
 
   useEffect(() => {
+    const timeout = timeoutRef.current;
+
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (timeout) {
+        clearTimeout(timeout);
       }
     };
   }, [activeTabId]);

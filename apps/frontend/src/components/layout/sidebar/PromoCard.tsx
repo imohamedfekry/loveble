@@ -1,3 +1,5 @@
+import type { LucideIcon } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 export function PromoCard({
@@ -8,7 +10,7 @@ export function PromoCard({
   className
 }: {
   open: boolean;
-  icon: any;
+  icon: LucideIcon | React.ComponentType<{ className?: string }>;
   title: string;
   subtitle: string;
   className?: string;

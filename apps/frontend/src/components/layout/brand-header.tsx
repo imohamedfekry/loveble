@@ -1,4 +1,5 @@
 import { Poppins } from "next/font/google";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export const brandFont = Poppins({
@@ -19,9 +20,11 @@ export function BrandHeader({ className }: BrandHeaderProps) {
         className,
       )}
     >
-      <img
+      <Image
         src="/logo.svg"
         alt="loveble"
+        width={40}
+        height={40}
         className="size-9 rounded-xl outline outline-1 -outline-offset-1 outline-black/10 opacity-90 transition-transform duration-(--duration-fast) ease-(--ease-smooth-out) motion-reduce:transition-none group-hover/logo:scale-105 group-hover/logo:opacity-100 md:size-11"
       />
       <h1

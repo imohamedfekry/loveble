@@ -47,6 +47,18 @@ export const ProjectsCommandDialog = ({
   const [hasMore, setHasMore] = useState(true);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    if (open) {
+      // reset when opening
+      setProjects([]);
+      setPage(1);
+      setHasMore(true);
+    }
+  }
+
   const handleSelect = (projectId: string) => {
     router.push(`/project/${projectId}`);
     onOpenChange(false);
@@ -54,11 +66,6 @@ export const ProjectsCommandDialog = ({
 
   useEffect(() => {
     if (!open) return;
-
-    // reset when opening
-    setProjects([]);
-    setPage(1);
-    setHasMore(true);
 
     const loadFirst = async () => {
       setIsFetching(true);

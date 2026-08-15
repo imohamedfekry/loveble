@@ -16,22 +16,33 @@ export const useLoadProject = (projectId?: string | null) => {
   const [project, setProject] = useState<Project | null | undefined>(
     cached ?? null,
   );
-  const [loading, setLoading] = useState<boolean>(!cached && !!projectId);
+  const [loadedId, setLoadedId] = useState<string | null>(cached?.id ?? null);
   const [error, setError] = useState<string | null>(null);
+
+  const cacheKey = cached?.id ?? projectId ?? null;
+  const [prevCacheKey, setPrevCacheKey] = useState(cacheKey);
+
+  if (prevCacheKey !== cacheKey) {
+    setPrevCacheKey(cacheKey);
+    if (cached) {
+      setProject(cached);
+      setLoadedId(cached.id);
+      setError(null);
+    } else if (projectId) {
+      setProject(undefined);
+      setLoadedId(null);
+      setError(null);
+    }
+  }
+
+  const loading = !!projectId && loadedId !== projectId && !error;
 
   useEffect(() => {
     if (!projectId) return;
 
-    if (cached) {
-      setProject(cached);
-      setLoading(false);
-      setError(null);
-      return;
-    }
+    if (cached) return;
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     const load = async () => {
       try {
@@ -58,6 +69,7 @@ export const useLoadProject = (projectId?: string | null) => {
 
           if (!cancelled && p && p.id) {
             setProject(p as Project);
+            setLoadedId(projectId);
             setError(null);
             try {
               addProject?.(p as Project);
@@ -70,17 +82,14 @@ export const useLoadProject = (projectId?: string | null) => {
         } finally {
           clearTimeout(timeoutId);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          const message = err?.name === 'AbortError' 
-            ? 'Load timed out' 
-            : err?.message || 'Failed to load project';
-          console.error(`[useLoadProject] ${message}:`, err);
-          setError(message);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
+          const name = err instanceof Error ? err.name : undefined;
+          const message =
+            err instanceof Error ? err.message : "Failed to load project";
+          const resolved = name === "AbortError" ? "Load timed out" : message;
+          console.error(`[useLoadProject] ${resolved}:`, err);
+          setError(resolved);
         }
       }
     };

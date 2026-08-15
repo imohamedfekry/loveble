@@ -48,8 +48,9 @@ export function ComposerAttachments({
             onClick={() => onRemove(attachment.id)}
             className={cn(
               "flex h-4 w-4 items-center justify-center",
-              "text-muted-foreground transition-colors",
+              "text-muted-foreground transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
               "hover:bg-foreground/5 hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/70",
               pill ? "rounded-full" : "rounded"
             )}
           >

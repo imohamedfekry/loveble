@@ -1,4 +1,4 @@
-import { ChevronRightIcon, CopyMinusIcon, FileIcon, FilePlusCornerIcon, FolderPlusIcon, RotateCw } from "lucide-react"
+import { ChevronRightIcon, CopyMinusIcon, FilePlusCornerIcon, FolderPlusIcon, RotateCw } from "lucide-react"
 import React, { useState } from "react";
 import { cn } from "@/lib/utils"
 import { CreateFileRequest } from "@/lib/api/apis/files/types";

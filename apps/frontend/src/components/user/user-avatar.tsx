@@ -11,7 +11,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { SettingsIcon, LogOutIcon } from "lucide-react";
-import { FaGithub } from "react-icons/fa";
 import { useUserStore } from "@/store/user.store";
 import { useSettings } from "@/components/settings/use-settings";
 import { useGithubAccount } from "./hooks/useGithubAccount";
@@ -21,7 +20,7 @@ const triggerClassName =
 
 export function UserAvatarButton() {
   const user = useUserStore((s) => s.user);
-  const { github, connectGithub } = useGithubAccount();
+  const { github } = useGithubAccount();
   const { openSettings } = useSettings();
 
   const avatarUrl =
