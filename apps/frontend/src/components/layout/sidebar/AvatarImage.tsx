@@ -14,9 +14,9 @@ export function AvatarImage({
   if (!src) {
     return (
       <div
-        className={`flex shrink-0 items-center justify-center bg-primary/20 font-semibold text-brand-accent-2 ${className}`}
+        className={`flex shrink-0 border border-[#a22665] items-center justify-center bg-[#b30d61] font-semibold ${className}`}
       >
-        {alt.slice(0, 2).toUpperCase()}
+        {alt.slice(0, 1).toUpperCase()}
       </div>
     );
   }

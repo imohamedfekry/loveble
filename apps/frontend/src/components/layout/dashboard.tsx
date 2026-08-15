@@ -1,20 +1,11 @@
 "use client";
 import { useState } from "react";
 import { ChatBox } from "./chat/ChatBox";
-import { ImportDialog } from "./chat/ImportDialog";
 import NoiseBackground from "./NoiseBackground";
 import { PulseBackground } from "./PulseBackground";
 
 export const Dashboard = () => {
   const [value, setValue] = useState("");
-  const [importOpen, setImportOpen] = useState(false);
-  const [repo, setRepo] = useState("");
-  const [path, setPath] = useState("/");
-  const startImport = () => {
-    if (!repo) return;
-    setValue(`Import from GitHub: ${repo} (${path})`);
-    setImportOpen(false);
-  };
 
   return (
 <main
@@ -47,19 +38,9 @@ export const Dashboard = () => {
     <ChatBox
       value={value}
       onChange={setValue}
-      onOpenImport={() => setImportOpen(true)}
     />
   </div>
 
-  <ImportDialog
-    open={importOpen}
-    onClose={() => setImportOpen(false)}
-    repo={repo}
-    onRepoChange={setRepo}
-    path={path}
-    onPathChange={setPath}
-    onStart={startImport}
-  />
   <NoiseBackground />
 </main>
 

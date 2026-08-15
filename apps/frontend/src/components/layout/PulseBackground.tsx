@@ -46,12 +46,12 @@ export function PulseBackground() {
         className={`
           absolute
           left-1/2
-          top-[100%]
+          top-full
           h-full
           w-full
           max-w-none
           transition-opacity
-          duration-300
+          duration-[2s]
           ${ready ? "opacity-100" : "opacity-0"}
         `}
         style={{

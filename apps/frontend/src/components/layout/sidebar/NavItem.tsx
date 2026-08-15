@@ -24,12 +24,31 @@ export function NavItem({
       onClick={(e) => {
         if (!open) e.stopPropagation();
       }}
-      className={cn(
-        "flex h-8 w-full items-center rounded-md px-2 text-sm text-white",
-        "transition-colors duration-(--duration-fast) ease-(--ease-smooth-out)",
-        active ? "bg-neutral-800" : "hover:bg-neutral-800/60",
-        !open && "cursor-pointer"
-      )}
+className={cn(
+  "relative flex h-8 w-full items-center rounded-md px-2 text-sm text-white",
+  "transition-colors duration-(--duration-quick) ease-(--ease-smooth-out)",
+
+  // Normal hover
+  "hover:bg-neutral-800/90",
+
+  // Indicator
+  "after:absolute after:left-0 after:top-1/2",
+  "after:h-[55%] after:w-[2px]",
+  "after:-translate-y-1/2",
+  "after:rounded-[10px]",
+  "after:bg-[#a1a1a1]",
+  "after:content-['']",
+  "after:opacity-0",
+  "hover:after:opacity-100",
+
+  // Active
+  active && "bg-neutral-700/90 after:opacity-100",
+
+  // Active + Hover
+  active && "hover:bg-neutral-600/90",
+
+  !open && "cursor-pointer",
+)}
     >
       {isHugeIcon ? (
         <HugeiconsIcon

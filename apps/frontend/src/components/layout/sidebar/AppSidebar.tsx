@@ -36,7 +36,7 @@ import { AvatarImage } from "./AvatarImage";
 import { WorkspaceMenu } from "./WorkspaceMenu";
 
 const iconSwapMotion =
-  "transition-[opacity,transform] duration-(--duration-fast) ease-(--ease-in-out) motion-reduce:transition-none";
+  "transition-[opacity,transform] duration-(--duration-quick) ease-(--ease-in-out) motion-reduce:transition-none";
 
 export function AppSidebar({
   open,
@@ -102,7 +102,7 @@ export function AppSidebar({
       aria-label={open ? undefined : "Open sidebar"}
       className={cn(
         "group/sidebar hidden shrink-0 flex-col overflow-hidden bg-[#171716] py-2",
-        "transition-[width] duration-(--duration-fast) ease-(--ease-smooth-out) md:flex",
+        "transition-[width] duration-(--duration-quick) ease-(--ease-smooth-out) md:flex",
         !open && "cursor-e-resize"
       )}
     >

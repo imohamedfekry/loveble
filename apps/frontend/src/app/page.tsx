@@ -12,6 +12,7 @@ export default function Home() {
             <span className="text-primary-pulse">vibe</span> projects
             faster
           </h2>
+
           <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
             A minimal AI-powered workspace to create, manage, and deploy your
             projects without complexity. Focus on ideas, not setup.
@@ -19,8 +20,18 @@ export default function Home() {
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-          <Button render={<Link href="/login" />}>Get Started</Button>
-          <Button variant="outline" render={<Link href="/register" />}>
+          <Button
+            nativeButton={false}
+            render={<Link href="/login" />}
+          >
+            Get Started
+          </Button>
+
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href="/register" />}
+          >
             Create Account
           </Button>
         </div>

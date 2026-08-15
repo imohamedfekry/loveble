@@ -62,7 +62,7 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                     </button>
                 </div>
             </nav>
-            <div className="relative flex-1">
+            <div className="relative flex-1 bg-[#141419] ">
                 <div className={cn(
                     "absolute inset-0",
                     activeView === "editor" ? "visible" : "invisible",

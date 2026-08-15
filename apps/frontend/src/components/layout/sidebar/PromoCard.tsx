@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import type { IconType } from "./types";
 
 export function PromoCard({
   open,
@@ -9,7 +8,7 @@ export function PromoCard({
   className
 }: {
   open: boolean;
-  icon: IconType;
+  icon: any;
   title: string;
   subtitle: string;
   className?: string;
@@ -17,7 +16,7 @@ export function PromoCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg transition-[max-height,opacity] duration-(--duration-fast) ease-(--ease-smooth-out)",
+        "overflow-hidden rounded-lg transition-[max-height,opacity] duration-(--duration-quick) ease-(--ease-smooth-out)",
         open
           ? "max-h-24 border border-neutral-800 bg-[#141419] opacity-100"
           : "max-h-0 opacity-0",
