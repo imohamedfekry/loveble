@@ -20,35 +20,37 @@ export function NavItem({
 
   return (
     <button
+      type="button"
       title={label}
       onClick={(e) => {
         if (!open) e.stopPropagation();
       }}
-className={cn(
-  "relative flex h-8 w-full items-center rounded-md px-2 text-sm text-sidebar-foreground",
-  "transition-colors duration-(--duration-quick) ease-(--ease-smooth-out)",
+      className={cn(
+        "relative flex h-8 w-full items-center rounded-md px-2 text-sm text-sidebar-foreground",
+        "transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sidebar-ring/70",
 
-  // Normal hover
-  "hover:bg-sidebar-accent/80",
+        // Indicator — fixed geometry (2px × 55%), animated via scale + opacity only (no layout)
+        "after:pointer-events-none after:absolute after:left-0 after:top-1/2",
+        "after:h-[55%] after:w-[2px] after:-translate-y-1/2",
+        "after:origin-center after:rounded-full after:bg-muted-foreground after:content-['']",
+        "after:scale-y-40 after:opacity-0",
+        "after:transition-[opacity,scale,background-color] after:duration-(--duration-quick) after:ease-(--ease-smooth-out) motion-reduce:after:transition-none",
 
-  // Indicator
-  "after:absolute after:left-0 after:top-1/2",
-  "after:h-[55%] after:w-[2px]",
-  "after:-translate-y-1/2",
-  "after:rounded-[10px]",
-  "after:bg-muted-foreground",
-  "after:content-['']",
-  "after:opacity-0",
-  "hover:after:opacity-100",
+        // DEFAULT → quiet. HOVER (non-active) → subtle tint + soft indicator preview
+        !active &&
+          "hover:bg-sidebar-accent/70 hover:after:scale-y-60 hover:after:opacity-45",
 
-  // Active
-  active && "bg-sidebar-accent after:opacity-100",
+        // ACTIVE → persistent tint + full indicator (stronger color/size/opacity than hover)
+        active &&
+          "bg-sidebar-accent after:bg-sidebar-foreground after:scale-y-100 after:opacity-100",
 
-  // Active + Hover
-  active && "hover:bg-sidebar-accent",
+        // ACTIVE + HOVER → keep active base, never weaken it
+        active &&
+          "hover:bg-sidebar-accent hover:after:bg-sidebar-foreground hover:after:scale-y-100 hover:after:opacity-100",
 
-  !open && "cursor-pointer",
-)}
+        !open && "cursor-pointer"
+      )}
     >
       {isHugeIcon ? (
         <HugeiconsIcon
