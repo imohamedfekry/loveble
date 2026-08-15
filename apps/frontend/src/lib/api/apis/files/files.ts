@@ -1,5 +1,5 @@
 import { apiFetch } from "../../api-fetch";
-import { CreateFileRequest, FileResponse, GetFilesResponse, ProjectFileType, UpdateFile } from "./types";
+import { CreateFileRequest, FileResponse, GetFilesResponse, MoveFileRequest, ProjectFileType, UpdateFile } from "./types";
 export function getFiles(projectId: string) {
     return apiFetch<GetFilesResponse>(
         `/projects/${projectId}/files`,
@@ -15,6 +15,23 @@ export function updateFile(
     projectId: string,
     fileID: string,
     body: UpdateFile,
+) {
+    return apiFetch<FileResponse>(
+        `/projects/${projectId}/files/${fileID}`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+
+        }
+    )
+}
+export function moveFile(
+    projectId: string,
+    fileID: string,
+    body: MoveFileRequest,
 ) {
     return apiFetch<FileResponse>(
         `/projects/${projectId}/files/${fileID}`,
