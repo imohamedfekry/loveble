@@ -1,9 +1,14 @@
 import { create } from "zustand";
-import type { ProjectFileType } from "@/lib/api/apis/files/types";
+import type { FileContent, ProjectFileType } from "@/lib/api/apis/files/types";
 
 interface FilesState {
   files: Record<string, ProjectFileType[]>;
   loadingProjects: Record<string, boolean>;
+
+  // File content cache (keyed by fileId)
+  fileContents: Record<string, FileContent>;
+  contentLoading: Record<string, boolean>;
+  contentErrors: Record<string, string>;
 
   // Folder cache
   folderContents: Record<string, ProjectFileType[]>;
@@ -35,6 +40,25 @@ interface FilesState {
     loading: boolean,
   ) => void;
 
+  setFileContent: (
+    fileId: string,
+    content: FileContent,
+  ) => void;
+
+  setContentLoading: (
+    fileId: string,
+    loading: boolean,
+  ) => void;
+
+  setContentError: (
+    fileId: string,
+    message: string,
+  ) => void;
+
+  clearFileContent: (
+    fileId: string,
+  ) => void;
+
   setFolderContents: (
     folderId: string,
     files: ProjectFileType[],
@@ -57,6 +81,10 @@ interface FilesState {
 export const useFilesStore = create<FilesState>((set) => ({
   files: {},
   loadingProjects: {},
+
+  fileContents: {},
+  contentLoading: {},
+  contentErrors: {},
 
   folderContents: {},
   folderLoading: {},
@@ -126,6 +154,51 @@ export const useFilesStore = create<FilesState>((set) => ({
         [projectId]: loading,
       },
     })),
+
+  setFileContent: (fileId, content) =>
+    set((state) => ({
+      fileContents: {
+        ...state.fileContents,
+        [fileId]: content,
+      },
+      contentErrors: {
+        ...state.contentErrors,
+        [fileId]: "",
+      },
+    })),
+
+  setContentLoading: (fileId, loading) =>
+    set((state) => ({
+      contentLoading: {
+        ...state.contentLoading,
+        [fileId]: loading,
+      },
+    })),
+
+  setContentError: (fileId, message) =>
+    set((state) => ({
+      contentErrors: {
+        ...state.contentErrors,
+        [fileId]: message,
+      },
+    })),
+
+  clearFileContent: (fileId) =>
+    set((state) => {
+      const fileContents = { ...state.fileContents };
+      const contentLoading = { ...state.contentLoading };
+      const contentErrors = { ...state.contentErrors };
+
+      delete fileContents[fileId];
+      delete contentLoading[fileId];
+      delete contentErrors[fileId];
+
+      return {
+        fileContents,
+        contentLoading,
+        contentErrors,
+      };
+    }),
 
   setFolderContents: (folderId, files) =>
     set((state) => ({

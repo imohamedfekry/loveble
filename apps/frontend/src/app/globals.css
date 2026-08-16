@@ -64,6 +64,35 @@
   --card: #ffffff;
   --card-foreground: #1c1c1c;
 
+  /* Code editor — light */
+  --editor-bg: var(--background);
+  --editor-gutter-bg: var(--background);
+  --editor-gutter-fg: #8b8781;
+  --editor-selection: rgba(75, 115, 255, 0.22);
+  --editor-selection-match: rgba(75, 115, 255, 0.14);
+  --editor-active-line: rgba(0, 0, 0, 0.035);
+  --editor-active-line-gutter: rgba(0, 0, 0, 0.05);
+  --editor-caret: #4b73ff;
+  --editor-matching-bracket: rgba(75, 115, 255, 0.25);
+  --editor-search-match: rgba(254, 123, 2, 0.25);
+  --editor-tooltip-bg: var(--popover);
+  --editor-tooltip-fg: var(--popover-foreground);
+
+  --editor-comment: #7a766f;
+  --editor-keyword: #3b5bdb;
+  --editor-string: #b3541e;
+  --editor-number: #2f855a;
+  --editor-boolean: #0e7490;
+  --editor-function: #4b73ff;
+  --editor-variable: #1c1c1c;
+  --editor-property: #8b1ea8;
+  --editor-type: #c2410c;
+  --editor-operator: #57534e;
+  --editor-punctuation: #78716c;
+  --editor-tag: #db2777;
+  --editor-attribute: #2f855a;
+  --editor-constant: #0e7490;
+
   --popover: #ffffff;
   --popover-foreground: #1c1c1c;
 
@@ -137,6 +166,35 @@
 
   --card: #141419;
   --card-foreground: #f4f4f5;
+
+  /* Code editor — dark */
+  --editor-bg: var(--card);
+  --editor-gutter-bg: var(--card);
+  --editor-gutter-fg: #4b4b55;
+  --editor-selection: rgba(75, 115, 255, 0.32);
+  --editor-selection-match: rgba(75, 115, 255, 0.2);
+  --editor-active-line: rgba(255, 255, 255, 0.04);
+  --editor-active-line-gutter: rgba(255, 255, 255, 0.06);
+  --editor-caret: #82bcff;
+  --editor-matching-bracket: rgba(130, 188, 255, 0.3);
+  --editor-search-match: rgba(254, 123, 2, 0.3);
+  --editor-tooltip-bg: var(--popover);
+  --editor-tooltip-fg: var(--popover-foreground);
+
+  --editor-comment: #6b6b74;
+  --editor-keyword: #82bcff;
+  --editor-string: #ffd29d;
+  --editor-number: #6fcf97;
+  --editor-boolean: #56c1d6;
+  --editor-function: #6f8bff;
+  --editor-variable: #f4f4f5;
+  --editor-property: #ff66f4;
+  --editor-type: #fe7b02;
+  --editor-operator: #a1a1aa;
+  --editor-punctuation: #9a9aa3;
+  --editor-tag: #ff66f4;
+  --editor-attribute: #6fcf97;
+  --editor-constant: #56c1d6;
 
   --popover: #1a1a20;
   --popover-foreground: #f4f4f5;
