@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { useEffect, useRef } from "react";
 import { AlertTriangleIcon, FileWarningIcon } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import { FileBreadcrumbs } from "./file-breadcrumbs";
@@ -7,8 +6,6 @@ import { TopNavigation } from "./top-navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEditor } from "@/lib/hooks/use-editor";
 import { useFile, useFileContent } from "@/lib/hooks/file/useFiles";
-
-const DEBOUNCE_MS = 1500;
 
 function isTextContent(contentType: string): boolean {
   const type = contentType.toLowerCase();
@@ -91,22 +88,13 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
   const activeFile = useFile(projectId, activeTabId);
   const isActiveFileText = activeFile?.type === "file";
 
+  // Content is only fetched to detect text vs binary files. The actual text
+  // is NOT passed to the editor: the collaboration server is the source of
+  // truth and syncs it over WebSocket (see code-editor.tsx).
   const { content, error } = useFileContent(
     projectId,
     isActiveFileText ? activeTabId : null,
   );
-
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    const timeout = timeoutRef.current;
-
-    return () => {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-    };
-  }, [activeTabId]);
 
   return (
     <div className="h-full flex flex-col">
@@ -114,7 +102,7 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
         <TopNavigation projectId={projectId} />
       </div>
       {activeTabId && <FileBreadcrumbs projectId={projectId} />}
-      <div className="flex-1 min-h-0 bg-card">
+      <div className="relative flex-1 min-h-0 bg-card">
         {!activeFile && !activeTabId && (
           <div className="size-full flex items-center justify-center">
             <Image
@@ -174,17 +162,9 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
           isTextContent(content.contentType) && (
             <CodeEditor
               key={activeFile.id}
+              projectId={projectId}
+              fileId={activeFile.id}
               fileName={activeFile.name}
-              initialValue={content.content}
-              onChange={(nextContent) => {
-                if (timeoutRef.current) {
-                  clearTimeout(timeoutRef.current);
-                }
-
-                timeoutRef.current = setTimeout(() => {
-                  console.log("content changed", nextContent.length);
-                }, DEBOUNCE_MS);
-              }}
             />
           )}
       </div>
