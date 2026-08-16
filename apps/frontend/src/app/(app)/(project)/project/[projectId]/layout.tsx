@@ -9,9 +9,8 @@ export default async function Layout({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-
   return (
-    <ProjectIdLayout projectId={projectId}>
+    <ProjectIdLayout key={projectId} projectId={projectId}>
       <ProjectSplitLayout>
         {children}
       </ProjectSplitLayout>

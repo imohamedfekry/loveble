@@ -8,6 +8,8 @@ export const customTheme = EditorView.theme({
     color: "var(--editor-variable)",
     outline: "none !important",
     height: "100%",
+    "--indent-marker-bg-color": "var(--editor-indent-marker)",
+    "--indent-marker-active-bg-color": "var(--editor-indent-marker-active)",
   },
   "&.cm-focused": {
     outline: "none !important",

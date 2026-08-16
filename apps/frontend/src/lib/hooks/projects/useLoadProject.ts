@@ -19,11 +19,10 @@ export const useLoadProject = (projectId?: string | null) => {
   const [loadedId, setLoadedId] = useState<string | null>(cached?.id ?? null);
   const [error, setError] = useState<string | null>(null);
 
-  const cacheKey = cached?.id ?? projectId ?? null;
-  const [prevCacheKey, setPrevCacheKey] = useState(cacheKey);
+  const [prevCached, setPrevCached] = useState(cached);
 
-  if (prevCacheKey !== cacheKey) {
-    setPrevCacheKey(cacheKey);
+  if (prevCached !== cached) {
+    setPrevCached(cached);
     if (cached) {
       setProject(cached);
       setLoadedId(cached.id);
