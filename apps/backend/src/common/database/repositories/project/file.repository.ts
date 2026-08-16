@@ -41,6 +41,23 @@ export class FileRepository extends BaseRepository {
       where: eq(files.id, id),
     });
   }
+  async isDescendant(
+    projectId: bigint,
+    ancestorId: bigint,
+    descendantId: bigint,
+  ): Promise<boolean> {
+    const all = await this.getAllFilesWithProjectId(projectId);
+    const byId = new Map(all.map((file) => [file.id, file]));
+
+    let current = byId.get(descendantId);
+
+    while (current?.parentId) {
+      if (current.parentId === ancestorId) return true;
+      current = byId.get(current.parentId);
+    }
+
+    return false;
+  }
   async getFolderContents(
     projectId: bigint,
     parentId: bigint | null,

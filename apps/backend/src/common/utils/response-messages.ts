@@ -168,5 +168,10 @@ export const RESPONSE_MESSAGES = {
       code: 'PARENT_MUST_BE_FOLDER',
       message: 'The specified parent must be a folder.',
     },
+    INVALID_PARENT: {
+      code: 'INVALID_PARENT',
+      message:
+        'A folder cannot be moved inside itself or one of its subfolders.',
+    },
   },
 } as const;

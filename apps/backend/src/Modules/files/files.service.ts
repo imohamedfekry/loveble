@@ -21,6 +21,7 @@ import { FileStandard } from './dto/file.dto';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { StorageService } from '../storage/storage.service';
+import { File } from 'src/common/database/schema';
 @Injectable()
 export class FileService {
   constructor(
@@ -111,7 +112,7 @@ export class FileService {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
     }
     return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
-      files: data,
+      files: v.parse(v.array(FileStandard), data),
     });
   }
   async createFile(
@@ -123,7 +124,7 @@ export class FileService {
     if (!project || project.userId !== req.user.id) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
-    let created;
+    let created: File | undefined;
     try {
       created = await this.fileRepository.createFile({
         ...body,
@@ -141,13 +142,14 @@ export class FileService {
       }
       throw error;
     }
-    console.log('created file', created);
+    const file = v.parse(FileStandard, created);
+
     this.realtimeEmitService.toProject(
       projectId.toString(),
       FILE_EVENTES.CREATED,
-      created,
+      file,
     );
-    return success(RESPONSE_MESSAGES.FILE.CREATED, { file: created });
+    return success(RESPONSE_MESSAGES.FILE.CREATED, { file });
   }
   async updateFile(
     body: UpdateFileDto,
@@ -159,19 +161,47 @@ export class FileService {
     if (!project || project.userId !== req.user.id) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
-    // check if parentid folder is exsisting && type is folder not file
-    if (body.parentId) {
-      const file = await this.fileRepository.getFile(body.parentId);
-      if (file?.type !== "folder") {
-        throw new BadRequestException(fail(RESPONSE_MESSAGES.FILE.PARENT_MUST_BE_FOLDER))
+
+    const existing = await this.fileRepository.getFile(fileId);
+    if (!existing || existing.projectId !== projectId) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
+    }
+
+    // If a new parent is provided (and it's not the root), validate it:
+    // must exist, be a folder, belong to the same project, and must not
+    // create a cycle (folder cannot be moved inside itself or a descendant).
+    if (body.parentId !== undefined && body.parentId !== null) {
+      const parent = await this.fileRepository.getFile(body.parentId);
+      if (
+        !parent ||
+        parent.type !== 'folder' ||
+        parent.projectId !== projectId
+      ) {
+        throw new BadRequestException(
+          fail(RESPONSE_MESSAGES.FILE.PARENT_MUST_BE_FOLDER),
+        );
+      }
+
+      if (existing.type === 'folder') {
+        const isDescendant = await this.fileRepository.isDescendant(
+          projectId,
+          fileId,
+          body.parentId,
+        );
+        if (isDescendant || body.parentId === fileId) {
+          throw new BadRequestException(
+            fail(RESPONSE_MESSAGES.FILE.INVALID_PARENT),
+          );
+        }
       }
     }
-    let updatedFile
+
+    let updatedFile: File | undefined;
     try {
       updatedFile = await this.fileRepository.updateFile(fileId, projectId, {
         ...body,
         ...(body.parentId !== undefined && {
-          parentId: body.parentId,
+          parentId: body.parentId === null ? null : body.parentId,
         }),
       });
     } catch (error: any) {
@@ -190,12 +220,14 @@ export class FileService {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
     }
 
+    const file = v.parse(FileStandard, updatedFile);
+
     this.realtimeEmitService.toProject(
       projectId.toString(),
       FILE_EVENTES.UPDATED,
-      updatedFile,
+      file,
     );
-    return success(RESPONSE_MESSAGES.FILE.UPDATED, { file: updatedFile });
+    return success(RESPONSE_MESSAGES.FILE.UPDATED, { file });
   }
   async updateFileContent(
     projectId: bigint,
@@ -245,12 +277,15 @@ export class FileService {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
     }
     await this.storageService.delete(deletedFile.storageKey);
+
+    const file = v.parse(FileStandard, deletedFile);
+
     this.realtimeEmitService.toProject(
       projectId.toString(),
       FILE_EVENTES.DELETED,
-      deletedFile,
+      file,
     );
 
-    return success(RESPONSE_MESSAGES.FILE.DLETED, { file: deletedFile });
+    return success(RESPONSE_MESSAGES.FILE.DLETED, { file });
   }
 }
