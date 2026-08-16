@@ -32,7 +32,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
           message: DEFAULT_MESSAGE,
           data: isObject ? data : { value: data },
         };
-        
+
         return response;
       }),
     );

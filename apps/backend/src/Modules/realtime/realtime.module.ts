@@ -13,6 +13,6 @@ import { RealtimeEmitService } from './core/realtime-emit.service';
     SocketAuthService,
     RealtimeEmitService,
   ],
-  exports: [RealtimeGateway, ConnectionManager,RealtimeEmitService],
+  exports: [RealtimeGateway, ConnectionManager, RealtimeEmitService],
 })
 export class RealtimeModule {}

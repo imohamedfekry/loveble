@@ -4,15 +4,13 @@ import {
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { Readable } from "node:stream";
-import { S3 } from "./storage.constants";
-import { RESPONSE_MESSAGES } from "src/common/utils/response-messages";
-import { fail } from "src/common/utils/response.util";
-import { StorageObject } from "src/common/utils/types";
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Readable } from 'node:stream';
+import { S3 } from './storage.constants';
+import { StorageObject } from 'src/common/utils/types';
 
 @Injectable()
 export class StorageService {
@@ -23,7 +21,7 @@ export class StorageService {
     private readonly client: S3Client,
     private readonly config: ConfigService,
   ) {
-    this.bucket = this.config.getOrThrow<string>("storage.bucket");
+    this.bucket = this.config.getOrThrow<string>('storage.bucket');
   }
 
   async upload(params: {
@@ -54,8 +52,6 @@ export class StorageService {
     );
   }
 
-
-
   async exists(key: string): Promise<boolean> {
     try {
       await this.client.send(
@@ -71,10 +67,7 @@ export class StorageService {
     }
   }
 
-  async getSignedUrl(
-    key: string,
-    expiresIn = 60 * 60,
-  ) {
+  async getSignedUrl(key: string, expiresIn = 60 * 60) {
     return getSignedUrl(
       this.client,
       new GetObjectCommand({
@@ -96,34 +89,36 @@ export class StorageService {
       }),
     );
   }
-async updateFileContent(
-  key: string,
-  content: string,
-) {
-  await this.client.send(
-    new PutObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-      Body: content,
-      ContentType: "text/plain; charset=utf-8",
-    }),
-  );
-}
-async getFileContent(key: string): Promise<string> {
-  const object = await this.client.send(
-    new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    }),
-  );
-
-  if (!object.Body) {
-    throw new NotFoundException(
-      fail(RESPONSE_MESSAGES.FILE.NOT_FOUND),
+  async updateFileContent(key: string, content: string) {
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: content,
+        ContentType: 'text/plain; charset=utf-8',
+      }),
     );
   }
+  async getFileContent(key: string): Promise<{ content: string; contentType: string }> {
+    try {
+      const object = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
 
-  return object.Body.transformToString("utf-8");
-}
+      if (!object.Body) {
+        return { content: "", contentType: "text/plain; charset=utf-8" };
+      }
 
+      const content = await object.Body.transformToString('utf-8');
+      return { content, contentType: object.ContentType || 'text/plain; charset=utf-8' };
+    } catch (error: any) {
+      if (error.name === 'NoSuchKey' || error.Code === 'NoSuchKey') {
+        return { content: "", contentType: "text/plain; charset=utf-8" };
+      }
+      throw error;
+    }
+  }
 }

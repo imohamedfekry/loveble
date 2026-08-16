@@ -22,50 +22,44 @@ export class ProjectRepository extends BaseRepository {
     return project;
   }
 
-  async findRecentByUserId(
-  userId: bigint,
-): Promise<Project[]> {
-  return this.db
-    .select()
-    .from(projects)
-    .where(eq(projects.userId, userId))
-    .orderBy(desc(projects.updatedAt))
-    .limit(6);
-}
-async findByUserIdPaginated(
-  userId: bigint,
-  page: number,
-  limit: number,
-) {
-  const offset = (page - 1) * limit;
-
-  const [items, totalResult] = await Promise.all([
-    this.db
+  async findRecentByUserId(userId: bigint): Promise<Project[]> {
+    return this.db
       .select()
       .from(projects)
       .where(eq(projects.userId, userId))
       .orderBy(desc(projects.updatedAt))
-      .limit(limit)
-      .offset(offset),
+      .limit(6);
+  }
+  async findByUserIdPaginated(userId: bigint, page: number, limit: number) {
+    const offset = (page - 1) * limit;
 
-    this.db
-      .select({
-        count: count(),
-      })
-      .from(projects)
-      .where(eq(projects.userId, userId)),
-  ]);
+    const [items, totalResult] = await Promise.all([
+      this.db
+        .select()
+        .from(projects)
+        .where(eq(projects.userId, userId))
+        .orderBy(desc(projects.updatedAt))
+        .limit(limit)
+        .offset(offset),
 
-  return {
-    projects: items,
-    pagination: {
-      page,
-      limit,
-      total: totalResult[0].count,
-      totalPages: Math.ceil(totalResult[0].count / limit),
-    },
-  };
-}
+      this.db
+        .select({
+          count: count(),
+        })
+        .from(projects)
+        .where(eq(projects.userId, userId)),
+    ]);
+
+    return {
+      projects: items,
+      pagination: {
+        page,
+        limit,
+        total: totalResult[0].count,
+        totalPages: Math.ceil(totalResult[0].count / limit),
+      },
+    };
+  }
   async findById(id: bigint | string): Promise<Project | null> {
     const result = await this.db
       .select()

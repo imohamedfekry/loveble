@@ -32,5 +32,5 @@ export function error(
     code: msg.code,
     message: msg.message,
     ...extra,
-  } as ApiResponse<undefined>;
+  };
 }

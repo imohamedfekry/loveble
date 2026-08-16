@@ -1,10 +1,10 @@
-import * as v from "valibot";
-import { tool } from "ai";
-import { valibotSchema } from "@ai-sdk/valibot";
+import * as v from 'valibot';
+import { tool } from 'ai';
+import { valibotSchema } from '@ai-sdk/valibot';
 
-import { crawl } from "src/common/scraping/crawl.service";
-import { normalize } from "src/common/scraping/Normalize.helper";
-import { cleanHTMLToMarkdown } from "src/common/scraping/clean.service";
+import { crawl } from 'src/common/scraping/crawl.service';
+import { normalize } from 'src/common/scraping/Normalize.helper';
+import { cleanHTMLToMarkdown } from 'src/common/scraping/clean.service';
 
 export const crawlTool = tool({
   description: `
@@ -19,7 +19,7 @@ export const crawlTool = tool({
   inputSchema: valibotSchema(
     v.object({
       url: v.pipe(v.string(), v.url()),
-    })
+    }),
   ),
 
   execute: async ({ url }) => {
@@ -30,8 +30,8 @@ export const crawlTool = tool({
     const dataset = items
       .map((item: any) => {
         try {
-          const html = item.html || item.content || "";
-          const pageUrl = item.url || item.sourceURL || "";
+          const html = item.html || item.content || '';
+          const pageUrl = item.url || item.sourceURL || '';
 
           if (!html) return null;
 

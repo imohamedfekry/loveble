@@ -47,7 +47,7 @@ export class AuthService {
     private readonly oauthRepository: OAuthRepository,
     private readonly configService: ConfigService,
     private readonly oauthTokenService: OauthTokenService,
-  ) { }
+  ) {}
 
   async requestOtp(body: TempUserDto) {
     const tempUser = await this.tempUserRepository.findByEmail(body.email);
@@ -121,7 +121,7 @@ export class AuthService {
   }
 
   async create(body: CreateUserDto, req: FastifyRequest, res: FastifyReply) {
-    const request = req as FastifyRequest;
+    const request = req;
     const token = request.cookies?.['temptoken'];
 
     if (!token) {
@@ -237,7 +237,7 @@ export class AuthService {
       fetch('https://api.github.com/user/emails', { headers }),
     ]);
 
-    const user = (await userRes.json()) as any;
+    const user = await userRes.json();
     const emails = (await emailsRes.json()) as any[];
     console.log('User:', user);
     console.log('Emails:', emails);

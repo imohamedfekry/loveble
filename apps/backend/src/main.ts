@@ -1,22 +1,22 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
-import "./instrument";
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppBootstrap } from './common/bootstrap';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { BigIntInterceptor } from './common/interceptors/BigInt.interceptors';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { fastifyPlugin } from 'inngest/fastify';
 import { inngest } from './common/inngest/client';
 import { functions } from './common/inngest/index';
 import * as Sentry from '@sentry/nestjs';
 
 async function bootstrap() {
-  const app = await NestFactory.create(
-    AppModule,
-    new FastifyAdapter(),
-  ) as NestFastifyApplication;
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
   const fastify = app.getHttpAdapter().getInstance();
 
@@ -29,17 +29,16 @@ async function bootstrap() {
     console.log('🔌 fastify: inngest plugin registration complete (after)');
   });
 
-
-  process.on("unhandledRejection", (reason) => {
+  process.on('unhandledRejection', (reason) => {
     Sentry.captureException(reason);
   });
 
-  process.on("uncaughtException", (error) => {
+  process.on('uncaughtException', (error) => {
     Sentry.captureException(error);
   });
 
   const { serverInfo } = await AppBootstrap.bootstrap(app);
-  
+
   // ===============================
   // Register Global Interceptors
   // ===============================

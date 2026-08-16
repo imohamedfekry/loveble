@@ -1,4 +1,4 @@
-export { };
+export {};
 
 declare module 'fastify' {
   interface FastifyReply {

@@ -17,7 +17,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly accessTokenService: AccessTokenService,
     private readonly userRepository: UserRepository,
-  ) { }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
@@ -32,7 +32,9 @@ export class AuthGuard implements CanActivate {
 
     try {
       // Automatic verify handles expiration throw
-      const payload = await this.accessTokenService.verify<{ sub: string }>(token.trim());
+      const payload = await this.accessTokenService.verify<{ sub: string }>(
+        token.trim(),
+      );
 
       if (!payload?.sub) {
         throw new Error('Invalid token payload');
@@ -48,7 +50,8 @@ export class AuthGuard implements CanActivate {
       return true;
     } catch (error) {
       this.logger.error(`AuthGuard failed: ${error}`);
-      const message = error instanceof Error ? error.message : 'Authentication failed';
+      const message =
+        error instanceof Error ? error.message : 'Authentication failed';
       throw new UnauthorizedException(message);
     }
   }

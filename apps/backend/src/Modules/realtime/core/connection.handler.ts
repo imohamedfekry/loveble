@@ -14,11 +14,16 @@ export class ConnectionHandler {
   ) {}
 
   async handleConnect(socket: Socket) {
-    try {        
-      const token =socket.handshake.headers.cookie?.split(';').find(c => c.trim().startsWith('Authorization='))?.split('=')[1];
+    try {
+      const token = socket.handshake.headers.cookie
+        ?.split(';')
+        .find((c) => c.trim().startsWith('Authorization='))
+        ?.split('=')[1];
       console.log(`Extracted token: ${token} from socket: ${socket.id}`);
       if (!token) {
-        this.logger.warn(`Connection attempt without token (socket: ${socket.id})`);
+        this.logger.warn(
+          `Connection attempt without token (socket: ${socket.id})`,
+        );
         socket.disconnect();
         return;
       }
@@ -27,7 +32,7 @@ export class ConnectionHandler {
       socket.data.userId = user.id.toString();
       socket.join(`user:${user.id}`);
       this.connectionManager.addConnection(socket.data.userId, socket);
-      this.logger.log(`User ${socket.data.userId} connected (${socket.id})`,);
+      this.logger.log(`User ${socket.data.userId} connected (${socket.id})`);
     } catch (err) {
       this.logger.error(`Connection failed: ${err}`);
       socket.disconnect();

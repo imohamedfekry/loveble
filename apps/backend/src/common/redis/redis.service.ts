@@ -14,7 +14,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private hadReconnectAttempt = false;
   private connectionErrorLogged = false;
 
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit(): Promise<void> {
     this.client = this.createClient();
@@ -23,15 +23,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Redis initialization started...');
 
     // Attempt an initial ping but don't block startup or crash if it fails
-    this.client.ping()
+    this.client
+      .ping()
       .then(() => {
         this.logger.log('Redis connected successfully');
         this.connectionErrorLogged = false;
       })
       .catch((error) => {
         if (!this.connectionErrorLogged) {
-          const message = error instanceof Error ? error.message : String(error);
-          this.logger.warn(`Redis connection failed initially: ${message}. The app will continue starting but Redis features will be unavailable.`);
+          const message =
+            error instanceof Error ? error.message : String(error);
+          this.logger.warn(
+            `Redis connection failed initially: ${message}. The app will continue starting but Redis features will be unavailable.`,
+          );
           this.connectionErrorLogged = true;
         }
       });

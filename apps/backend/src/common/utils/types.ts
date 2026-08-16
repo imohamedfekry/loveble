@@ -8,12 +8,12 @@ export interface ApiResponse<T = any> {
 
 export type StorageObject =
   | {
-      type: "text";
+      type: 'text';
       content: string;
       contentType: string;
     }
   | {
-      type: "binary";
+      type: 'binary';
       content: Uint8Array;
       contentType: string;
     };

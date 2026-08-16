@@ -5,10 +5,7 @@ import { RepositoryModule } from 'src/common/database/repositories/repository.mo
 import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
-    imports: [
-      RepositoryModule,
-      RealtimeModule
-    ],
+  imports: [RepositoryModule, RealtimeModule],
   controllers: [ProjectController],
   providers: [projectService],
 })

@@ -31,7 +31,7 @@ export class OAuthRepository extends BaseRepository {
 
     return result[0] ?? null;
   }
-  
+
   async create(data: NewOAuthAccount): Promise<OAuthAccount> {
     const [account] = await this.db
       .insert(userOAuthAccounts)

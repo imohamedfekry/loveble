@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/nestjs";
+import * as Sentry from '@sentry/nestjs';
 
 export async function captureErrors<T>(
   fn: () => Promise<T>,

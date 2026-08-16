@@ -29,9 +29,8 @@ export const UserProfileSchema = v.object({
   createdAt: v.date(),
   updatedAt: v.date(),
   oauthAccounts: v.array(UserOAuthAccountSchema),
-
 });
 
 export type UserProfile = v.InferOutput<typeof UserProfileSchema>;
 
-export class TempUserDto extends createStandardDto(TempUserSchema) { }
+export class TempUserDto extends createStandardDto(TempUserSchema) {}

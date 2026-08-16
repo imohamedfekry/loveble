@@ -1,23 +1,15 @@
-import * as dotenv
-from "dotenv";
+import * as dotenv from 'dotenv';
 
-import * as Sentry
-from "@sentry/nestjs";
+import * as Sentry from '@sentry/nestjs';
 
-import {
-  googleGenAIIntegration,
-  vercelAIIntegration,
-} from "@sentry/nestjs";
+import { googleGenAIIntegration, vercelAIIntegration } from '@sentry/nestjs';
 
 dotenv.config();
 
 Sentry.init({
-  dsn:
-    process.env.SENTRY_DSN,
+  dsn: process.env.SENTRY_DSN,
 
-  environment:
-    process.env.NODE_ENV ??
-    "development",
+  environment: process.env.NODE_ENV ?? 'development',
 
   tracesSampleRate: 1,
 

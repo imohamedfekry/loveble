@@ -8,4 +8,4 @@ import { RepositoryModule } from '../../common/database/repositories/repository.
   controllers: [UserController],
   providers: [UserService],
 })
-export class UserModule { }
+export class UserModule {}

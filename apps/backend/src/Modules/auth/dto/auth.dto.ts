@@ -80,12 +80,11 @@ const GithubCallbackSchema = v.object({
     v.pipe(
       v.string('State must be a string'),
       v.nonEmpty('State cannot be empty'),
-    )
+    ),
   ),
 });
 
 export class GithubCallbackDto extends createStandardDto(GithubCallbackSchema) {
-  
   code: string;
   state?: string;
 }
@@ -95,14 +94,12 @@ export class TempUserDto extends createStandardDto(TempUserSchema) {
 }
 
 export class verfyOtpDto extends createStandardDto(verfyOtpSchema) {
-
   email: string;
 
   otp: string;
 }
 
 export class CreateUserDto extends createStandardDto(CreateUserSchema) {
-
   name: string;
 
   password: string;
@@ -113,4 +110,3 @@ export class LoginDto extends createStandardDto(LoginSchema) {
 
   password: string;
 }
-

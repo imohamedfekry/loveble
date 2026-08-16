@@ -43,7 +43,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       typeof client === 'object' &&
       client !== null &&
       'end' in client &&
-      typeof (client as { end: unknown }).end === 'function'
+      typeof client.end === 'function'
     );
   }
 }

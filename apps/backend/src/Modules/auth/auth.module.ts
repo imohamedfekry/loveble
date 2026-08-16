@@ -4,9 +4,7 @@ import { AuthController } from './auth.controller';
 import { RepositoryModule } from 'src/common/database/repositories/repository.module';
 
 @Module({
-  imports: [
-    RepositoryModule,
-  ],
+  imports: [RepositoryModule],
   controllers: [AuthController],
   providers: [AuthService],
 })

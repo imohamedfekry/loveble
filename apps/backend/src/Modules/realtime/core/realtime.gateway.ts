@@ -56,8 +56,8 @@ export class RealtimeGateway
     }
 
     if (project.userId != userId) {
-      console.log(project.userId , userId);
-      
+      console.log(project.userId, userId);
+
       socket.emit('project:error', {
         message: 'Unauthorized',
       });
@@ -66,7 +66,7 @@ export class RealtimeGateway
 
     await socket.join(`project:${projectId}`);
     console.log(`user ${socket.data.userId} Connected To Project ${projectId}`);
-    
+
     socket.emit('project:subscribed', {
       projectId,
     });

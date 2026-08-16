@@ -7,11 +7,7 @@ import { S3Client } from '@aws-sdk/client-s3';
 import { StorageModule } from '../storage/storage.module';
 
 @Module({
-    imports: [
-      RepositoryModule,
-      RealtimeModule,
-      StorageModule
-    ],
+  imports: [RepositoryModule, RealtimeModule, StorageModule],
 
   controllers: [FileController],
   providers: [FileService],

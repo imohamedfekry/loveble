@@ -7,7 +7,7 @@ import appConfig from '../bootstrap/config/app.config';
 import redisConfig from '../Global/config/redis.config';
 import jwtConfig from '../Global/config/jwt.config';
 import { RedisModule } from '../redis/redis.module';
-import { SentryModule } from "@sentry/nestjs/setup";
+import { SentryModule } from '@sentry/nestjs/setup';
 import storageConfig from '../Global/config/storage.config';
 
 @Module({
@@ -17,11 +17,11 @@ import storageConfig from '../Global/config/storage.config';
       isGlobal: true,
       envFilePath: '.env',
       validate: env,
-      load: [appConfig, redisConfig, jwtConfig,storageConfig],
+      load: [appConfig, redisConfig, jwtConfig, storageConfig],
     }),
     DatabaseModule.forRoot(),
     RedisModule,
     JwtHelperModule,
   ],
 })
-export class CoreModule { }
+export class CoreModule {}
