@@ -20,6 +20,9 @@ export class RealtimeEmitService {
   }
 
   toProject(projectId: string, event: string, data: any) {
+    console.log(projectId,event,data);
+    console.log(`to project:${projectId}`);
+    
     this.gateway.server
       .to(`project:${projectId}`)
       .emit(event, this.serializeBigInt(data));

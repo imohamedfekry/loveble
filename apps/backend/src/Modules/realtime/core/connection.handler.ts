@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { ConnectionManager } from './connection.manager';
 import { SocketAuthService } from './socket-auth.service';
-import { log } from 'node:console';
+import { parseCookie } from 'cookie';
 
 @Injectable()
 export class ConnectionHandler {
@@ -11,14 +11,12 @@ export class ConnectionHandler {
   constructor(
     private readonly connectionManager: ConnectionManager,
     private readonly authService: SocketAuthService,
-  ) {}
+  ) { }
 
   async handleConnect(socket: Socket) {
     try {
-      const token = socket.handshake.headers.cookie
-        ?.split(';')
-        .find((c) => c.trim().startsWith('Authorization='))
-        ?.split('=')[1];
+      const rawCookie = socket.handshake.headers.cookie;
+      const token = rawCookie ? parseCookie(rawCookie).Authorization : undefined;
       console.log(`Extracted token: ${token} from socket: ${socket.id}`);
       if (!token) {
         this.logger.warn(
