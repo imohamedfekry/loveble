@@ -10,6 +10,8 @@ export const useRealtimeProjects = () => {
     };
 
     const onUpdated = (project: Project) => {
+      console.log("projectttt updated", project);
+
       useProjectsStore.getState().updateProject(project);
     };
 

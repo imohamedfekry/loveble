@@ -93,6 +93,9 @@
   --editor-attribute: #2f855a;
   --editor-constant: #0e7490;
 
+  --editor-indent-marker: rgba(28, 28, 28, 0.16);
+  --editor-indent-marker-active: rgba(75, 115, 255, 0.35);
+
   --popover: #ffffff;
   --popover-foreground: #1c1c1c;
 
@@ -195,6 +198,9 @@
   --editor-tag: #ff66f4;
   --editor-attribute: #6fcf97;
   --editor-constant: #56c1d6;
+
+  --editor-indent-marker: rgba(255, 255, 255, 0.13);
+  --editor-indent-marker-active: rgba(130, 188, 255, 0.3);
 
   --popover: #1a1a20;
   --popover-foreground: #f4f4f5;
