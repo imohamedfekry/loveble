@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
-import { ProjectDto, ProjectQueryDto, UpdateProjectDto } from './dto/project.dto';
+import {
+  ProjectDto,
+  ProjectQueryDto,
+  UpdateProjectDto,
+} from './dto/project.dto';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
 import { RESPONSE_MESSAGES } from 'src/common/utils/response-messages';
 import { fail, success } from 'src/common/utils/response.util';
@@ -12,8 +16,8 @@ export class projectService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
-  ) { }
-  async findAll(req: AuthenticatedRequest,query: ProjectQueryDto, ) {
+  ) {}
+  async findAll(req: AuthenticatedRequest, query: ProjectQueryDto) {
     if (query.recent === 'true') {
       const projects = await this.projectRepository.findRecentByUserId(
         req.user.id,
@@ -64,14 +68,11 @@ export class projectService {
     if (!project || project.userId !== req.user.id) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
-    const updatedProject = await this.projectRepository.update(
-      projectId,
-      body,
-    );
+    const updatedProject = await this.projectRepository.update(projectId, body);
     this.realtimeEmitService.toUser(
       req.user.id.toString(),
       PROJECT_EVENTS.UPDATED,
-      updatedProject,  
+      updatedProject,
     );
     return success(RESPONSE_MESSAGES.PROJECT.UPDATE_SUCCESS, {
       project: updatedProject,

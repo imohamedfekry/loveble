@@ -23,27 +23,32 @@ export class BootstrapConfig {
     const corsOrigins = configService.get<string | string[]>('app.cors.origin');
     const origins = Array.isArray(corsOrigins)
       ? corsOrigins
-      : (corsOrigins
-        ? corsOrigins.split(',').map(o => o.trim())
-        : ['http://localhost:3001', 'http://localhost:5500','http://localhost:3000','http://localhost:4200','http://localhost:3730','http://localhost:8288']);
+      : corsOrigins
+        ? corsOrigins.split(',').map((o) => o.trim())
+        : [
+            'http://localhost:3001',
+            'http://localhost:5500',
+            'http://localhost:3000',
+            'http://localhost:4200',
+            'http://localhost:3730',
+            'http://localhost:8288',
+          ];
 
     console.log('BootstrapConfig: configuring CORS with origins', origins);
     await app.register(fastifyCors as unknown as RegisterPlugin, {
       origin: origins,
 
-      methods:
-        configService.get<string[]>('app.cors.methods') || [
-          'GET',
-          'POST',
-          'PUT',
-          'PATCH',
-          'DELETE',
-          'OPTIONS',
-          'HEAD',
-        ],
+      methods: configService.get<string[]>('app.cors.methods') || [
+        'GET',
+        'POST',
+        'PUT',
+        'PATCH',
+        'DELETE',
+        'OPTIONS',
+        'HEAD',
+      ],
 
-      credentials:
-        configService.get<boolean>('app.cors.credentials') ?? true,
+      credentials: configService.get<boolean>('app.cors.credentials') ?? true,
     });
     console.log('BootstrapConfig: CORS registered');
 

@@ -1,6 +1,6 @@
-import { ConfigService } from "@nestjs/config";
-import { S3Client } from "@aws-sdk/client-s3";
-import { S3 } from "../storage.constants";
+import { ConfigService } from '@nestjs/config';
+import { S3Client } from '@aws-sdk/client-s3';
+import { S3 } from '../storage.constants';
 
 export const S3Provider = {
   provide: S3,
@@ -11,7 +11,7 @@ export const S3Provider = {
       accessKey: string;
       secretKey: string;
       forcePathStyle: boolean;
-    }>("storage");
+    }>('storage');
 
     return new S3Client({
       endpoint: storage.endpoint,

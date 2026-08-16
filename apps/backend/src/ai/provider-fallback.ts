@@ -1,23 +1,20 @@
-import { APICallError } from "@ai-sdk/provider";
+import { APICallError } from '@ai-sdk/provider';
 
 export type ProviderFallbackDecision =
   | {
-      kind: "permanent";
-      reason:
-        | "insufficient_balance"
-        | "quota_exceeded"
-        | "billing_suspended";
+      kind: 'permanent';
+      reason: 'insufficient_balance' | 'quota_exceeded' | 'billing_suspended';
       statusCode?: number;
       message: string;
     }
   | {
-      kind: "transient";
-      reason: "rate_limited" | "provider_unavailable" | "network";
+      kind: 'transient';
+      reason: 'rate_limited' | 'provider_unavailable' | 'network';
       statusCode?: number;
       message: string;
     }
   | {
-      kind: "unknown";
+      kind: 'unknown';
       message: string;
     };
 
@@ -36,8 +33,9 @@ export function classifyProviderError(
   const message = toMessage(error);
 
   // ai-sdk exposes a structured APICallError in many cases
-  const statusCode =
-    APICallError.isInstance(error) ? error.statusCode : undefined;
+  const statusCode = APICallError.isInstance(error)
+    ? error.statusCode
+    : undefined;
 
   // Permanent: billing / quota style failures (don't retry)
   if (
@@ -45,8 +43,8 @@ export function classifyProviderError(
     /recharge your account/i.test(message)
   ) {
     return {
-      kind: "permanent",
-      reason: "insufficient_balance",
+      kind: 'permanent',
+      reason: 'insufficient_balance',
       statusCode,
       message,
     };
@@ -54,8 +52,8 @@ export function classifyProviderError(
 
   if (/quota exceeded/i.test(message)) {
     return {
-      kind: "permanent",
-      reason: "quota_exceeded",
+      kind: 'permanent',
+      reason: 'quota_exceeded',
       statusCode,
       message,
     };
@@ -63,8 +61,8 @@ export function classifyProviderError(
 
   if (/suspended/i.test(message) && /billing|balance/i.test(message)) {
     return {
-      kind: "permanent",
-      reason: "billing_suspended",
+      kind: 'permanent',
+      reason: 'billing_suspended',
       statusCode,
       message,
     };
@@ -73,8 +71,8 @@ export function classifyProviderError(
   // Transient: rate limit or provider availability
   if (statusCode === 429 || /rate limit|too many requests/i.test(message)) {
     return {
-      kind: "transient",
-      reason: "rate_limited",
+      kind: 'transient',
+      reason: 'rate_limited',
       statusCode,
       message,
     };
@@ -89,8 +87,8 @@ export function classifyProviderError(
     )
   ) {
     return {
-      kind: "transient",
-      reason: "provider_unavailable",
+      kind: 'transient',
+      reason: 'provider_unavailable',
       statusCode,
       message,
     };
@@ -103,19 +101,16 @@ export function classifyProviderError(
     )
   ) {
     return {
-      kind: "transient",
-      reason: "network",
+      kind: 'transient',
+      reason: 'network',
       statusCode,
       message,
     };
   }
 
-  return { kind: "unknown", message };
+  return { kind: 'unknown', message };
 }
 
-export function shouldFallbackOn(
-  decision: ProviderFallbackDecision,
-): boolean {
-  return decision.kind === "transient" || decision.kind === "permanent";
+export function shouldFallbackOn(decision: ProviderFallbackDecision): boolean {
+  return decision.kind === 'transient' || decision.kind === 'permanent';
 }
-

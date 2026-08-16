@@ -51,16 +51,10 @@ const envSchema = v.object({
   // Redis
   REDIS_URL: v.optional(v.string()),
   REDIS_HOST: v.optional(v.string(), '127.0.0.1'),
-  REDIS_PORT: v.optional(
-    v.pipe(v.string(), v.nonEmpty()),
-    '6379',
-  ),
+  REDIS_PORT: v.optional(v.pipe(v.string(), v.nonEmpty()), '6379'),
   REDIS_USERNAME: v.optional(v.string(), ''),
   REDIS_PASSWORD: v.optional(v.string(), ''),
-  REDIS_DB: v.optional(
-    v.pipe(v.string(), v.nonEmpty()),
-    '0',
-  ),
+  REDIS_DB: v.optional(v.pipe(v.string(), v.nonEmpty()), '0'),
   SENTRY_DSN: v.optional(v.string()),
 });
 

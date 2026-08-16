@@ -35,7 +35,11 @@ export class TempUserRepository extends BaseRepository {
 
   async findById(id: bigint): Promise<TempUser | null> {
     return this.execute(async (db) => {
-      const result = await db.select().from(tempUsers).where(eq(tempUsers.id, id)).limit(1);
+      const result = await db
+        .select()
+        .from(tempUsers)
+        .where(eq(tempUsers.id, id))
+        .limit(1);
       return result[0] ?? null;
     });
   }

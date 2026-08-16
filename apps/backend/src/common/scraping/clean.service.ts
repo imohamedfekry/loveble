@@ -1,34 +1,34 @@
-import TurndownService from "turndown";
-import { JSDOM } from "jsdom";
-import { Readability } from "@mozilla/readability";
+import TurndownService from 'turndown';
+import { JSDOM } from 'jsdom';
+import { Readability } from '@mozilla/readability';
 
 const turndown = new TurndownService({
-  headingStyle: "atx",
-  codeBlockStyle: "fenced",
+  headingStyle: 'atx',
+  codeBlockStyle: 'fenced',
 });
 
 function cleanMarkdown(md: string) {
   return md
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/\[\]\(.*?\)/g, "")
-    .replace(/!\[.*?\]\(.*?\)/g, "") // remove images (optional)
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\[\]\(.*?\)/g, '')
+    .replace(/!\[.*?\]\(.*?\)/g, '') // remove images (optional)
     .trim();
 }
 
-export function cleanHTMLToMarkdown(html: string, url = "") {
+export function cleanHTMLToMarkdown(html: string, url = '') {
   const dom = new JSDOM(html, { url });
   const document = dom.window.document;
 
   // remove junk
   const junkSelectors = [
-    "script",
-    "style",
-    "nav",
-    "footer",
-    "aside",
-    "form",
-    "iframe",
-    "header",
+    'script',
+    'style',
+    'nav',
+    'footer',
+    'aside',
+    'form',
+    'iframe',
+    'header',
   ];
 
   junkSelectors.forEach((sel) => {
@@ -40,8 +40,8 @@ export function cleanHTMLToMarkdown(html: string, url = "") {
 
   if (!article?.content) {
     return {
-      title: "Untitled",
-      markdown: "",
+      title: 'Untitled',
+      markdown: '',
     };
   }
 
@@ -53,24 +53,22 @@ export function cleanHTMLToMarkdown(html: string, url = "") {
   md = cleanMarkdown(md);
 
   // 🔥 EXTRACT LINKS FOR TOP SECTION
-const links = Array.from(contentDoc.querySelectorAll("a"))
-  .slice(0, 10)
-  .map((a) => {
-    const el = a as HTMLAnchorElement;
+  const links = Array.from(contentDoc.querySelectorAll('a'))
+    .slice(0, 10)
+    .map((a) => {
+      const el = a as HTMLAnchorElement;
 
-    return {
-      text: el.textContent?.trim(),
-      href: el.getAttribute("href"),
-    };
-  })
-  .filter((l) => l.text && l.href);
-  
-  const topLinks = links
-    .map((l) => `*   [${l.text}](${l.href})`)
-    .join("\n");
+      return {
+        text: el.textContent?.trim(),
+        href: el.getAttribute('href'),
+      };
+    })
+    .filter((l) => l.text && l.href);
+
+  const topLinks = links.map((l) => `*   [${l.text}](${l.href})`).join('\n');
 
   // 🔥 SPLIT SECTIONS (simulate docs style)
-  const sections = md.split("\n## ").map((s, i) => {
+  const sections = md.split('\n## ').map((s, i) => {
     if (i === 0) return s;
     return `## ${s}`;
   });
@@ -80,15 +78,15 @@ const links = Array.from(contentDoc.querySelectorAll("a"))
 
 ## 🌐 ${url}
 
-### 📌 ${article.title || "Documentation"}
+### 📌 ${article.title || 'Documentation'}
 
-${topLinks ? topLinks + "\n" : ""}
+${topLinks ? topLinks + '\n' : ''}
 
-${sections.join("\n\n")}
+${sections.join('\n\n')}
 `.trim();
 
   return {
-    title: article.title || "Untitled",
+    title: article.title || 'Untitled',
     markdown: formatted,
   };
 }

@@ -5,9 +5,7 @@ type ValidateOptions = {
   title?: string;
 };
 
-export function validate<
-  const TSchema extends v.BaseSchema<any, any, any>,
->(
+export function validate<const TSchema extends v.BaseSchema<any, any, any>>(
   schema: TSchema,
   data: unknown,
   options?: ValidateOptions,
@@ -15,7 +13,9 @@ export function validate<
   const result = v.safeParse(schema, data);
 
   if (!result.success) {
-    const errors = v.flatten(result.issues).nested ?? {} as Record<string, string[] | undefined>;
+    const errors =
+      v.flatten(result.issues).nested ??
+      ({} as Record<string, string[] | undefined>);
 
     const R = '\x1b[38;5;203m';
     const RD = '\x1b[38;5;167m';
@@ -31,7 +31,9 @@ export function validate<
       .map(([key, msgs]) =>
         [
           `  ${R}▸${RS} ${B}${key}${RS}`,
-          ...(Array.isArray(msgs) ? msgs : []).map((m) => `    ${D}└─${RS} ${RD}${m}${RS}`),
+          ...(Array.isArray(msgs) ? msgs : []).map(
+            (m) => `    ${D}└─${RS} ${RD}${m}${RS}`,
+          ),
         ].join('\n'),
       )
       .join('\n\n');

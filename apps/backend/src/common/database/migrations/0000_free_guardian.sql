@@ -1,4 +1,6 @@
 CREATE TYPE "public"."file_type_enum" AS ENUM('file', 'folder');--> statement-breakpoint
+CREATE TYPE "public"."export_status_enum" AS ENUM('exporting', 'completed', 'failed');--> statement-breakpoint
+CREATE TYPE "public"."import_status_enum" AS ENUM('importing', 'completed', 'failed');--> statement-breakpoint
 CREATE TABLE "temp_users" (
 	"id" bigint PRIMARY KEY NOT NULL,
 	"email" varchar(255) NOT NULL,
@@ -41,21 +43,21 @@ CREATE TABLE "files" (
 	"parent_id" bigint,
 	"name" varchar(255) NOT NULL,
 	"type" "file_type_enum" NOT NULL,
-	"storage_key" varchar(506),
-	"mime_type" varchar(10),
-	"size" bigint,
+	"storage_key" uuid DEFAULT gen_random_uuid(),
 	"version" integer DEFAULT 1 NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "files_unique_name_per_folder_idx" UNIQUE NULLS NOT DISTINCT("project_id","parent_id","name")
 );
 --> statement-breakpoint
 CREATE TABLE "projects" (
 	"id" bigint PRIMARY KEY NOT NULL,
 	"user_id" bigint NOT NULL,
 	"name" varchar(255) NOT NULL,
-	"import_status" "import_status_enum" DEFAULT 'importing',
-	"export_status" "export_status_enum" DEFAULT 'exporting',
+	"import_status" "import_status_enum",
+	"export_status" "export_status_enum",
 	"export_repo_url" varchar(255),
+	"storage_used" bigint DEFAULT 0 NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );

@@ -26,8 +26,7 @@ export class CatchAllFilter implements ExceptionFilter {
           {
             timestamp: new Date().toISOString(),
             stack:
-              (exception as Error)?.stack?.split('\n').slice(0, 6) ??
-              undefined,
+              (exception as Error)?.stack?.split('\n').slice(0, 6) ?? undefined,
           } as any,
         ),
       );

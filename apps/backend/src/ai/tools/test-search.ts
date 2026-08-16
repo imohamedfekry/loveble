@@ -1,20 +1,20 @@
-import { searchTool } from "./webSearch.tool";
+import { searchTool } from './webSearch.tool';
 
 async function main() {
   try {
     const result = await searchTool.execute?.(
       {
-        query: "NestJS latest version",
+        query: 'NestJS latest version',
       },
       {
-        toolCallId: "test",
+        toolCallId: 'test',
         messages: [],
-      }
+      },
     );
 
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
-    console.error("ERROR:", error);
+    console.error('ERROR:', error);
   }
 }
 

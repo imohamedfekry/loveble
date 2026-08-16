@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1782173241349,
-      "tag": "0000_unknown_nehzno",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1782175045885,
-      "tag": "0001_wild_tenebrous",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1783042825233,
-      "tag": "0002_last_cerise",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1785792619144,
-      "tag": "0003_charming_wonder_man",
+      "when": 1785843835153,
+      "tag": "0000_free_guardian",
       "breakpoints": true
     }
   ]

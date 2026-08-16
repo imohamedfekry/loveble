@@ -7,7 +7,19 @@ import { FileRepository } from './project/file.repository';
 
 @Global()
 @Module({
-  providers: [UserRepository, TempUserRepository, OAuthRepository,ProjectRepository,FileRepository],
-  exports: [UserRepository, TempUserRepository, OAuthRepository,ProjectRepository,FileRepository],
+  providers: [
+    UserRepository,
+    TempUserRepository,
+    OAuthRepository,
+    ProjectRepository,
+    FileRepository,
+  ],
+  exports: [
+    UserRepository,
+    TempUserRepository,
+    OAuthRepository,
+    ProjectRepository,
+    FileRepository,
+  ],
 })
 export class RepositoryModule {}

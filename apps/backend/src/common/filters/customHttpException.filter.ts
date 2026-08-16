@@ -36,7 +36,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
           const match = message.match(/Expected "([^"]+)"/);
           const fieldName = match ? match[1] : (e.path?.join('.') ?? 'field');
           message = `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
-        } else if (message.includes('Invalid type: Expected string but received undefined')) {
+        } else if (
+          message.includes(
+            'Invalid type: Expected string but received undefined',
+          )
+        ) {
           const fieldName = e.path?.join('.') ?? 'Field';
           message = `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
         }

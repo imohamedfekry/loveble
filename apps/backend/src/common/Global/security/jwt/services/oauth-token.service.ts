@@ -7,7 +7,7 @@ export class OauthTokenService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   sign(payload: object) {
     return this.jwtService.sign(payload, {

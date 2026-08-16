@@ -31,7 +31,7 @@ import { OauthTokenService } from './services/oauth-token.service';
     AccessTokenService,
     RefreshTokenService,
     TempTokenService,
-    OauthTokenService
+    OauthTokenService,
   ],
 })
-export class JwtHelperModule { }
+export class JwtHelperModule {}

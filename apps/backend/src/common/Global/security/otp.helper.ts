@@ -20,6 +20,6 @@ export function generateOtp(options?: OtpOptions): string {
     otp += chars[index];
   }
   console.log(otp);
-  
+
   return otp;
 }

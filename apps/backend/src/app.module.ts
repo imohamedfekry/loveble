@@ -10,6 +10,16 @@ import { FileModule } from './Modules/files/files.module';
 import { StorageModule } from './Modules/storage/storage.module';
 
 @Module({
-  imports: [CoreModule, UserModule, DefaultModule, RedisModule, AuthModule, projectModule, RealtimeModule,FileModule,StorageModule],
+  imports: [
+    CoreModule,
+    UserModule,
+    DefaultModule,
+    RedisModule,
+    AuthModule,
+    projectModule,
+    RealtimeModule,
+    FileModule,
+    StorageModule,
+  ],
 })
-export class AppModule { }
+export class AppModule {}

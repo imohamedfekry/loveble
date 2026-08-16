@@ -1,5 +1,5 @@
 {
-  "id": "0d08f2af-6132-4e56-ba6d-f1376a08534b",
+  "id": "dc26d067-dc13-476c-a760-cff5413292da",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -283,21 +283,10 @@
         },
         "storage_key": {
           "name": "storage_key",
-          "type": "varchar(506)",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": false
-        },
-        "mime_type": {
-          "name": "mime_type",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "size": {
-          "name": "size",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "gen_random_uuid()"
         },
         "version": {
           "name": "version",
@@ -403,7 +392,17 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "files_unique_name_per_folder_idx": {
+          "name": "files_unique_name_per_folder_idx",
+          "nullsNotDistinct": true,
+          "columns": [
+            "project_id",
+            "parent_id",
+            "name"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -435,22 +434,27 @@
           "type": "import_status_enum",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false,
-          "default": "'importing'"
+          "notNull": false
         },
         "export_status": {
           "name": "export_status",
           "type": "export_status_enum",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false,
-          "default": "'exporting'"
+          "notNull": false
         },
         "export_repo_url": {
           "name": "export_repo_url",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
+        },
+        "storage_used": {
+          "name": "storage_used",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "0"
         },
         "updated_at": {
           "name": "updated_at",
@@ -513,6 +517,24 @@
       "values": [
         "file",
         "folder"
+      ]
+    },
+    "public.export_status_enum": {
+      "name": "export_status_enum",
+      "schema": "public",
+      "values": [
+        "exporting",
+        "completed",
+        "failed"
+      ]
+    },
+    "public.import_status_enum": {
+      "name": "import_status_enum",
+      "schema": "public",
+      "values": [
+        "importing",
+        "completed",
+        "failed"
       ]
     }
   },

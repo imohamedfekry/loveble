@@ -38,9 +38,7 @@ export class DatabaseModule {
 
     return {
       module: DatabaseModule,
-      imports: [
-        ConfigModule,
-      ],
+      imports: [ConfigModule],
       providers: [drizzleProvider, DatabaseService],
       exports: [drizzleProvider, DatabaseService],
     };

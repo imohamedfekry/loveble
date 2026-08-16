@@ -1,36 +1,36 @@
-import { cleanHTMLToMarkdown } from "src/common/scraping/clean.service";
-import { crawl } from "src/common/scraping/crawl.service";
-import { normalize } from "src/common/scraping/Normalize.helper";
-import { inngest } from "../client";
-import fs from "fs";
+import { cleanHTMLToMarkdown } from 'src/common/scraping/clean.service';
+import { crawl } from 'src/common/scraping/crawl.service';
+import { normalize } from 'src/common/scraping/Normalize.helper';
+import { inngest } from '../client';
+import fs from 'fs';
 export const crawlFunction = inngest.createFunction(
   {
-    id: "crawl-pipeline",
-    name: "Crawl AI Clean Pipeline",
+    id: 'crawl-pipeline',
+    name: 'Crawl AI Clean Pipeline',
     retries: 2,
-    triggers: [{ event: "crawl/run" }],
+    triggers: [{ event: 'crawl/run' }],
   },
 
   async ({ event, step }) => {
     const urls = event.data.urls;
 
     // 1. crawl
-    const raw = await step.run("crawl", async () => {
+    const raw = await step.run('crawl', async () => {
       return crawl(urls);
     });
 
     // 2. normalize
-    const items = await step.run("normalize", async () => {
+    const items = await step.run('normalize', async () => {
       return normalize(raw);
     });
 
     // 3. clean
-    const dataset = await step.run("clean", async () => {
+    const dataset = await step.run('clean', async () => {
       return items
         .map((item: any) => {
           try {
-            const html = item.html || item.content || "";
-            const url = item.url || item.sourceURL || "";
+            const html = item.html || item.content || '';
+            const url = item.url || item.sourceURL || '';
 
             if (!html) return null;
 
@@ -52,7 +52,7 @@ export const crawlFunction = inngest.createFunction(
     // console.log("Dataset:", dataset);
     return {
       count: dataset.length,
-      data: dataset, 
+      data: dataset,
     };
-  }
+  },
 );

@@ -136,7 +136,7 @@ export const RESPONSE_MESSAGES = {
     UPDATE_SUCCESS: {
       code: 'PROJECT_UPDATE_SUCCESS',
       message: 'Project updated successfully.',
-    }
+    },
   },
   FILE: {
     FETCH_SUCCESS: {
@@ -149,20 +149,24 @@ export const RESPONSE_MESSAGES = {
     },
     DUPLICATE_NAME: {
       code: 'FILE_DUPLICATE_NAME',
-      message: 'This file or folder already exists at this location. Please choose a different name.',
+      message:
+        'This file or folder already exists at this location. Please choose a different name.',
     },
-    UPDATED:{
-      code:"FILE_UPDATED",
-      message:"File updated successfully"
+    UPDATED: {
+      code: 'FILE_UPDATED',
+      message: 'File updated successfully',
     },
-    DLETED:{
-      code:"FILE_DELETED_",
-      message:"File deleted successfully"
+    DLETED: {
+      code: 'FILE_DELETED_',
+      message: 'File deleted successfully',
     },
     NOT_FOUND: {
       code: 'FILE_NOT_FOUND',
       message: 'File not found.',
     },
-
-  }
+    PARENT_MUST_BE_FOLDER: {
+      code: 'PARENT_MUST_BE_FOLDER',
+      message: 'The specified parent must be a folder.',
+    },
+  },
 } as const;

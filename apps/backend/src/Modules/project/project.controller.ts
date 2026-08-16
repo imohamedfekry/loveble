@@ -1,8 +1,22 @@
-import { Body, Controller, Delete, Get, Post, Put, Query, Req, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Put,
+  Query,
+  Req,
+  Param,
+} from '@nestjs/common';
 import { Auth } from 'src/common/decorator/auth-user.decorator';
 import { projectService } from './project.service';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
-import { ProjectDto, ProjectQueryDto, UpdateProjectDto } from './dto/project.dto';
+import {
+  ProjectDto,
+  ProjectQueryDto,
+  UpdateProjectDto,
+} from './dto/project.dto';
 import { ParseSnowflakePipe } from 'src/common/Global/security/validator/isId.validator';
 
 @Controller('projects')
@@ -13,7 +27,8 @@ export class ProjectController {
   @Get('project/:id')
   getProjectById(
     @Param('id', ParseSnowflakePipe) projectId: bigint,
-    @Req() req: AuthenticatedRequest) {
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.projectService.findById(projectId, req);
   }
 
@@ -40,7 +55,10 @@ export class ProjectController {
   }
 
   @Delete()
-  deleteProject(@Query('id', ParseSnowflakePipe) projectId: bigint, @Req() req: AuthenticatedRequest) {
+  deleteProject(
+    @Query('id', ParseSnowflakePipe) projectId: bigint,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.projectService.delete(projectId, req);
   }
 }

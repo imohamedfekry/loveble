@@ -10,12 +10,12 @@ export class TempTokenService {
   ) {}
 
   sign(payload: object) {
-    const status =  this.jwtService.sign(payload, {
+    const status = this.jwtService.sign(payload, {
       secret: this.configService.get('jwt.temp.secret'),
       expiresIn: '3m', // OTP verification window
     });
     console.log(status);
-    
+
     return status;
   }
 

@@ -18,8 +18,8 @@ export const ApiResponseHelper = {
       typeof msg === 'object'
         ? msg.code
         : typeof codeOrExtra === 'string'
-        ? codeOrExtra
-        : undefined;
+          ? codeOrExtra
+          : undefined;
 
     const response: ApiResponseType = {
       success: false,

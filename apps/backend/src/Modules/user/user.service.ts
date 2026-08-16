@@ -9,11 +9,13 @@ import { AuthenticatedRequest } from 'src/common/Global/security/types/auth-requ
 
 @Injectable()
 export class UserService {
-  constructor(
+  constructor() {
     // private readonly userRepository: UserRepository,
     // private readonly tempUserRepository: TempUserRepository,
-  ) { }
+  }
   async getMe(req: AuthenticatedRequest) {
-    return success(RESPONSE_MESSAGES.USER.FETCH_SUCCESS, { user:  v.parse(UserProfileSchema, req.user) });
+    return success(RESPONSE_MESSAGES.USER.FETCH_SUCCESS, {
+      user: v.parse(UserProfileSchema, req.user),
+    });
   }
 }
