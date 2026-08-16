@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import Image from "next/image";
 
@@ -26,6 +26,9 @@ import { SectionLabel } from "./SectionLabel";
 import { ProjectsList } from "@/components/layout/sidebar/projects-list";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { MOD_KEY_CODES } from "@/lib/keyboard";
+import { useKeyboardShortcut } from "@/lib/hooks/useKeyboardShortcut";
+import { useModKeyLabel } from "@/lib/hooks/useModKeyLabel";
 
 import {
   TooltipContent,
@@ -81,6 +84,18 @@ export function AppSidebar({
     setIsClosing(false);
     onOpenChange(true);
   };
+
+  const toggleSidebar = useCallback(() => {
+    if (open) {
+      handleClose();
+    } else {
+      handleOpen();
+    }
+  }, [open, handleClose, handleOpen]);
+
+  useKeyboardShortcut(MOD_KEY_CODES.B, toggleSidebar);
+
+  const modKey = useModKeyLabel();
 
   const handleSidebarTransitionEnd = (
     e: React.TransitionEvent<HTMLElement>
@@ -184,7 +199,7 @@ export function AppSidebar({
           <TooltipContent>
             {open
               ? "Loveble"
-              : "Open sidebar (Ctrl B)"}
+              : `Open sidebar (${modKey} B)`}
           </TooltipContent>
         </Tooltip>
 
@@ -216,7 +231,7 @@ export function AppSidebar({
             />
 
             <TooltipContent>
-              Close sidebar (Ctrl B)
+              {`Close sidebar (${modKey} B)`}
             </TooltipContent>
           </Tooltip>
         )}
@@ -249,7 +264,7 @@ export function AppSidebar({
           open={open}
           icon={Search01Icon}
           label="Search"
-          shortcut="Ctrl K"
+          shortcut="K"
         />
 
         <NavItem

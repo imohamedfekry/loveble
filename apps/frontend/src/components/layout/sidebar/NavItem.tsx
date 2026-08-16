@@ -1,8 +1,11 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { CollapseLabel } from "./CollapseLabel";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { IconSvgElement } from "@hugeicons/react";
 import type { LucideIcon } from "lucide-react";
+import { useModKeyLabel } from "@/lib/hooks/useModKeyLabel";
 
 export function NavItem({
   icon,
@@ -18,6 +21,7 @@ export function NavItem({
   open: boolean;
 }) {
   const Icon = icon as LucideIcon;
+  const modKey = useModKeyLabel();
 
   return (
     <button
@@ -79,7 +83,7 @@ export function NavItem({
               : "pointer-events-none opacity-0"
           )}
         >
-          {shortcut}
+          {modKey} {shortcut}
         </span>
       )}
     </button>

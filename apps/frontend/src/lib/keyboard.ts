@@ -1,4 +1,5 @@
 export const MOD_KEY_CODES = {
+  B: "KeyB",
   K: "KeyK",
   J: "KeyJ",
   I: "KeyI",

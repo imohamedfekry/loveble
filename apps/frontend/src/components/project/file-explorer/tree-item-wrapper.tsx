@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -11,6 +13,7 @@ import {
     ContextMenuShortcut,
     ContextMenuSeparator,
 } from "@/components/ui/context-menu";
+import { useModKeyLabel } from "@/lib/hooks/useModKeyLabel";
 
 import { getItemPadding } from "./constants";
 import { isValidDropTarget, useTreeDndContext } from "./tree-dnd";
@@ -49,6 +52,7 @@ export const TreeItemWrapper = ({
 }: TreeItemWrapperProps) => {
     const { activeId } = useTreeDndContext();
     const files = useFilesStore((s) => s.files[projectId] ?? EMPTY_FILES);
+    const modKey = useModKeyLabel();
 
     const canDrop = isValidDropTarget(files, activeId, item.id);
 
@@ -132,7 +136,7 @@ export const TreeItemWrapper = ({
                         onSelect={onDelete}
                     >
                         Delete Permanently
-                        <ContextMenuShortcut>⌘Backspace</ContextMenuShortcut>
+                        <ContextMenuShortcut>{`${modKey}Backspace`}</ContextMenuShortcut>
                     </ContextMenuItem>
                 </ContextMenuContent>
             </ContextMenu>
