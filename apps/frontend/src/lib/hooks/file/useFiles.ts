@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createFile, deleteFile, getFiles, moveFile, updateFile } from "@/lib/api/apis/files/files";
+import { createFile, deleteFile, getFileContent, getFiles, moveFile, updateFile } from "@/lib/api/apis/files/files";
 import { useFilesStore } from "@/store/file.store";
 import { CreateFileRequest, ProjectFileType, UpdateFile } from "@/lib/api/apis/files/types";
 
@@ -163,6 +163,7 @@ export const useMoveFile = () => {
 
 export const useDeleteFile = () => {
   const removeFile = useFilesStore((s) => s.removeFile);
+  const clearFileContent = useFilesStore((s) => s.clearFileContent);
   const [loading, setLoading] = useState(false);
 
   const mutate = async (
@@ -175,6 +176,7 @@ export const useDeleteFile = () => {
       await deleteFile(projectId, fileId);
 
       removeFile(projectId, fileId);
+      clearFileContent(fileId);
     } finally {
       setLoading(false);
     }
@@ -210,6 +212,73 @@ export const useLoadFolderContent = (
   };
 };
 const EMPTY_FILES: ProjectFileType[] = [];
+
+const inflightContentLoads = new Map<string, Promise<void>>();
+const MIN_CONTENT_LOADING_MS = 250;
+
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export const useFileContent = (
+  projectId: string,
+  fileId: string | null | undefined,
+) => {
+  const content = useFilesStore(
+    (s) => (fileId ? s.fileContents[fileId] : undefined),
+  );
+  const loading = useFilesStore(
+    (s) => (fileId ? s.contentLoading[fileId] ?? false : false),
+  );
+  const error = useFilesStore(
+    (s) => (fileId ? s.contentErrors[fileId] : undefined),
+  );
+
+  useEffect(() => {
+    if (!projectId || !fileId) return;
+
+    const { fileContents, contentLoading, contentErrors } =
+      useFilesStore.getState();
+
+    if (fileId in fileContents || contentLoading[fileId]) return;
+    if (contentErrors[fileId]) return;
+
+    const existing = inflightContentLoads.get(fileId);
+    if (existing) return;
+
+    const promise = (async () => {
+      const { setContentLoading, setFileContent, setContentError } =
+        useFilesStore.getState();
+
+      const startedAt = Date.now();
+
+      try {
+        setContentLoading(fileId, true);
+
+        const res = await getFileContent(projectId, fileId);
+        setFileContent(fileId, res.data.file);
+      } catch (err) {
+        setContentError(
+          fileId,
+          err instanceof Error ? err.message : "Failed to load file content",
+        );
+      } finally {
+        const elapsed = Date.now() - startedAt;
+        const remaining = MIN_CONTENT_LOADING_MS - elapsed;
+
+        if (remaining > 0) {
+          await sleep(remaining);
+        }
+
+        setContentLoading(fileId, false);
+        inflightContentLoads.delete(fileId);
+      }
+    })();
+
+    inflightContentLoads.set(fileId, promise);
+  }, [projectId, fileId]);
+
+  return { content, loading, error };
+};
 
 export const useFile = (
   projectId: string,

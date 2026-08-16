@@ -1,5 +1,8 @@
 "use client";
 
+import * as React from "react";
+import { Monitor, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -8,6 +11,7 @@ import { useGithubAccount } from "@/components/user/hooks/useGithubAccount";
 import { useUserStore } from "@/store/user.store";
 import { FaGithub } from "react-icons/fa";
 import { useSettingsStore } from "@/store/settings.store";
+import { cn } from "@/lib/utils";
 import { SettingsRow } from "./settings-row";
 import { SettingsSectionHeader } from "./settings-section-header";
 
@@ -186,7 +190,18 @@ function NotificationsSection() {
   );
 }
 
+const THEME_OPTIONS = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+] as const;
+
+type ThemeOptionValue = (typeof THEME_OPTIONS)[number]["value"];
+
 function AppearanceSection() {
+  const { theme, setTheme } = useTheme();
+  const current = (theme ?? "system") as ThemeOptionValue;
+
   return (
     <div className="space-y-8">
       <section className="space-y-4">
@@ -195,13 +210,24 @@ function AppearanceSection() {
           description="Customize how loveble looks on your device."
         />
 
-        <div className="space-y-2">
-          <SettingsRow
-            label="Dark mode"
-            description="loveble uses dark theme by default."
-          >
-            <Switch defaultChecked disabled />
-          </SettingsRow>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={current === value}
+              onClick={() => setTheme(value)}
+              className={cn(
+                "flex flex-col items-center gap-2 rounded-lg border px-4 py-3 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                current === value
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-input bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              <Icon className="size-5" />
+              <span>{label}</span>
+            </button>
+          ))}
         </div>
       </section>
     </div>

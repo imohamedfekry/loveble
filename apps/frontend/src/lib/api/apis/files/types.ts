@@ -35,3 +35,12 @@ export interface GetFilesResponse {
 export interface FileResponse {
   file: ProjectFileType;
 }
+
+export interface FileContent {
+  content: string;
+  contentType: string;
+}
+
+export interface FileContentResponse {
+  file: FileContent;
+}
