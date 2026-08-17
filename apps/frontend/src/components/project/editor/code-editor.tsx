@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef } from "react"
 import { EditorView, keymap } from "@codemirror/view";
 import { indentWithTab } from "@codemirror/commands";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
+import { colorPicker, colorPickerTheme } from "@replit/codemirror-css-color-picker";
 import { getLanguageExtension } from "./extensions/language-extension";
+import { numberInteract } from "./extensions/interact";
 import { customTheme, editorHighlightExtension } from "./extensions/theme";
 import { customSetup } from "./extensions/custom-setup";
 import { minimap } from "./extensions/minimap";
@@ -37,6 +39,9 @@ export const CodeEditor = ({
         editorHighlightExtension,
         customSetup,
         languageExtension,
+        colorPicker,
+        colorPickerTheme,
+        ...numberInteract,
         keymap.of([indentWithTab]),
         minimap(),
         indentationMarkers(),
