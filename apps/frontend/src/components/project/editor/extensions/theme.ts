@@ -78,9 +78,38 @@ export const customTheme = EditorView.theme({
     backgroundColor: "var(--accent)",
     color: "var(--accent-foreground)",
   },
-  ".cm-panels": {
-    backgroundColor: "var(--editor-tooltip-bg)",
-    color: "var(--editor-tooltip-fg)",
+  "& .cm-panels": {
+    backgroundColor: "var(--editor-tooltip-bg) !important",
+    color: "var(--editor-tooltip-fg) !important",
+    borderBottom: "1px solid var(--border)",
+  },
+  "& .cm-panels.cm-panels-bottom": {
+    borderBottom: "none",
+    borderTop: "1px solid var(--border)",
+  },
+  "& .cm-panels input": {
+    caretColor: "var(--editor-caret)",
+  },
+  "& .cm-panels input[type=checkbox]": {
+    accentColor: "var(--ring)",
+  },
+  "& .cm-textfield": {
+    backgroundColor: "var(--input) !important",
+    color: "var(--foreground) !important",
+    border: "1px solid var(--border) !important",
+    borderRadius: "var(--radius-sm)",
+    padding: "0.2em 0.6em",
+  },
+  "& .cm-button": {
+    backgroundColor: "var(--secondary) !important",
+    color: "var(--secondary-foreground) !important",
+    backgroundImage: "none !important",
+    border: "1px solid var(--border) !important",
+    borderRadius: "var(--radius-sm)",
+    padding: "0.2em 1em",
+  },
+  "& .cm-search-label": {
+    color: "var(--muted-foreground) !important",
   },
   ".cm-completionMatchedText": {
     color: "var(--editor-function)",
