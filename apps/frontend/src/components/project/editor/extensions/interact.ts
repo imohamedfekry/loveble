@@ -1,8 +1,22 @@
 import interact from "@replit/codemirror-interact";
 
-export const numberInteract = interact({
+export const interactiveValues = interact({
   key: "alt",
   rules: [
+    {
+      regexp: /\b(true|false)\b/g,
+      cursor: "pointer",
+      onClick: (text, setText) => {
+        setText(text === "true" ? "false" : "true");
+      },
+    },
+    {
+      regexp: /\bhttps?:\/\/[^\s"'<>]+/g,
+      cursor: "pointer",
+      onClick: (text) => {
+        window.open(text, "_blank", "noopener,noreferrer");
+      },
+    },
     {
       regexp: /-?\b\d+\.?\d*\b/g,
       cursor: "ew-resize",

@@ -4,7 +4,7 @@ import { indentWithTab } from "@codemirror/commands";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { colorPicker, colorPickerTheme } from "@replit/codemirror-css-color-picker";
 import { getLanguageExtension } from "./extensions/language-extension";
-import { numberInteract } from "./extensions/interact";
+import { interactiveValues } from "./extensions/interact";
 import { customTheme, editorHighlightExtension } from "./extensions/theme";
 import { customSetup } from "./extensions/custom-setup";
 import { minimap } from "./extensions/minimap";
@@ -41,7 +41,7 @@ export const CodeEditor = ({
         languageExtension,
         colorPicker,
         colorPickerTheme,
-        ...numberInteract,
+        ...interactiveValues,
         keymap.of([indentWithTab]),
         minimap(),
         indentationMarkers(),
