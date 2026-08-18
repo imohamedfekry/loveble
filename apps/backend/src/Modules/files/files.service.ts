@@ -273,10 +273,12 @@ export class FileService {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
     const deletedFile = await this.fileRepository.deleteFile(fileId, projectId);
-    if (!deletedFile || !deletedFile.storageKey) {
+    if (!deletedFile) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
     }
-    await this.storageService.delete(deletedFile.storageKey);
+    if (deletedFile.storageKey) {
+      await this.storageService.delete(deletedFile.storageKey);
+    }
 
     const file = v.parse(FileStandard, deletedFile);
 

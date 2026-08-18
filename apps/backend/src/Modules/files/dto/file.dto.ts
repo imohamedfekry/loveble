@@ -39,7 +39,6 @@ export const FileStandard = v.object({
   name: v.string(),
   type: v.picklist(['file', 'folder']),
   storageKey: v.nullable(v.string()),
-  version: v.number(),
   createdAt: v.date(),
   updatedAt: v.date(),
 });
