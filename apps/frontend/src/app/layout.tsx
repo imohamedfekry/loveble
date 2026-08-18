@@ -18,7 +18,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "loveble - AI-Powered App Development",
+  title: "Loveble",
   description: "loveble is an AI-powered platform that helps you build, test, and deploy applications faster than ever. With loveble, you can leverage the power of AI to automate your development workflow and focus on what matters most - building great software.",
 };
 

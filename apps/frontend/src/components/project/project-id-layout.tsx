@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { ConnectionLoading } from "@/components/layout/connection-loading";
 import { useLoadFiles } from "@/lib/hooks/file/useFiles";
 import { useProjectRealtime } from "@/lib/socket/hooks/useProjectRealtime";
@@ -20,7 +22,30 @@ export const ProjectIdLayout = ({
   useProjectRealtime(projectId);
   useRealtimeProjects();
 
-  const { loading: projectLoading } = useLoadProject(projectId);
+  const { project, loading: projectLoading } = useLoadProject(projectId);
+
+  useEffect(() => {
+    const expected = project?.name ? `${project.name} | Loveble` : "Loveble";
+
+    const apply = () => {
+      if (document.title !== expected) {
+        document.title = expected;
+      }
+    };
+
+    apply();
+
+    // Next.js re-applies route metadata during client-side navigation,
+    // so keep re-applying our title whenever the <title> changes.
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    return () => observer.disconnect();
+  }, [project?.name]);
 
   // Show content once project data is loaded
   // Socket is only for real-time updates, not blocking initial render
