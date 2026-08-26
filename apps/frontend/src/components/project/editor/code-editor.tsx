@@ -8,7 +8,7 @@ import { interactiveValues } from "./extensions/interact";
 import { customTheme, editorHighlightExtension } from "./extensions/theme";
 import { customSetup } from "./extensions/custom-setup";
 import { minimap } from "./extensions/minimap";
-import { unusedImportHighlighter } from "./extensions/unused-imports";
+import { unusedDetection } from "./extensions/unused-detection";
 
 
 interface Props {
@@ -51,7 +51,7 @@ export const CodeEditor = ({
         keymap.of([indentWithTab]),
         minimap(),
         indentationMarkers(),
-        ...(isTypeScript ? unusedImportHighlighter() : []),
+        ...(isTypeScript ? unusedDetection() : []),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             onChange(update.state.doc.toString());
