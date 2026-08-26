@@ -1,5 +1,5 @@
 /**
- * Syntax-only, scope-aware "unused import" dimming for CodeMirror 6 + TypeScript.
+ * Syntax-only, scope-aware "unused import/variable" dimming for CodeMirror 6 + TypeScript.
  *
  * No TypeScript compiler, no language server, no Worker — just the Lezer syntax
  * tree that @codemirror/lang-javascript already builds for highlighting. It does
@@ -12,6 +12,13 @@
  *     console.log(foo); // uses the LOCAL foo, not the import
  *   }
  *   // -> `foo` import is correctly reported as unused
+ *
+ * Also detects unused local variables (const/let/var/function params/catch params/loop vars):
+ *
+ *   const x = 1;  // unused -> dimmed
+ *   function foo(unusedParam) { }  // unused -> dimmed
+ *   for (const i of [1]) { }  // unused -> dimmed
+ *   catch (e) { }  // unused -> dimmed
  *
  * Validated against: plain usage, shadowing (block/function/for-of/catch),
  * destructured + renamed + rest params, class methods, hoisted function
@@ -80,9 +87,10 @@ interface Reference {
   scope: Scope;
 }
 
-function buildScopes(tree: Tree, doc: Text): { root: Scope; unresolved: Reference[] } {
+function buildScopes(tree: Tree, doc: Text): { root: Scope; allScopes: Scope[]; unresolved: Reference[] } {
   const text = (n: SyntaxNode) => doc.sliceString(n.from, n.to);
   const references: Reference[] = [];
+  const allScopes: Scope[] = [];
   let root!: Scope;
 
   function declareBindingsIn(node: SyntaxNode, scope: Scope, isImport: boolean) {
@@ -105,6 +113,7 @@ function buildScopes(tree: Tree, doc: Text): { root: Scope; unresolved: Referenc
     switch (node.name) {
       case "Script": {
         root = new Scope(null);
+        allScopes.push(root);
         for (const c of children(node)) walk(c, root);
         break;
       }
@@ -123,6 +132,7 @@ function buildScopes(tree: Tree, doc: Text): { root: Scope; unresolved: Referenc
       case "FunctionDeclaration":
       case "FunctionExpression": {
         const inner = new Scope(scope);
+        allScopes.push(inner);
         for (const c of children(node)) {
           if (c.name === "VariableDefinition") scope!.declare(text(c), false, c.from, c.to); // fn's own name lives in the OUTER scope
           else if (c.name === "ParamList") declareBindingsIn(c, inner, false);
@@ -132,6 +142,7 @@ function buildScopes(tree: Tree, doc: Text): { root: Scope; unresolved: Referenc
       }
       case "ArrowFunction": {
         const inner = new Scope(scope);
+        allScopes.push(inner);
         for (const c of children(node)) {
           if (c.name === "ParamList") declareBindingsIn(c, inner, false);
           else walk(c, inner);
@@ -140,6 +151,7 @@ function buildScopes(tree: Tree, doc: Text): { root: Scope; unresolved: Referenc
       }
       case "MethodDeclaration": {
         const inner = new Scope(scope);
+        allScopes.push(inner);
         for (const c of children(node)) {
           if (c.name === "ParamList") declareBindingsIn(c, inner, false);
           else if (c.name === "PropertyDefinition") {
@@ -157,6 +169,7 @@ function buildScopes(tree: Tree, doc: Text): { root: Scope; unresolved: Referenc
       }
       case "ForStatement": {
         const inner = new Scope(scope);
+        allScopes.push(inner);
         for (const c of children(node)) {
           if (c.name.startsWith("For")) {
             // ForSpec / ForOfSpec / ForInSpec: declare the loop variable, then
@@ -172,6 +185,7 @@ function buildScopes(tree: Tree, doc: Text): { root: Scope; unresolved: Referenc
       }
       case "CatchClause": {
         const inner = new Scope(scope);
+        allScopes.push(inner);
         for (const c of children(node)) {
           if (c.name === "VariableDefinition") inner.declare(text(c), false, c.from, c.to);
           else walk(c, inner);
@@ -180,6 +194,7 @@ function buildScopes(tree: Tree, doc: Text): { root: Scope; unresolved: Referenc
       }
       case "Block": {
         const inner = new Scope(scope);
+        allScopes.push(inner);
         for (const c of children(node)) walk(c, inner);
         break;
       }
@@ -196,23 +211,34 @@ function buildScopes(tree: Tree, doc: Text): { root: Scope; unresolved: Referenc
   }
 
   walk(tree.topNode, null);
-  return { root, unresolved: references };
+  return { root, allScopes, unresolved: references };
 }
 
-export function findUnusedImports(state: EditorState): { from: number; to: number }[] {
+function findUnused(state: EditorState): { imports: { from: number; to: number }[]; variables: { from: number; to: number }[] } {
   const tree = syntaxTree(state);
-  const { root, unresolved } = buildScopes(tree, state.doc);
+  const { root, allScopes, unresolved } = buildScopes(tree, state.doc);
 
+  // Resolve all references
   for (const ref of unresolved) {
     const decl = ref.scope.resolve(ref.name);
-    if (decl && decl.isImport) decl.used = true;
+    if (decl) decl.used = true;
   }
 
-  const unused: { from: number; to: number }[] = [];
-  for (const d of root.decls.values()) {
-    if (d.isImport && !d.used) unused.push({ from: d.from, to: d.to });
+  const unusedImports: { from: number; to: number }[] = [];
+  const unusedVariables: { from: number; to: number }[] = [];
+
+  // Check all scopes for unused declarations
+  for (const scope of allScopes) {
+    for (const d of scope.decls.values()) {
+      if (d.isImport && !d.used) {
+        unusedImports.push({ from: d.from, to: d.to });
+      } else if (!d.isImport && !d.used) {
+        unusedVariables.push({ from: d.from, to: d.to });
+      }
+    }
   }
-  return unused;
+
+  return { imports: unusedImports, variables: unusedVariables };
 }
 
 // ---------------------------------------------------------------------------
@@ -220,13 +246,19 @@ export function findUnusedImports(state: EditorState): { from: number; to: numbe
 // ---------------------------------------------------------------------------
 
 const unusedImportMark = Decoration.mark({ class: "cm-unused-import" });
+const unusedVariableMark = Decoration.mark({ class: "cm-unused-variable" });
 
 function buildDecorations(state: EditorState): DecorationSet {
-  const unused = findUnusedImports(state).sort((a, b) => a.from - b.from);
-  return Decoration.set(unused.map(({ from, to }) => unusedImportMark.range(from, to)));
+  const { imports, variables } = findUnused(state);
+  const ranges: { from: number; to: number; mark: typeof unusedImportMark | typeof unusedVariableMark }[] = [
+    ...imports.map(({ from, to }) => ({ from, to, mark: unusedImportMark })),
+    ...variables.map(({ from, to }) => ({ from, to, mark: unusedVariableMark })),
+  ];
+  ranges.sort((a, b) => a.from - b.from);
+  return Decoration.set(ranges.map(({ from, to, mark }) => mark.range(from, to)));
 }
 
-export const unusedImportsField = StateField.define<DecorationSet>({
+export const unusedDetectionField = StateField.define<DecorationSet>({
   create(state) {
     return buildDecorations(state);
   },
@@ -237,11 +269,20 @@ export const unusedImportsField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
-export const unusedImportsTheme = EditorView.baseTheme({
+export const unusedDetectionTheme = EditorView.baseTheme({
   ".cm-unused-import": { opacity: "0.55" },
+  ".cm-unused-variable": { opacity: "0.6" },
 });
 
 /** Drop this into your TypeScript editor's extensions array. */
-export function unusedImportHighlighter() {
-  return [unusedImportsField, unusedImportsTheme];
+export function unusedDetectionHighlighter() {
+  return [unusedDetectionField, unusedDetectionTheme];
+}
+
+// Backward compatibility exports
+export const unusedImportsField = unusedDetectionField;
+export const unusedImportsTheme = unusedDetectionTheme;
+export const unusedImportHighlighter = unusedDetectionHighlighter;
+export function findUnusedImports(state: EditorState): { from: number; to: number }[] {
+  return findUnused(state).imports;
 }
