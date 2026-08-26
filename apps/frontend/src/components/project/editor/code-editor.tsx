@@ -8,6 +8,7 @@ import { interactiveValues } from "./extensions/interact";
 import { customTheme, editorHighlightExtension } from "./extensions/theme";
 import { customSetup } from "./extensions/custom-setup";
 import { minimap } from "./extensions/minimap";
+import { unusedImportHighlighter } from "./extensions/unused-imports";
 
 
 interface Props {
@@ -28,6 +29,11 @@ export const CodeEditor = ({
     return getLanguageExtension(fileName)
   }, [fileName])
 
+  const isTypeScript = useMemo(() => {
+    const ext = fileName.split(".").pop()?.toLowerCase();
+    return ext === "ts" || ext === "tsx";
+  }, [fileName])
+
   useEffect(() => {
     if (!editorRef.current) return;
 
@@ -45,6 +51,7 @@ export const CodeEditor = ({
         keymap.of([indentWithTab]),
         minimap(),
         indentationMarkers(),
+        ...(isTypeScript ? unusedImportHighlighter() : []),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             onChange(update.state.doc.toString());
