@@ -20,15 +20,14 @@ import { ProjectRepository } from 'src/common/database/repositories/project/proj
   },
 })
 export class RealtimeGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
   constructor(
     private readonly connectionHandler: ConnectionHandler,
     private readonly projectRepository: ProjectRepository,
-  ) {}
+  ) { }
 
   handleConnection(socket: Socket) {
     return this.connectionHandler.handleConnect(socket);
@@ -43,8 +42,6 @@ export class RealtimeGateway
     @ConnectedSocket() socket: Socket,
     @MessageBody() projectId: string,
   ) {
-    const userId = socket.data.userId;
-
     const project = await this.projectRepository.findById(projectId);
 
     if (!project) {
@@ -54,10 +51,8 @@ export class RealtimeGateway
 
       return;
     }
-
-    if (project.userId != userId) {
-      console.log(project.userId, userId);
-
+    if (project.userId.toString() != socket?.data?.user?.id?.toString()) {
+      console.log("faild to connect project with user id :", socket.data.user.id.toString())
       socket.emit('project:error', {
         message: 'Unauthorized',
       });

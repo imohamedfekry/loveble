@@ -33,15 +33,55 @@ services:
     image: minio/minio
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "19000:9000"
+      - "19001:9001"
     environment:
       MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: password123
+      MINIO_ROOT_PASSWORD: admin123456
     volumes:
       - minio_data:/data
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    restart: "no"
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 admin admin123456; do
+        echo 'Waiting for MinIO...';
+        sleep 2;
+      done;
+
+      mc mb --ignore-existing local/squadra;
+      mc version enable local/squadra;
+
+      mc mb --ignore-existing local/walgit;
+      mc version enable local/walgit;
+
+      echo 'MinIO buckets initialized successfully.';
+      "
+
+  walgit:
+    build:
+      context: ./walgit
+      dockerfile: Containerfile
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "8090:8080"
+    environment:
+      AWS_ACCESS_KEY_ID: userhere
+      AWS_SECRET_ACCESS_KEY: passwordhere
+      WALGIT_TOKEN_ME: "tokenhere"
+    volumes:
+      - ./walgit.toml:/etc/walgit/walgit.toml:ro
+      - walgit-cache:/var/lib/walgit
     restart: unless-stopped
 
 volumes:
   searxng-data:
   minio_data:
+  walgit-cache:

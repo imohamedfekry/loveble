@@ -28,7 +28,7 @@ services:
     volumes:
       - searxng-data:/etc/searxng
     restart: unless-stopped
-    
+
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
@@ -57,9 +57,31 @@ services:
       mc mb --ignore-existing local/squadra;
       mc version enable local/squadra;
 
-      echo 'MinIO bucket initialized successfully.';
+      mc mb --ignore-existing local/walgit;
+      mc version enable local/walgit;
+
+      echo 'MinIO buckets initialized successfully.';
       "
+
+  walgit:
+    build:
+      context: ./walgit
+      dockerfile: Containerfile
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "8090:8080"
+    environment:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: admin123456
+      WALGIT_TOKEN_ME: "ucantgetcodelolf91e7abd43a394927ac0a4lol9dade725da903647f43bd89fct4a9870life00happyarrrmyy"
+    volumes:
+      - ./walgit.toml:/etc/walgit/walgit.toml:ro
+      - walgit-cache:/var/lib/walgit
+    restart: unless-stopped
 
 volumes:
   searxng-data:
   minio_data:
+  walgit-cache:
