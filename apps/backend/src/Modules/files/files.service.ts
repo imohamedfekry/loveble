@@ -15,7 +15,7 @@ import {
   UpdateFileContentDto,
   UpdateFileDto,
 } from './dto/file.dto';
-import { FILE_EVENTES } from '../realtime/events/files.events';
+import { FILE_EVENTS } from '../realtime/events/files.events';
 import * as v from 'valibot';
 import { FileStandard } from './dto/file.dto';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
@@ -146,7 +146,7 @@ export class FileService {
 
     this.realtimeEmitService.toProject(
       projectId.toString(),
-      FILE_EVENTES.CREATED,
+      FILE_EVENTS.CREATED,
       file,
     );
     return success(RESPONSE_MESSAGES.FILE.CREATED, { file });
@@ -224,7 +224,7 @@ export class FileService {
 
     this.realtimeEmitService.toProject(
       projectId.toString(),
-      FILE_EVENTES.UPDATED,
+      FILE_EVENTS.UPDATED,
       file,
     );
     return success(RESPONSE_MESSAGES.FILE.UPDATED, { file });
@@ -255,7 +255,7 @@ export class FileService {
 
     this.realtimeEmitService.toProject(
       projectId.toString(),
-      FILE_EVENTES.CONTENT_UPDATED,
+      FILE_EVENTS.CONTENT_UPDATED,
       {
         fileId: file.id,
       },
@@ -284,7 +284,7 @@ export class FileService {
 
     this.realtimeEmitService.toProject(
       projectId.toString(),
-      FILE_EVENTES.DELETED,
+      FILE_EVENTS.DELETED,
       file,
     );
 
