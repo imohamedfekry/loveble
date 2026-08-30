@@ -115,6 +115,33 @@ export const customTheme = EditorView.theme({
     color: "var(--editor-function)",
     textDecoration: "underline",
   },
+  ".cm-remote-caret": {
+    position: "relative",
+    display: "inline-block",
+    borderLeft: "2px solid",
+    marginLeft: "-1px",
+    pointerEvents: "none",
+    height: "1.15em",
+  },
+  ".cm-remote-caret-label": {
+    position: "absolute",
+    top: "-1.35em",
+    left: "-1px",
+    color: "#fff",
+    fontSize: "10px",
+    fontFamily: "var(--font-sans), sans-serif",
+    lineHeight: "1.2",
+    padding: "1px 4px",
+    borderRadius: "2px",
+    whiteSpace: "nowrap",
+    pointerEvents: "none",
+    maxWidth: "9rem",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  ".cm-remote-selection": {
+    pointerEvents: "none",
+  },
 })
 
 export const editorHighlightStyle = HighlightStyle.define([

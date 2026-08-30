@@ -11,6 +11,7 @@ import {
     useUpdateFile,
 } from "@/lib/hooks/file/useFiles";
 import { TreeItemWrapper } from "./tree-item-wrapper";
+import { FilePresenceDots } from "./file-presence-dots";
 import { RenameInput } from "./rename-input";
 import { TreeItemWrapperSkeleton } from "./TreeItemWrapperSkeleton";
 import { useEditor } from "@/lib/hooks/use-editor";
@@ -91,6 +92,7 @@ export const Tree = ({
             >
                 <FileIcon fileName={filename} autoAssign className="size-4 shrink-0" />
                 <span className="truncate text-sm">{filename}</span>
+                <FilePresenceDots fileId={item.id} />
             </TreeItemWrapper>
         );
     }

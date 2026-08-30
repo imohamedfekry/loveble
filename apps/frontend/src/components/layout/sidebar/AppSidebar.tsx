@@ -165,6 +165,7 @@ export function AppSidebar({
                   alt="loveble"
                   width={16}
                   height={16}
+                  loading="eager"
                   className={cn(
                     iconSwapMotion,
                     "col-start-1 row-start-1 h-4 w-4 object-contain",

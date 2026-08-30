@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { AlertTriangleIcon, FileWarningIcon } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import { FileBreadcrumbs } from "./file-breadcrumbs";
@@ -7,8 +7,15 @@ import { TopNavigation } from "./top-navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEditor } from "@/lib/hooks/use-editor";
 import { useFile, useFileContent } from "@/lib/hooks/file/useFiles";
+import { useCollaboration } from "@/lib/socket/hooks/useCollaboration";
+import { serializeSelections } from "@/lib/socket/collab-protocol";
+import { useSocketStatus } from "@/lib/socket/socket-store";
 
 const DEBOUNCE_MS = 1500;
+
+function generateClientID(): string {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
 
 function isTextContent(contentType: string): boolean {
   const type = contentType.toLowerCase();
@@ -49,7 +56,6 @@ function EditorSkeleton() {
         <div className="flex items-center gap-2">
           <Skeleton className="h-3.5 w-10 rounded" />
           <Skeleton className="h-3.5 flex-[0.9] rounded" />
-          <Skeleton className="h-3.5 w-16 rounded" />
         </div>
         <div className="flex items-center gap-2">
           <Skeleton className="h-3.5 w-10 rounded" />
@@ -97,6 +103,28 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
   );
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clientID = useMemo(() => generateClientID(), []);
+  const socketStatus = useSocketStatus();
+  const canJoinCollab =
+    Boolean(activeTabId) &&
+    Boolean(content) &&
+    socketStatus === "connected";
+
+  const { setView, snapshot, peers, sendAwareness } = useCollaboration({
+    fileId: canJoinCollab ? (activeTabId ?? null) : null,
+    projectId,
+    initialContent: content?.content ?? "",
+    clientID,
+  });
+
+  const collabConfig = useMemo(() => {
+    if (!snapshot || socketStatus !== "connected") return undefined;
+
+    return {
+      clientID,
+      startVersion: snapshot.version,
+    };
+  }, [snapshot, socketStatus, clientID]);
 
   useEffect(() => {
     const timeout = timeoutRef.current;
@@ -122,6 +150,7 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
               alt="loveble Logo"
               width={50}
               height={50}
+              loading="eager"
               className="opacity-25"
             />
           </div>
@@ -171,19 +200,32 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
           activeFile.type === "file" &&
           !error &&
           content &&
-          isTextContent(content.contentType) && (
-            <CodeEditor
-              key={activeFile.id}
-              fileName={activeFile.name}
-              initialValue={content.content}
-              onChange={(nextContent) => {
-                if (timeoutRef.current) {
-                  clearTimeout(timeoutRef.current);
-                }
+          isTextContent(content.contentType) &&
+          socketStatus === "connected" &&
+          !snapshot && <EditorSkeleton />}
 
-                timeoutRef.current = setTimeout(() => {
-                  console.log("content changed", nextContent.length);
-                }, DEBOUNCE_MS);
+        {activeFile &&
+          activeFile.type === "file" &&
+          !error &&
+          content &&
+          isTextContent(content.contentType) &&
+          (snapshot || socketStatus !== "connected") && (
+            <CodeEditor
+              key={`${activeFile.id}:${snapshot?.version ?? "offline"}`}
+              fileName={activeFile.name}
+              initialValue={snapshot?.document ?? content.content}
+              collaboration={collabConfig}
+              peers={peers}
+              onLocalAwareness={sendAwareness}
+              onViewReady={(view) => {
+                setView(view);
+                if (!view) return;
+                sendAwareness({
+                  selection: serializeSelections(
+                    view.state.selection.ranges,
+                    view.state.selection.mainIndex,
+                  ),
+                });
               }}
             />
           )}

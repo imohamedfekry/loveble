@@ -37,6 +37,7 @@ export function Navbar() {
                       alt="Logo"
                       width={20}
                       height={20}
+                      loading="eager"
                       className="rounded-sm"
                     />
 

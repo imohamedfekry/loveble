@@ -92,6 +92,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                       alt="Logo"
                       width={20}
                       height={20}
+                      loading="eager"
                       className="rounded-sm outline outline-1 outline-border"
                     />
 
