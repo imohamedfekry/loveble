@@ -11,7 +11,10 @@ import {
     useUpdateFile,
 } from "@/lib/hooks/file/useFiles";
 import { TreeItemWrapper } from "./tree-item-wrapper";
-import { FilePresenceDots } from "./file-presence-dots";
+import {
+  FilePresenceDots,
+  FolderPresenceDots,
+} from "./file-presence-dots";
 import { RenameInput } from "./rename-input";
 import { TreeItemWrapperSkeleton } from "./TreeItemWrapperSkeleton";
 import { useEditor } from "@/lib/hooks/use-editor";
@@ -142,6 +145,11 @@ export const Tree = ({
                     <span className="truncate text-sm">
                         {filename}
                     </span>
+                    <FolderPresenceDots
+                        folderId={item.id}
+                        projectId={projectId}
+                        isOpen={isOpen}
+                    />
                 </TreeItemWrapper>
             )}
 
