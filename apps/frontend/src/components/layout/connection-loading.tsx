@@ -26,6 +26,7 @@ export function ConnectionLoading({
     alt="loveble"
     width={64}
     height={64}
+    loading="eager"
     draggable={false}
     className="relative z-10 size-16 select-none animate-[loveble-pulse_2s_ease-in-out_infinite] motion-reduce:[animation:none]"
   />
