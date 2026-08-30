@@ -4,6 +4,7 @@ import { ConnectionHandler } from './core/connection.handler';
 import { ConnectionManager } from './core/connection.manager';
 import { SocketAuthService } from './core/socket-auth.service';
 import { RealtimeEmitService } from './core/realtime-emit.service';
+import { CollaborationService } from './core/collaboration.service';
 
 @Module({
   providers: [
@@ -12,7 +13,8 @@ import { RealtimeEmitService } from './core/realtime-emit.service';
     ConnectionManager,
     SocketAuthService,
     RealtimeEmitService,
+    CollaborationService,
   ],
-  exports: [RealtimeGateway, ConnectionManager, RealtimeEmitService],
+  exports: [RealtimeGateway, ConnectionManager, RealtimeEmitService, CollaborationService],
 })
 export class RealtimeModule {}
