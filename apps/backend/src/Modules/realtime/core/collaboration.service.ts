@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import {
+  AwarenessService,
+  AwarenessSelection,
+  AwarenessState,
+} from './awareness.service';
+
 export interface SerializedUpdate {
   clientID: string;
   changes: unknown;
@@ -19,19 +25,6 @@ export type PushResult = {
   document: string;
 };
 
-export type AwarenessSelection = {
-  anchor: number;
-  head: number;
-};
-
-export type AwarenessState = {
-  socketId: string;
-  userId: string;
-  userName: string;
-  selection: AwarenessSelection[] | null;
-  mouse: { x: number; y: number } | null;
-};
-
 export type FileViewer = {
   socketId: string;
   userId: string;
@@ -40,27 +33,13 @@ export type FileViewer = {
   projectId: string;
 };
 
-function normalizeSelection(
-  selection: AwarenessSelection | AwarenessSelection[] | null | undefined,
-): AwarenessSelection[] | null | undefined {
-  if (selection === undefined) return undefined;
-  if (selection == null) return null;
-  const list = Array.isArray(selection) ? selection : [selection];
-  const valid = list.filter(
-    (range) =>
-      range &&
-      Number.isFinite(range.anchor) &&
-      Number.isFinite(range.head),
-  );
-  return valid.length ? valid : null;
-}
-
 @Injectable()
 export class CollaborationService {
   private readonly logger = new Logger(CollaborationService.name);
   private documents = new Map<string, FileDocument>();
-  private awareness = new Map<string, Map<string, AwarenessState>>();
   private occupancyBySocket = new Map<string, FileViewer>();
+
+  constructor(private readonly awarenessService: AwarenessService) {}
 
   getDocument(fileId: string, initialContent: string): FileDocument {
     if (!this.documents.has(fileId)) {
@@ -181,7 +160,7 @@ export class CollaborationService {
     return doc.updates.slice(version);
   }
 
-  setAwareness(
+  async setAwareness(
     fileId: string,
     state: {
       socketId: string;
@@ -190,34 +169,19 @@ export class CollaborationService {
       selection?: AwarenessSelection | AwarenessSelection[] | null;
       mouse?: { x: number; y: number } | null;
     },
-  ): AwarenessState {
-    if (!this.awareness.has(fileId)) {
-      this.awareness.set(fileId, new Map());
-    }
-
-    const current = this.awareness.get(fileId)!.get(state.socketId);
-    const next: AwarenessState = {
-      socketId: state.socketId,
-      userId: state.userId,
-      userName: state.userName,
-      selection:
-        state.selection === undefined
-          ? current?.selection ?? null
-          : normalizeSelection(state.selection) ?? null,
-      mouse: state.mouse === undefined ? current?.mouse ?? null : state.mouse,
-    };
-
-    this.awareness.get(fileId)!.set(state.socketId, next);
-    return next;
+  ): Promise<AwarenessState> {
+    return this.awarenessService.setAwareness(fileId, state);
   }
 
-  listAwareness(fileId: string, exceptSocketId?: string): AwarenessState[] {
-    const peers = this.awareness.get(fileId);
-    if (!peers) return [];
+  async listAwareness(
+    fileId: string,
+    exceptSocketId?: string,
+  ): Promise<AwarenessState[]> {
+    return this.awarenessService.listAwareness(fileId, exceptSocketId);
+  }
 
-    return [...peers.values()].filter(
-      (peer) => peer.socketId !== exceptSocketId,
-    );
+  async removeAwareness(fileId: string, socketId: string): Promise<boolean> {
+    return this.awarenessService.removeAwareness(fileId, socketId);
   }
 
   joinFile(
@@ -228,7 +192,6 @@ export class CollaborationService {
     userName: string,
   ): { viewer: FileViewer; left: FileViewer[] } {
     const left = this.leaveSocket(socketId);
-
     const viewer: FileViewer = {
       socketId,
       userId,
@@ -260,20 +223,8 @@ export class CollaborationService {
     );
   }
 
-  removeAwareness(fileId: string, socketId: string): boolean {
-    const peers = this.awareness.get(fileId);
-    if (!peers) return false;
-
-    const removed = peers.delete(socketId);
-    if (peers.size === 0) {
-      this.awareness.delete(fileId);
-    }
-    return removed;
-  }
-
   removeDocument(fileId: string) {
     this.documents.delete(fileId);
-    this.awareness.delete(fileId);
     this.logger.log(`Removed document for file: ${fileId}`);
   }
 }

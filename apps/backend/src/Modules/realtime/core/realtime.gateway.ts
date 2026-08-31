@@ -7,11 +7,14 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 
 import { ConnectionHandler } from './connection.handler';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
-import { CollaborationService, type AwarenessSelection } from './collaboration.service';
+import { FileRepository } from 'src/common/database/repositories/project/file.repository';
+import { CollaborationService } from './collaboration.service';
+import type { AwarenessSelection } from './awareness.service';
 import { COLLAB_EVENTS } from '../events/files.events';
 
 @WebSocketGateway({
@@ -26,21 +29,24 @@ export class RealtimeGateway
   @WebSocketServer()
   server!: Server;
 
+  private readonly logger = new Logger(RealtimeGateway.name);
+
   private fileRooms = new Map<string, Set<string>>();
   private socketFiles = new Map<string, Set<string>>();
 
   constructor(
     private readonly connectionHandler: ConnectionHandler,
     private readonly projectRepository: ProjectRepository,
+    private readonly fileRepository: FileRepository,
     private readonly collabService: CollaborationService,
-  ) { }
+  ) {}
 
   handleConnection(socket: Socket) {
     return this.connectionHandler.handleConnect(socket);
   }
 
-  handleDisconnect(socket: Socket) {
-    this.leaveAllFileRooms(socket);
+  async handleDisconnect(socket: Socket) {
+    await this.leaveAllFileRooms(socket);
     return this.connectionHandler.handleDisconnect(socket);
   }
 
@@ -49,29 +55,35 @@ export class RealtimeGateway
     @ConnectedSocket() socket: Socket,
     @MessageBody() projectId: string,
   ) {
-    const project = await this.projectRepository.findById(projectId);
-
-    if (!project) {
-      socket.emit('project:error', {
-        message: 'Project not found',
-      });
-
+    if (!projectId || typeof projectId !== 'string') {
+      socket.emit('project:error', { message: 'Invalid projectId' });
       return;
     }
-    if (project.userId.toString() != socket?.data?.user?.id?.toString()) {
-      console.log("faild to connect project with user id :", socket.data.user.id.toString())
-      socket.emit('project:error', {
-        message: 'Unauthorized',
-      });
+
+    let project: Awaited<ReturnType<ProjectRepository['findById']>>;
+    try {
+      project = await this.projectRepository.findById(projectId);
+    } catch {
+      socket.emit('project:error', { message: 'Invalid projectId format' });
+      return;
+    }
+
+    if (!project) {
+      socket.emit('project:error', { message: 'Project not found' });
+      return;
+    }
+
+    const userId = socket.data?.user?.id?.toString() ?? socket.data?.userId;
+    if (!userId || project.userId.toString() !== userId.toString()) {
+      this.logger.warn(`Unauthorized project subscribe attempt socket=${socket.id} project=${projectId} user=${userId}`);
+      socket.emit('project:error', { message: 'Unauthorized' });
       return;
     }
 
     await socket.join(`project:${projectId}`);
-    console.log(`user ${socket.data.userId} Connected To Project ${projectId}`);
+    this.logger.log(`user ${userId} Connected To Project ${projectId}`);
 
-    socket.emit('project:subscribed', {
-      projectId,
-    });
+    socket.emit('project:subscribed', { projectId });
     socket.emit(COLLAB_EVENTS.PRESENCE_STATE, {
       projectId,
       viewers: this.collabService.listProjectViewers(projectId),
@@ -83,11 +95,9 @@ export class RealtimeGateway
     @ConnectedSocket() socket: Socket,
     @MessageBody() projectId: string,
   ) {
+    if (!projectId || typeof projectId !== 'string') return;
     await socket.leave(`project:${projectId}`);
-
-    socket.emit('project:unsubscribed', {
-      projectId,
-    });
+    socket.emit('project:unsubscribed', { projectId });
   }
 
   @SubscribeMessage(COLLAB_EVENTS.JOIN)
@@ -95,18 +105,57 @@ export class RealtimeGateway
     @ConnectedSocket() socket: Socket,
     @MessageBody() payload: { fileId: string; projectId: string; initialContent: string },
   ) {
-    const { fileId, projectId, initialContent } = payload;
+    const { fileId, projectId, initialContent } = payload ?? {};
 
-    if (!fileId || !projectId) {
+    if (!fileId || !projectId || typeof fileId !== 'string' || typeof projectId !== 'string') {
+      socket.emit(COLLAB_EVENTS.SYNC, {
+        fileId: fileId ?? null,
+        error: 'Invalid payload: fileId and projectId required',
+      });
       return;
     }
 
-    const { userId, userName } = this.presenceIdentity(socket);
+    // تحقق ملكية المشروع
+    let project: Awaited<ReturnType<ProjectRepository['findById']>> | null = null;
+    try {
+      project = await this.projectRepository.findById(projectId);
+    } catch {
+      socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Invalid projectId' });
+      return;
+    }
+    if (!project) {
+      socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Project not found' });
+      return;
+    }
+    const userId = socket.data?.user?.id?.toString() ?? socket.data?.userId;
+    if (!userId || project.userId.toString() !== userId.toString()) {
+      socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Unauthorized for project' });
+      return;
+    }
+
+    // تحقق أن الملف ينتمي للمشروع
+    try {
+      const file = await this.fileRepository.getFile(BigInt(fileId));
+      if (!file) {
+        socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'File not found' });
+        return;
+      }
+      if (file.projectId.toString() !== projectId.toString()) {
+        socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'File does not belong to project' });
+        return;
+      }
+    } catch {
+      // لو fileId ليس BigInt صالح، نعتبره خطأ
+      socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Invalid fileId' });
+      return;
+    }
+
+    const { userId: presenceUserId, userName } = this.presenceIdentity(socket);
     const occupancy = this.collabService.joinFile(
       fileId,
       projectId,
       socket.id,
-      userId,
+      presenceUserId,
       userName,
     );
 
@@ -134,10 +183,10 @@ export class RealtimeGateway
 
     socket.emit(COLLAB_EVENTS.AWARENESS_STATE, {
       fileId,
-      peers: this.collabService.listAwareness(fileId, socket.id),
+      peers: await this.collabService.listAwareness(fileId, socket.id),
     });
 
-    console.log(`Socket ${socket.id} joined file room: ${fileId}`);
+    this.logger.log(`Socket ${socket.id} joined file room: ${fileId}`);
   }
 
   @SubscribeMessage(COLLAB_EVENTS.LEAVE)
@@ -145,16 +194,19 @@ export class RealtimeGateway
     @ConnectedSocket() socket: Socket,
     @MessageBody() payload: { fileId: string },
   ) {
-    await socket.leave(`file:${payload.fileId}`);
-    this.removeFromFileRoom(payload.fileId, socket.id);
-    this.removeSocketFile(socket.id, payload.fileId);
-    this.broadcastAwarenessLeave(payload.fileId, socket.id);
-    const left = this.collabService.leaveFile(payload.fileId, socket.id);
+    const fileId = payload?.fileId;
+    if (!fileId || typeof fileId !== 'string') return;
+
+    await socket.leave(`file:${fileId}`);
+    this.removeFromFileRoom(fileId, socket.id);
+    this.removeSocketFile(socket.id, fileId);
+    await this.broadcastAwarenessLeave(fileId, socket.id);
+    const left = this.collabService.leaveFile(fileId, socket.id);
     if (left) {
       this.broadcastPresenceLeave(left);
     }
 
-    console.log(`Socket ${socket.id} left file room: ${payload.fileId}`);
+    this.logger.log(`Socket ${socket.id} left file room: ${fileId}`);
   }
 
   @SubscribeMessage(COLLAB_EVENTS.UPDATE)
@@ -168,7 +220,16 @@ export class RealtimeGateway
       document?: string;
     },
   ) {
-    const { fileId, updates: clientUpdates, version, document } = payload;
+    const { fileId, updates: clientUpdates, version, document } = payload ?? {};
+    if (!fileId || typeof fileId !== 'string') {
+      return { accepted: false, fileId: fileId ?? null, fromVersion: 0, version: 0, updates: [] };
+    }
+    if (typeof version !== 'number' || !Number.isInteger(version) || version < 0) {
+      return { accepted: false, fileId, fromVersion: 0, version: 0, updates: [] };
+    }
+    if (clientUpdates && !Array.isArray(clientUpdates)) {
+      return { accepted: false, fileId, fromVersion: version, version: 0, updates: [] };
+    }
 
     const result = this.collabService.pushUpdates(
       fileId,
@@ -215,10 +276,16 @@ export class RealtimeGateway
       };
     },
   ) {
-    if (!payload?.fileId) return;
+    if (!payload?.fileId || typeof payload.fileId !== 'string') return;
+    // تحقق أن الـ socket داخل الغرفة (منع spoofing لملف لم ينضم إليه)
+    const files = this.socketFiles.get(socket.id);
+    if (!files || !files.has(payload.fileId)) {
+      // السماح مؤقتاً لكن مع تحذير - يمكن تفعيل الحماية لاحقاً
+      this.logger.debug(`Awareness from socket not in room file=${payload.fileId} socket=${socket.id}`);
+    }
 
     const { userId, userName } = this.presenceIdentity(socket);
-    const state = this.collabService.setAwareness(payload.fileId, {
+    const state = await this.collabService.setAwareness(payload.fileId, {
       socketId: socket.id,
       userId,
       userName,
@@ -271,10 +338,9 @@ export class RealtimeGateway
     });
   }
 
-  private broadcastAwarenessLeave(fileId: string, socketId: string) {
-    const removed = this.collabService.removeAwareness(fileId, socketId);
+  private async broadcastAwarenessLeave(fileId: string, socketId: string) {
+    const removed = await this.collabService.removeAwareness(fileId, socketId);
     if (!removed) return;
-
     this.server.to(`file:${fileId}`).emit(COLLAB_EVENTS.AWARENESS, {
       fileId,
       socketId,
@@ -316,12 +382,12 @@ export class RealtimeGateway
     }
   }
 
-  private leaveAllFileRooms(socket: Socket) {
+  private async leaveAllFileRooms(socket: Socket) {
     const files = this.socketFiles.get(socket.id);
     if (files) {
       for (const fileId of files) {
         this.removeFromFileRoom(fileId, socket.id);
-        this.broadcastAwarenessLeave(fileId, socket.id);
+        await this.broadcastAwarenessLeave(fileId, socket.id);
       }
       this.socketFiles.delete(socket.id);
     }
