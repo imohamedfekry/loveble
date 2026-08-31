@@ -31,41 +31,92 @@ export function NavItem({
         if (!open) e.stopPropagation();
       }}
       className={cn(
-        "relative flex h-8 w-full items-center rounded-md px-2 text-sm text-sidebar-foreground",
-        "transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sidebar-ring/70",
+        // ─────────────────────────────────────────────
+        // Base
+        // ─────────────────────────────────────────────
+        "relative flex h-8 w-full items-center overflow-hidden rounded-md px-2",
+        "text-sm text-sidebar-foreground",
+        "transition-[background-color,color]",
+        "duration-(--duration-quick) ease-(--ease-smooth-out)",
+        "motion-reduce:transition-none",
 
-        // Indicator — fixed geometry (2px × 55%), animated via scale + opacity only (no layout)
-        "after:pointer-events-none after:absolute after:left-0 after:top-1/2",
-        "after:h-[55%] after:w-0.5 after:-translate-y-1/2",
-        "after:origin-center after:rounded-full after:bg-muted-foreground after:content-['']",
+        // ─────────────────────────────────────────────
+        // Focus
+        // ─────────────────────────────────────────────
+        "focus-visible:outline-none",
+        "focus-visible:ring-2 focus-visible:ring-inset",
+        "focus-visible:ring-sidebar-ring/70",
+
+        // ─────────────────────────────────────────────
+        // Indicator
+        // 3px wide × ~18px high
+        // Transform only → no layout shift
+        // ─────────────────────────────────────────────
+        "after:pointer-events-none after:absolute",
+        "after:left-[-2.8%] after:top-1/2",
+        "after:h-[56%] after:w-[3px]",
+        "after:-translate-y-1/2",
+        "after:origin-center after:rounded-full",
+        "after:bg-muted-foreground",
+        "after:content-['']",
+
+        // Hidden / idle
         "after:scale-y-40 after:opacity-0",
-        "after:transition-[opacity,scale,background-color] after:duration-(--duration-quick) after:ease-(--ease-smooth-out) motion-reduce:after:transition-none",
 
-        // DEFAULT → quiet. HOVER (non-active) → subtle tint + soft indicator preview
-        !active &&
-          "hover:bg-sidebar-nav-hover hover:after:scale-y-60 hover:after:opacity-45",
+        // Smooth animation
+        "after:transition-[opacity,transform,background-color]",
+        "after:duration-(--duration-quick)",
+        "after:ease-(--ease-smooth-out)",
+        "motion-reduce:after:transition-none",
 
-        // ACTIVE → persistent tint + full indicator (stronger color/size/opacity than hover)
-        active &&
-          "bg-sidebar-nav-active after:bg-sidebar-foreground after:scale-y-100 after:opacity-100",
+        // ─────────────────────────────────────────────
+        // Hover — inactive
+        // Noticeably visible, but softer than active
+        // ─────────────────────────────────────────────
+        !active && [
+          "hover:bg-sidebar-nav-hover",
+          "hover:after:scale-y-90",
+          "hover:after:opacity-50",
+        ],
 
-        // ACTIVE + HOVER → keep active base, never weaken it
-        active &&
-          "hover:bg-sidebar-nav-active-hover hover:after:bg-sidebar-foreground hover:after:scale-y-100 hover:after:opacity-100",
+        // ─────────────────────────────────────────────
+        // Active
+        // ─────────────────────────────────────────────
+        active && [
+          "bg-sidebar-nav-active",
+          "after:bg-sidebar-foreground",
+          "after:scale-y-100",
+          "after:opacity-100",
+        ],
 
+        // ─────────────────────────────────────────────
+        // Active + Hover
+        // Keep the active indicator stable
+        // ─────────────────────────────────────────────
+        active && [
+          "hover:bg-sidebar-nav-active-hover",
+          "hover:after:bg-sidebar-foreground",
+          "hover:after:scale-y-100",
+          "hover:after:opacity-100",
+        ],
+
+        // ─────────────────────────────────────────────
+        // Collapsed sidebar
+        // ─────────────────────────────────────────────
         !open && "cursor-pointer"
       )}
     >
+      {/* Icon */}
       {Array.isArray(Icon) ? (
         <HugeiconsIcon
           icon={Icon}
-          className="h-4.5 w-4.5 shrink-0"
+          className="size-4 shrink-0"
         />
       ) : (
-        <Icon className="h-4 w-4 shrink-0" />
+        <Icon className="size-4 shrink-0" />
       )}
 
+      {/* Label */}
       <CollapseLabel
         open={open}
         className="ml-2.5"
@@ -73,14 +124,24 @@ export function NavItem({
         {label}
       </CollapseLabel>
 
+      {/* Shortcut */}
       {shortcut && (
         <span
           className={cn(
-            "ml-auto rounded bg-sidebar-accent px-1.5 py-0.5",
-            "text-[10px] whitespace-nowrap text-muted-foreground",
+            "ml-auto shrink-0 rounded px-1.5 py-0.5",
+            "bg-sidebar-accent",
+            "text-[10px] font-medium leading-none",
+            "whitespace-nowrap text-muted-foreground",
+            "transition-[background-color,color,opacity]",
+            "duration-(--duration-quick)",
+            "ease-(--ease-smooth-out)",
+            "motion-reduce:transition-none",
+
             open
               ? "opacity-100"
-              : "pointer-events-none opacity-0"
+              : "pointer-events-none opacity-0",
+
+            active && "text-sidebar-foreground/70"
           )}
         >
           {modKey} {shortcut}
@@ -89,3 +150,4 @@ export function NavItem({
     </button>
   );
 }
+
