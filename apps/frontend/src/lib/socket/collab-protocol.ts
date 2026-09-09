@@ -89,16 +89,30 @@ export type RemotePeer = {
   mouse: PresenceMouse | null;
 };
 
-export function peerColor(id: string, slot = 0): string {
+export function peerColor(socketId: string): string {
+  const colors = [
+    "#FF6B6B",
+    "#4ECDC4",
+    "#45B7D1",
+    "#96CEB4",
+    "#DDA0DD",
+    "#F7DC6F",
+    "#BB8FCE",
+    "#85C1E9",
+    "#F8C471",
+    "#82E0AA",
+    "#F1948A",
+    "#AED6F1",
+    "#F5CBA7",
+    "#D7BDE2",
+    "#A9CCE3",
+    "#EDBB99",
+  ];
   let hash = 0;
-  for (let i = 0; i < id.length; i += 1) {
-    hash = (hash << 5) - hash + id.charCodeAt(i);
-    hash |= 0;
+  for (let i = 0; i < socketId.length; i += 1) {
+    hash = (hash * 31 + socketId.charCodeAt(i)) | 0;
   }
-  const hue = (Math.abs(hash) + slot * 71) % 360;
-  const saturation = 74 + (slot % 2) * 8;
-  const lightness = 52 + (slot % 3) * 5;
-  return `hsl(${hue} ${saturation}% ${lightness}%)`;
+  return colors[Math.abs(hash) % colors.length];
 }
 
 export function distinguishSameAccountPeers(
@@ -121,6 +135,10 @@ export function distinguishSameAccountPeers(
     track(local.userId, local.socketId);
   }
 
+  for (const sockets of socketIdsByUser.values()) {
+    sockets.sort();
+  }
+
   return peers.map((peer) => {
     const sockets = socketIdsByUser.get(peer.userId) ?? [peer.socketId];
     const index = Math.max(0, sockets.indexOf(peer.socketId));
@@ -129,8 +147,8 @@ export function distinguishSameAccountPeers(
     return {
       ...peer,
       displayName:
-        duplicated && index > 0 ? `${peer.userName} ${index + 1}` : peer.userName,
-      color: peerColor(peer.socketId, duplicated ? index : 0),
+        duplicated && index > 0 ? `${peer.userName} ${index}` : peer.userName,
+      color: peer.color || peerColor(peer.socketId),
     };
   });
 }
@@ -144,6 +162,7 @@ export function toRemotePeer(input: {
   socketId: string;
   userId?: string;
   userName?: string;
+  color?: string;
   selection?: PresenceSelection | PresenceSelection[] | null;
   mouse?: PresenceMouse | null;
 }): RemotePeer {
@@ -154,7 +173,7 @@ export function toRemotePeer(input: {
     userId: String(input.userId ?? socketId),
     userName,
     displayName: userName,
-    color: peerColor(socketId),
+    color: input.color || peerColor(socketId),
     selection: normalizeSelections(input.selection),
     mouse: input.mouse ?? null,
   };

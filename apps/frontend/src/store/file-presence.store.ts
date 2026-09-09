@@ -9,6 +9,7 @@ export type FileViewer = {
   userName: string;
   fileId: string;
   projectId: string;
+  color: string;
 };
 
 type FilePresenceState = {

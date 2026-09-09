@@ -4,41 +4,37 @@ import { useMemo } from "react";
 import {
   useFileViewers,
   useFolderViewers,
+  type FileViewer,
 } from "@/store/file-presence.store";
-import { peerColor } from "@/lib/socket/collab-protocol";
 
-function buildDisplayInfo(
-  viewers: { userId: string; userName: string; socketId: string }[],
-) {
+function buildDisplayNames(viewers: FileViewer[]) {
   const byUser = new Map<string, string[]>();
-  for (const v of viewers) {
-    const sockets = byUser.get(v.userId) ?? [];
-    if (!sockets.includes(v.socketId)) sockets.push(v.socketId);
-    byUser.set(v.userId, sockets);
+  for (const viewer of viewers) {
+    const sockets = byUser.get(viewer.userId) ?? [];
+    if (!sockets.includes(viewer.socketId)) sockets.push(viewer.socketId);
+    byUser.set(viewer.userId, sockets);
+  }
+  for (const sockets of byUser.values()) {
+    sockets.sort();
   }
 
   const names = new Map<string, string>();
-  const colors = new Map<string, string>();
-  for (const v of viewers) {
-    const sockets = byUser.get(v.userId) ?? [v.socketId];
-    const index = Math.max(0, sockets.indexOf(v.socketId));
-    const hasMultiple = sockets.length > 1;
+  for (const viewer of viewers) {
+    const sockets = byUser.get(viewer.userId) ?? [viewer.socketId];
+    const index = Math.max(0, sockets.indexOf(viewer.socketId));
     names.set(
-      v.socketId,
-      hasMultiple && index > 0 ? `${v.userName} ${index + 1}` : v.userName,
+      viewer.socketId,
+      sockets.length > 1 && index > 0
+        ? `${viewer.userName} ${index}`
+        : viewer.userName,
     );
-    colors.set(v.socketId, peerColor(v.socketId, hasMultiple ? index : 0));
   }
-  return { names, colors };
+  return names;
 }
 
-function PresenceDotsView({
-  viewers,
-}: {
-  viewers: { userId: string; userName: string; socketId: string }[];
-}) {
-  const { names: displayNames, colors } = useMemo(
-    () => buildDisplayInfo(viewers),
+function PresenceDotsView({ viewers }: { viewers: FileViewer[] }) {
+  const displayNames = useMemo(
+    () => buildDisplayNames(viewers),
     [viewers],
   );
 
@@ -47,7 +43,7 @@ function PresenceDotsView({
   const visible = viewers.slice(0, 4);
   const extra = viewers.length - visible.length;
   const tooltip = viewers
-    .map((v) => displayNames.get(v.socketId) ?? v.userName)
+    .map((viewer) => displayNames.get(viewer.socketId) ?? viewer.userName)
     .join(", ");
 
   return (
@@ -57,7 +53,7 @@ function PresenceDotsView({
           <span
             key={viewer.socketId}
             className="flex size-3.5 items-center justify-center rounded-full text-[8px] font-semibold text-white ring-1 ring-sidebar"
-            style={{ backgroundColor: colors.get(viewer.socketId) }}
+            style={{ backgroundColor: viewer.color }}
           >
             {(displayNames.get(viewer.socketId) ?? viewer.userName)
               .slice(0, 1)

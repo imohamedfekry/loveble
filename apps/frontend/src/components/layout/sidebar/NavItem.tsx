@@ -34,7 +34,7 @@ export function NavItem({
         // ─────────────────────────────────────────────
         // Base
         // ─────────────────────────────────────────────
-        "relative flex h-8 w-full items-center overflow-hidden rounded-md px-2",
+        "relative flex h-8 w-full items-center rounded-md px-2",
         "text-sm text-sidebar-foreground",
         "transition-[background-color,color]",
         "duration-(--duration-quick) ease-(--ease-smooth-out)",
@@ -53,7 +53,7 @@ export function NavItem({
         // Transform only → no layout shift
         // ─────────────────────────────────────────────
         "after:pointer-events-none after:absolute",
-        "after:left-[-2.8%] after:top-1/2",
+        "after:left-0 after:top-1/2",
         "after:h-[56%] after:w-[3px]",
         "after:-translate-y-1/2",
         "after:origin-center after:rounded-full",

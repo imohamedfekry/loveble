@@ -198,10 +198,12 @@ export function useCollaboration({
       socketId: string;
       userId?: string;
       userName?: string;
+      color?: string;
       selection?: RemotePeer["selection"];
       mouse?: RemotePeer["mouse"];
     }) => {
       if (payload.fileId !== fileIdRef.current) return;
+      if (payload.socketId === socket.id) return;
 
       if (payload.type === "leave") {
         collabLog("peer left file", {
@@ -232,6 +234,7 @@ export function useCollaboration({
           socketId: payload.socketId,
           userId: payload.userId ?? existing?.userId,
           userName: payload.userName ?? existing?.userName,
+          color: payload.color ?? existing?.color,
           selection:
             payload.selection !== undefined
               ? payload.selection
@@ -250,6 +253,7 @@ export function useCollaboration({
         socketId: string;
         userId?: string;
         userName?: string;
+        color?: string;
         selection?: RemotePeer["selection"];
         mouse?: RemotePeer["mouse"];
       }>;
@@ -266,6 +270,7 @@ export function useCollaboration({
 
       const next: Record<string, RemotePeer> = {};
       for (const peer of payload.peers ?? []) {
+        if (peer.socketId === socket.id) continue;
         next[peer.socketId] = toRemotePeer(peer);
       }
       setPeers(next);

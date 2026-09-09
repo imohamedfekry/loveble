@@ -64,6 +64,7 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       clearRetry();
       retryCountRef.current = 0;
       subscribedProjectRef.current = null;
+      useFilePresenceStore.getState().clear();
     };
 
     const onSubscribed = (payload: { projectId?: string }) => {
