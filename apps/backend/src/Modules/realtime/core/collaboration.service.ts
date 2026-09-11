@@ -1,29 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import Redis from 'ioredis';
 
 import {
   AwarenessService,
   AwarenessSelection,
   AwarenessState,
 } from './awareness.service';
-
-export interface SerializedUpdate {
-  clientID: string;
-  changes: unknown;
-}
-
-export interface FileDocument {
-  version: number;
-  updates: SerializedUpdate[];
-  document: string;
-}
-
-export type PushResult = {
-  accepted: boolean;
-  fromVersion: number;
-  version: number;
-  updates: SerializedUpdate[];
-  document: string;
-};
+import { RedisService } from 'src/common/redis/redis.service';
 
 export type FileViewer = {
   socketId: string;
@@ -34,130 +17,48 @@ export type FileViewer = {
 };
 
 @Injectable()
-export class CollaborationService {
-  private readonly logger = new Logger(CollaborationService.name);
-  private documents = new Map<string, FileDocument>();
-  private occupancyBySocket = new Map<string, FileViewer>();
+export class CollaborationService implements OnModuleInit {
+  constructor(
+    private readonly awarenessService: AwarenessService,
+    private readonly redisService: RedisService,
+  ) {}
 
-  constructor(private readonly awarenessService: AwarenessService) {}
-
-  getDocument(fileId: string, initialContent: string): FileDocument {
-    if (!this.documents.has(fileId)) {
-      this.documents.set(fileId, {
-        version: 0,
-        updates: [],
-        document: initialContent,
-      });
-      this.logger.log(`Created new document for file: ${fileId}`);
-    }
-    return this.documents.get(fileId)!;
+  async onModuleInit(): Promise<void> {
+    await this.scanAndDelete('collab:*');
   }
 
-  getSnapshot(fileId: string, initialContent: string): {
-    version: number;
-    document: string;
-  } {
-    const doc = this.getDocument(fileId, initialContent);
-    return { version: doc.version, document: doc.document };
+  private async scanAndDelete(pattern: string): Promise<void> {
+    const redis = this.getRedis();
+    if (!redis) return;
+    try {
+      let cursor = '0';
+      do {
+        const result = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+        cursor = result[0];
+        const keys = result[1] as string[];
+        if (keys.length > 0) {
+          await redis.del(...keys);
+        }
+      } while (cursor !== '0');
+    } catch {
+      // ignore errors on startup flush
+    }
   }
 
-  pushUpdates(
-    fileId: string,
-    baseVersion: number,
-    updates: SerializedUpdate[],
-    resultingDocument?: string,
-  ): PushResult | null {
-    const doc = this.documents.get(fileId);
-    if (!doc) return null;
-
-    if (
-      typeof baseVersion !== 'number' ||
-      !Number.isInteger(baseVersion) ||
-      baseVersion < 0
-    ) {
-      return {
-        accepted: false,
-        fromVersion: 0,
-        version: doc.version,
-        updates: doc.updates.slice(),
-        document: doc.document,
-      };
+  private getRedis(): Redis {
+    const redis = this.redisService.getClient();
+    if (!redis) {
+      throw new Error('Redis client is not initialized');
     }
-
-    if (baseVersion > doc.version) {
-      return {
-        accepted: false,
-        fromVersion: doc.version,
-        version: doc.version,
-        updates: [],
-        document: doc.document,
-      };
-    }
-
-    if (baseVersion !== doc.version) {
-      return {
-        accepted: false,
-        fromVersion: baseVersion,
-        version: doc.version,
-        updates: doc.updates.slice(baseVersion),
-        document: doc.document,
-      };
-    }
-
-    if (!Array.isArray(updates) || updates.length === 0) {
-      return {
-        accepted: true,
-        fromVersion: baseVersion,
-        version: doc.version,
-        updates: [],
-        document: doc.document,
-      };
-    }
-
-    const valid = updates.every(
-      (update) =>
-        update &&
-        typeof update.clientID === 'string' &&
-        update.changes != null,
-    );
-
-    if (!valid) {
-      return {
-        accepted: false,
-        fromVersion: baseVersion,
-        version: doc.version,
-        updates: [],
-        document: doc.document,
-      };
-    }
-
-    for (const update of updates) {
-      doc.updates.push({
-        clientID: update.clientID,
-        changes: update.changes,
-      });
-    }
-
-    doc.version = doc.updates.length;
-
-    if (typeof resultingDocument === 'string') {
-      doc.document = resultingDocument;
-    }
-
-    return {
-      accepted: true,
-      fromVersion: baseVersion,
-      version: doc.version,
-      updates,
-      document: doc.document,
-    };
+    return redis;
   }
 
-  getUpdatesSince(fileId: string, version: number): SerializedUpdate[] {
-    const doc = this.documents.get(fileId);
-    if (!doc) return [];
-    if (version < 0) return doc.updates.slice();
-    return doc.updates.slice(version);
+  private projectKey(projectId: string): string {
+    return `collab:project:${projectId}`;
+  }
+
+  private socketKey(socketId: string): string {
+    return `collab:socket:${socketId}`;
   }
 
   async setAwareness(
@@ -184,47 +85,98 @@ export class CollaborationService {
     return this.awarenessService.removeAwareness(fileId, socketId);
   }
 
-  joinFile(
+  async joinFile(
     fileId: string,
     projectId: string,
     socketId: string,
     userId: string,
     userName: string,
-  ): { viewer: FileViewer; left: FileViewer[] } {
-    const left = this.leaveSocket(socketId);
+  ): Promise<{ viewer: FileViewer; left: FileViewer[] }> {
+    const left = await this.leaveSocket(socketId);
+
+    const redis = this.getRedis();
+
+    // Get all current viewers in the project
+    const all = await redis.hgetall(this.projectKey(projectId));
+    const existingNames = new Set<string>();
+    for (const value of Object.values(all)) {
+      try {
+        const v: FileViewer = JSON.parse(value as string);
+        existingNames.add(v.userName);
+      } catch {
+        // skip invalid
+      }
+    }
+
+    // Pick a unique name
+    let uniqueName = userName;
+    if (existingNames.has(uniqueName)) {
+      let i = 1;
+      while (existingNames.has(`${userName} ${i}`)) {
+        i++;
+      }
+      uniqueName = `${userName} ${i}`;
+    }
+
     const viewer: FileViewer = {
       socketId,
       userId,
-      userName,
+      userName: uniqueName,
       fileId,
       projectId,
     };
-    this.occupancyBySocket.set(socketId, viewer);
+
+    const viewerJson = JSON.stringify(viewer);
+    const pipeline = redis.pipeline();
+    pipeline.hset(this.projectKey(projectId), socketId, viewerJson);
+    pipeline.set(this.socketKey(socketId), viewerJson);
+    await pipeline.exec();
+
     return { viewer, left };
   }
 
-  leaveFile(fileId: string, socketId: string): FileViewer | null {
-    const current = this.occupancyBySocket.get(socketId);
-    if (!current || current.fileId !== fileId) return null;
-    this.occupancyBySocket.delete(socketId);
-    return current;
+  async leaveFile(fileId: string, socketId: string): Promise<FileViewer | null> {
+    const redis = this.getRedis();
+    const socketJson = await redis.get(this.socketKey(socketId));
+    if (!socketJson) return null;
+
+    const viewer: FileViewer = JSON.parse(socketJson);
+    if (viewer.fileId !== fileId) return null;
+
+    const pipeline = redis.pipeline();
+    pipeline.hdel(this.projectKey(viewer.projectId), socketId);
+    pipeline.del(this.socketKey(socketId));
+    await pipeline.exec();
+
+    return viewer;
   }
 
-  leaveSocket(socketId: string): FileViewer[] {
-    const current = this.occupancyBySocket.get(socketId);
-    if (!current) return [];
-    this.occupancyBySocket.delete(socketId);
-    return [current];
+  async leaveSocket(socketId: string): Promise<FileViewer[]> {
+    const redis = this.getRedis();
+    const socketJson = await redis.get(this.socketKey(socketId));
+    if (!socketJson) return [];
+
+    const viewer: FileViewer = JSON.parse(socketJson);
+
+    const pipeline = redis.pipeline();
+    pipeline.hdel(this.projectKey(viewer.projectId), socketId);
+    pipeline.del(this.socketKey(socketId));
+    await pipeline.exec();
+
+    return [viewer];
   }
 
-  listProjectViewers(projectId: string): FileViewer[] {
-    return [...this.occupancyBySocket.values()].filter(
-      (viewer) => viewer.projectId === projectId,
-    );
-  }
-
-  removeDocument(fileId: string) {
-    this.documents.delete(fileId);
-    this.logger.log(`Removed document for file: ${fileId}`);
+  async listProjectViewers(projectId: string): Promise<FileViewer[]> {
+    const redis = this.getRedis();
+    const all = await redis.hgetall(this.projectKey(projectId));
+    const viewers: FileViewer[] = [];
+    for (const [, value] of Object.entries(all)) {
+      try {
+        viewers.push(JSON.parse(value) as FileViewer);
+      } catch {
+        // skip invalid entries
+      }
+    }
+    return viewers;
   }
 }

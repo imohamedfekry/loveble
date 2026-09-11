@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import Redis from 'ioredis';
 
 import { RedisService } from 'src/common/redis/redis.service';
@@ -41,29 +41,6 @@ function normalizeSelection(
 
 const AWARENESS_TTL_SECONDS = 60 * 30;
 
-const CURSOR_COLORS = [
-  '#FF6B6B',
-  '#4ECDC4',
-  '#45B7D1',
-  '#96CEB4',
-  '#FFEAA7',
-  '#DDA0DD',
-  '#98D8C8',
-  '#F7DC6F',
-  '#BB8FCE',
-  '#85C1E9',
-  '#F8C471',
-  '#82E0AA',
-  '#F1948A',
-  '#AED6F1',
-  '#ABEBC6',
-  '#F5CBA7',
-  '#D7BDE2',
-  '#A9CCE3',
-  '#F9E79F',
-  '#EDBB99',
-] as const;
-
 function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -72,10 +49,15 @@ function hashString(str: string): number {
   return Math.abs(hash);
 }
 
+function generateRandomColor(): string {
+  const hue = Math.floor(Math.random() * 360);
+  const sat = 65 + Math.floor(Math.random() * 20);
+  const light = 55 + Math.floor(Math.random() * 15);
+  return `hsl(${hue}, ${sat}%, ${light}%)`;
+}
+
 function getStableColor(userId: string, socketId: string): string {
-  const key = userId && userId !== socketId ? userId : socketId;
-  const idx = hashString(key) % CURSOR_COLORS.length;
-  return CURSOR_COLORS[idx];
+  return generateRandomColor();
 }
 
 function safeParseAwareness(raw: string): AwarenessState | null {
@@ -89,8 +71,30 @@ function safeParseAwareness(raw: string): AwarenessState | null {
 }
 
 @Injectable()
-export class AwarenessService {
+export class AwarenessService implements OnModuleInit {
   constructor(private readonly redisService: RedisService) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.scanAndDelete('awareness:*');
+  }
+
+  private async scanAndDelete(pattern: string): Promise<void> {
+    const redis = this.getRedis();
+    if (!redis) return;
+    try {
+      let cursor = '0';
+      do {
+        const result = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+        cursor = result[0];
+        const keys = result[1] as string[];
+        if (keys.length > 0) {
+          await redis.del(...keys);
+        }
+      } while (cursor !== '0');
+    } catch {
+      // ignore errors on startup flush
+    }
+  }
 
   private getRedis(): Redis {
     const redis = this.redisService.getClient();
@@ -138,7 +142,7 @@ export class AwarenessService {
             }
           }
           if (collision) {
-            const alt = CURSOR_COLORS[hashString(state.socketId) % CURSOR_COLORS.length];
+            const alt = generateRandomColor();
             if (alt !== candidate) {
               color = alt;
             } else {
@@ -147,8 +151,11 @@ export class AwarenessService {
                 const o = safeParseAwareness(v);
                 if (o && o.userId === state.userId && o.color) used.add(o.color);
               }
-              const free = CURSOR_COLORS.find((c) => !used.has(c));
-              color = free ?? alt;
+              let altColor = generateRandomColor();
+              while (used.has(altColor)) {
+                altColor = generateRandomColor();
+              }
+              color = altColor;
             }
           } else {
             color = candidate;

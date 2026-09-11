@@ -7,10 +7,9 @@ enum ImportStatus {
 }
 
 const projectSchema = v.object({
-  name: v.pipe(
-    v.string('Name must be a string'),
-    v.nonEmpty('Name is required'),
-    v.maxLength(100, 'Name cannot exceed 100 characters'),
+  prompt: v.pipe(
+    v.string('Prompt must be a string'),
+    v.nonEmpty('Prompt is required'),
   ),
 });
 const updateProjectSchema = v.object({

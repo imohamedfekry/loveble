@@ -2,7 +2,6 @@ import { cleanHTMLToMarkdown } from 'src/common/scraping/clean.service';
 import { crawl } from 'src/common/scraping/crawl.service';
 import { normalize } from 'src/common/scraping/Normalize.helper';
 import { inngest } from '../client';
-import fs from 'fs';
 export const crawlFunction = inngest.createFunction(
   {
     id: 'crawl-pipeline',

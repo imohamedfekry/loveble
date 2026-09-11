@@ -23,10 +23,12 @@ export class RealtimeEmitService {
   }
 
   toUser(userId: string | bigint, event: string, data: unknown) {
+    console.log('toUser called with userId:', userId, 'event:', event, 'data:', data);
     if (!this.ensureServer()) return;
     const uid = String(userId);
     try {
       this.gateway.server.to(`user:${uid}`).emit(event, this.serializeBigInt(data));
+      console.log(`Emitted to user:${uid} event=${event}`);
     } catch (err) {
       this.logger.error(`toUser failed user=${uid} event=${event}: ${err}`);
     }
