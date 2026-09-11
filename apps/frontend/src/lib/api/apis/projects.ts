@@ -107,11 +107,11 @@ export async function getProjects(
   return { success: false, message: "Unexpected response shape", data: empty };
 }
 
-export async function createProject(name: string) {
-  return fetch(`${API_BASE_URL}/project/create`, {
+export async function createProject(prompt: string) {
+  return fetch(`${API_BASE_URL}/projects/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ prompt }),
     credentials: "include",
   }).then((r) => r.json());
 }

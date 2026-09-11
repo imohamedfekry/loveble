@@ -118,8 +118,8 @@ export function AppSidebar({
       role={open ? undefined : "button"}
       aria-label={open ? undefined : "Open sidebar"}
       className={cn(
-        "group/sidebar hidden shrink-0 flex-col overflow-hidden bg-sidebar py-2",
-        "transition-[width] duration-(--duration-quick) ease-(--ease-smooth-out) md:flex",
+        "group/sidebar hidden shrink-0 flex-col overflow-hidden bg-sidebar py-2 will-change-[width]",
+        "transition-[width] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none md:flex",
         !open && "cursor-e-resize"
       )}
     >
@@ -155,8 +155,8 @@ export function AppSidebar({
                 }}
                 aria-label={open ? "Loveble" : "Open sidebar"}
                 className={cn(
-                  "group/logo grid h-8 w-8 shrink-0 place-items-center rounded-md",
-                  "hover:bg-sidebar-nav-hover",
+                  "group/logo grid h-8 w-8 shrink-0 place-items-center rounded-lg ring-1 ring-transparent",
+                  "transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10 motion-reduce:transition-none",
                   open ? "cursor-default" : "cursor-e-resize"
                 )}
               >
@@ -220,9 +220,9 @@ export function AppSidebar({
                   }}
                   aria-label="Close sidebar"
                   className={cn(
-                    "ml-auto flex h-8 w-8 shrink-0 cursor-e-resize items-center justify-center rounded-md text-muted-foreground",
-                    "transition-[opacity,background-color,color] duration-200 ease-out",
-                    "hover:bg-sidebar-nav-hover hover:text-sidebar-foreground",
+                    "ml-auto flex h-8 w-8 shrink-0 cursor-e-resize items-center justify-center rounded-lg text-muted-foreground ring-1 ring-transparent",
+                    "transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                    "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10",
                     open ? "opacity-100" : "pointer-events-none opacity-0"
                   )}
                 >
@@ -253,7 +253,7 @@ export function AppSidebar({
       {/* Main Navigation */}
       {/* ================================================== */}
 
-      <nav className="space-y-0.5 px-2">
+      <nav className="space-y-1 px-2">
         <NavItem
           open={open}
           icon={Home12Icon}
@@ -289,7 +289,7 @@ export function AppSidebar({
         Projects
       </SectionLabel>
 
-      <nav className="space-y-0.5 px-2">
+      <nav className="space-y-1 px-2">
         <NavItem
           open={open}
           icon={FolderLibraryIcon}
@@ -324,11 +324,14 @@ export function AppSidebar({
       </SectionLabel>
 
       <div
-        className={`${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={cn(
+          "overflow-hidden transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          open ? "max-h-[320px] opacity-100" : "pointer-events-none max-h-0 opacity-0"
+        )}
         onClick={(e) => e.stopPropagation()}
         aria-hidden={!open}
       >
-        <div className="space-y-0.5 px-2">
+        <div className="space-y-1 px-2 py-1">
           <ProjectsList />
         </div>
       </div>
@@ -366,8 +369,10 @@ export function AppSidebar({
 
           <div
             className={cn(
-              "absolute [&>button]:size-8 [&>button]:rounded-md [&>button]:text-muted-foreground",
-              "transition-[bottom,right] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
+              "absolute [&>button]:size-8 [&>button]:rounded-lg [&>button]:ring-1 [&>button]:ring-transparent [&>button]:text-muted-foreground",
+              "[&>button]:transition-colors [&>button]:duration-200 [&>button]:ease-[cubic-bezier(0.22,1,0.36,1)]",
+              "[&>button]:hover:bg-foreground/[0.06] [&>button]:hover:text-sidebar-foreground [&>button]:hover:ring-border/50 dark:[&>button]:hover:bg-white/[0.06] dark:[&>button]:hover:ring-white/10",
+              "transition-[bottom,right] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none will-change-transform",
               open ? "bottom-0 right-8" : "bottom-10 right-0"
             )}
             onClick={(e) => {
@@ -386,19 +391,7 @@ export function AppSidebar({
               onClick={(e) => {
                 if (!open) e.stopPropagation();
               }}
-              className="
-                flex
-                h-8
-                w-8
-                cursor-pointer
-                items-center
-                justify-center
-                rounded-md
-                text-muted-foreground
-                transition-colors
-                hover:bg-sidebar-nav-hover
-                hover:text-sidebar-foreground
-              "
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground ring-1 ring-transparent transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10 motion-reduce:transition-none"
             >
               <Inbox className="h-4 w-4" />
             </button>

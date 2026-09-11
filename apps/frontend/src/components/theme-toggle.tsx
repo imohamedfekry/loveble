@@ -51,14 +51,17 @@ export function ThemeToggle({ className }: { className?: string }) {
             variant="ghost"
             size="icon"
             aria-label="Toggle theme"
-            className={cn("size-8 text-muted-foreground hover:text-foreground", className)}
+            className={cn(
+              "size-8 rounded-lg ring-1 ring-transparent text-muted-foreground transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] hover:text-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10",
+              className
+            )}
           >
             <CurrentIcon className="size-4" />
           </Button>
         }
       />
 
-      <DropdownMenuContent align="end" side="top" className="min-w-36">
+      <DropdownMenuContent align="end" side="top" className="w-48 p-1.5">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Theme</DropdownMenuLabel>
         </DropdownMenuGroup>
@@ -71,11 +74,15 @@ export function ThemeToggle({ className }: { className?: string }) {
             <DropdownMenuItem
               key={value}
               onClick={() => setTheme(value)}
-              className="gap-2.5"
+              className="justify-between"
             >
-              <Icon className="size-4" />
-              <span>{label}</span>
-              {active && <span className="ml-auto text-primary">●</span>}
+              <span className="flex items-center gap-2.5">
+                <Icon className="size-4" />
+                <span className="text-[13.5px] font-[450]">{label}</span>
+              </span>
+              {active && (
+                <span className="ml-auto flex size-1.5 rounded-full bg-primary shadow-sm" aria-hidden />
+              )}
             </DropdownMenuItem>
           );
         })}

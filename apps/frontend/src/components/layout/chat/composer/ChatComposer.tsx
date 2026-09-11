@@ -303,10 +303,15 @@ export function ChatComposer({
           <div
             ref={controlsRef}
             className={cn(
-              "grid items-end gap-x-1.5 gap-y-1.5 p-2",
+              "grid items-end gap-x-1.5 gap-y-1.5 p-2 overflow-hidden",
+              "transition-[grid-template-columns] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
               expanded
-                ? "grid-cols-[minmax(0,1fr)_auto_32px_32px]"
-                : "grid-cols-[32px_minmax(0,1fr)_auto_32px_32px]"
+                ? canSend
+                  ? "grid-cols-[minmax(0,1fr)_auto_32px_32px]"
+                  : "grid-cols-[minmax(0,1fr)_auto_32px_0px]"
+                : canSend
+                  ? "grid-cols-[32px_minmax(0,1fr)_auto_32px_32px]"
+                  : "grid-cols-[32px_minmax(0,1fr)_auto_32px_0px]"
             )}
           >
 
@@ -437,26 +442,25 @@ className={cn(
               )}
             </button>
 
-            {/* SEND */}
+            {/* SEND — مخفي تماماً لما مش active ويظهر بسلايد من اليمين للشمال */}
             <button
               type="button"
               aria-label="Send"
-              disabled={!canSend}
+              aria-hidden={!canSend}
+              tabIndex={canSend ? 0 : -1}
               onClick={send}
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center",
-                "transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-                "enabled:active:scale-[0.96]",
+                "flex h-8 shrink-0 items-center justify-center overflow-hidden",
+                "transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                "active:scale-[0.96]",
                 pill ? "rounded-full" : "rounded-lg",
-                expanded
-                  ? "col-start-4 row-start-2"
-                  : "col-start-5 row-start-1",
+                expanded ? "col-start-4 row-start-2" : "col-start-5 row-start-1",
                 canSend
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "bg-muted text-muted-foreground"
+                  ? "w-8 translate-x-0 scale-100 bg-primary text-primary-foreground opacity-100 hover:bg-primary/90"
+                  : "pointer-events-none w-0 translate-x-4 scale-90 bg-primary text-primary-foreground opacity-0"
               )}
             >
-              <ArrowUp className="h-4 w-4" />
+              <ArrowUp className="h-4 w-4 shrink-0" />
             </button>
           </div>
         </div>

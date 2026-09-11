@@ -18,17 +18,17 @@ export function SettingsRow({
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-4 rounded-lg bg-muted/30 px-4 py-3",
+        "flex flex-col gap-3 rounded-lg border border-border/30 bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4",
         className,
       )}
     >
       <div className="min-w-0 flex-1 space-y-0.5">
         <p className="text-sm font-medium text-foreground">{label}</p>
         {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
         )}
       </div>
-      {children && <div className="shrink-0">{children}</div>}
+      {children && <div className="shrink-0 sm:ml-4">{children}</div>}
     </div>
   );
 }

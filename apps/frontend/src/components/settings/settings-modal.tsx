@@ -30,8 +30,8 @@ export function SettingsModal() {
     <Dialog open={isOpen} onOpenChange={setOpen}>
       <DialogContent
         showCloseButton={false}
-        overlayClassName="bg-black/70 supports-backdrop-filter:backdrop-blur-sm"
-        className="flex h-[min(90vh,calc(100vh-3rem))] max-h-[calc(100vh-3rem)] w-[min(90%,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] flex-row gap-0 overflow-hidden rounded-xl border-border/60 bg-background p-0 shadow-2xl sm:max-w-[calc(100vw-2rem)]"
+        overlayClassName="bg-black/40"
+        className="flex h-[92vh] max-h-[92vh] w-[calc(100vw-1rem)] !max-w-[1140px] flex-col overflow-hidden rounded-xl border border-border/40 bg-card p-0 shadow-lg sm:h-[min(88vh,780px)] sm:max-h-[calc(100vh-2rem)] sm:w-[min(96vw,1140px)] sm:!max-w-[1140px] sm:flex-row"
       >
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">
@@ -40,8 +40,8 @@ export function SettingsModal() {
 
         <SettingsSidebar />
 
-        <div className="flex min-w-0 flex-1 flex-col bg-background">
-          <header className="flex shrink-0 items-center justify-between border-b border-border/60 px-6 py-4">
+        <div className="flex min-w-0 flex-1 flex-col bg-card sm:border-l sm:border-border/40">
+          <header className="flex shrink-0 items-center justify-between border-b border-border/40 bg-card px-8 py-5">
             <h2 className="text-lg font-semibold text-foreground">
               {sectionTitle}
             </h2>
@@ -60,8 +60,8 @@ export function SettingsModal() {
             </DialogClose>
           </header>
 
-          <ScrollArea className="min-h-0 flex-1">
-            <div className="px-6 py-5">
+          <ScrollArea className="min-h-0 flex-1 bg-card">
+            <div className="px-8 py-6">
               <SettingsContent />
             </div>
           </ScrollArea>

@@ -1,11 +1,22 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChatBox } from "./chat/ChatBox";
+import { createProject } from "@/lib/api/apis/projects";
 import NoiseBackground from "./NoiseBackground";
 import { PulseBackground } from "./PulseBackground";
 
 export const Dashboard = () => {
   const [value, setValue] = useState("");
+  const router = useRouter();
+
+  async function handleSend(payload: { text: string }) {
+    const res = await createProject(payload.text);
+    if (res.success && res.data?.project?.id) {
+      router.push(`/project/${res.data.project.id}`);
+    }
+    setValue("");
+  }
 
   return (
 <main
@@ -37,6 +48,7 @@ export const Dashboard = () => {
     <ChatBox
       value={value}
       onChange={setValue}
+      onSend={handleSend}
     />
   </div>
 

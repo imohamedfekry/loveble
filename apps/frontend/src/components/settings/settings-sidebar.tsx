@@ -1,18 +1,10 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useGithubAccount } from "@/components/user/hooks/useGithubAccount";
 import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store/settings.store";
-import { useUserStore } from "@/store/user.store";
-import { SearchIcon } from "lucide-react";
-import { useMemo, useState } from "react";
 import {
   SETTINGS_NAV,
-  type SettingsNavGroup,
   type SettingsNavItem,
   type SettingsSectionId,
 } from "./settings-config";
@@ -33,13 +25,13 @@ function SidebarNavItem({
       type="button"
       onClick={onSelect}
       className={cn(
-        "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+        "flex h-8 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] font-[450] tracking-[-0.01em] ring-1 transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
         isActive
-          ? "bg-accent text-accent-foreground"
-          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+          ? "bg-foreground/[0.06] dark:bg-white/[0.06] text-foreground ring-border/50 dark:ring-white/10 shadow-sm"
+          : "text-muted-foreground ring-transparent hover:bg-foreground/[0.06] hover:text-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10"
       )}
     >
-      <Icon className="size-4 shrink-0 opacity-80" />
+      <Icon className="size-4 shrink-0" />
       <span className="truncate">{item.label}</span>
     </button>
   );
@@ -59,16 +51,16 @@ function SidebarSubNavItem({
       type="button"
       onClick={onSelect}
       className={cn(
-        "relative w-full rounded-md py-1 ps-7 pe-2.5 text-left text-sm transition-colors",
+        "relative flex h-7 w-full items-center rounded-lg ps-8 pe-2.5 text-left text-[13px] font-[450] tracking-[-0.01em] ring-1 transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
         isActive
-          ? "font-medium text-foreground"
-          : "text-muted-foreground hover:text-foreground",
+          ? "bg-foreground/[0.06] dark:bg-white/[0.06] font-medium text-foreground ring-border/50 dark:ring-white/10"
+          : "text-muted-foreground ring-transparent hover:bg-foreground/[0.04] hover:text-foreground hover:ring-border/30 dark:hover:bg-white/[0.04]"
       )}
     >
       <span
         className={cn(
-          "absolute inset-s-3 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full",
-          isActive ? "bg-foreground" : "bg-border",
+          "absolute left-3 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full transition-colors duration-200",
+          isActive ? "bg-foreground" : "bg-border"
         )}
       />
       {label}
@@ -76,46 +68,10 @@ function SidebarSubNavItem({
   );
 }
 
-function filterNavGroups(
-  groups: SettingsNavGroup[],
-  query: string,
-): SettingsNavGroup[] {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return groups;
-
-  return groups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => {
-        const matchesItem = item.label.toLowerCase().includes(normalized);
-        const matchesSub = item.subSections?.some((sub) =>
-          sub.label.toLowerCase().includes(normalized),
-        );
-        return matchesItem || matchesSub;
-      }),
-    }))
-    .filter((group) => group.items.length > 0);
-}
-
 export function SettingsSidebar() {
-  const user = useUserStore((s) => s.user);
-  const { github } = useGithubAccount();
   const activeSection = useSettingsStore((s) => s.activeSection);
   const activeSubSection = useSettingsStore((s) => s.activeSubSection);
   const setActiveSection = useSettingsStore((s) => s.setActiveSection);
-  const [search, setSearch] = useState("");
-
-  const avatarUrl =
-    github?.avatar_url ??
-    user?.oauthAccounts.find((acc) => acc.avatar_url)?.avatar_url ??
-    null;
-  const fallback = user?.username?.slice(0, 2).toUpperCase() ?? "U";
-  const displayName = github?.displayName?.trim() || user?.username || "User";
-
-  const filteredNav = useMemo(
-    () => filterNavGroups(SETTINGS_NAV, search),
-    [search],
-  );
 
   const handleSelectSection = (
     sectionId: SettingsSectionId,
@@ -125,42 +81,11 @@ export function SettingsSidebar() {
   };
 
   return (
-    <aside className="flex h-full w-[218px] shrink-0 flex-col bg-sidebar">
-      <div className="space-y-3 border-b border-sidebar-border p-3">
-        <div className="flex items-center gap-2.5">
-          <Avatar className="size-10">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-            <AvatarFallback>{fallback}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-sidebar-foreground">
-              {displayName}
-            </p>
-            <button
-              type="button"
-              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-              onClick={() => handleSelectSection("account", "profile")}
-            >
-              Edit Profile
-            </button>
-          </div>
-        </div>
-
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search"
-            className="h-8 bg-background/40 ps-8 text-xs"
-          />
-        </div>
-      </div>
-
+    <aside className="flex h-auto w-full shrink-0 flex-col bg-sidebar sm:h-full sm:w-64">
       <ScrollArea className="min-h-0 flex-1">
-        <nav className="space-y-4 p-2">
-          {filteredNav.map((group) => (
-            <div key={group.label} className="space-y-1">
+        <nav className="space-y-6 p-3">
+          {SETTINGS_NAV.map((group) => (
+            <div key={group.label} className="space-y-2">
               <p className="px-2.5 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
                 {group.label}
               </p>
@@ -169,7 +94,7 @@ export function SettingsSidebar() {
                 const isActive = activeSection === item.id;
 
                 return (
-                  <div key={item.id} className="space-y-0.5">
+                  <div key={item.id} className="space-y-1">
                     <SidebarNavItem
                       item={item}
                       isActive={isActive}
@@ -197,25 +122,8 @@ export function SettingsSidebar() {
               })}
             </div>
           ))}
-
-          {filteredNav.length === 0 && (
-            <p className="px-2.5 py-4 text-center text-xs text-muted-foreground">
-              No settings found
-            </p>
-          )}
         </nav>
       </ScrollArea>
-
-      <div className="border-t border-sidebar-border p-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-muted-foreground"
-          onClick={() => handleSelectSection("account")}
-        >
-          Back to account
-        </Button>
-      </div>
     </aside>
   );
 }
