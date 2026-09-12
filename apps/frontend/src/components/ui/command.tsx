@@ -63,7 +63,9 @@ function CommandDialog({
         showCloseButton={showCloseButton}
         overlayClassName={overlayClassName}
       >
-        {children}
+        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-input-wrapper]_svg]:size-5">
+          {children}
+        </Command>
       </DialogContent>
     </Dialog>
   )

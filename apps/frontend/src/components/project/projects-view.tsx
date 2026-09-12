@@ -2,33 +2,17 @@
 
 import { SparkleIcon } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
-import { MOD_KEY_CODES } from "@/lib/keyboard";
-import { useKeyboardShortcut } from "@/lib/hooks/useKeyboardShortcut";
 import { BrandPageShell } from "@/components/layout/brand-page-shell";
 import { ProjectsList } from "@/components/layout/sidebar/projects-list";
-import { useCallback, useState } from "react";
 import { ProjectActionCard } from "./project-action-card";
-import { ProjectsCommandDialog } from "./0Old(notused)/projects-commands-dialog";
 
 export const ProjectsView = ({
   githubSection,
 }: {
   githubSection?: React.ReactNode;
 }) => {
-  const [commandDialogOpen, setCommandDialogOpen] = useState(false);
-
-  const toggleCommandDialog = useCallback(() => {
-    setCommandDialogOpen((open) => !open);
-  }, []);
-
-  useKeyboardShortcut(MOD_KEY_CODES.K, toggleCommandDialog);
-
   return (
-    <>    
-      <ProjectsCommandDialog
-        open={commandDialogOpen}
-        onOpenChange={setCommandDialogOpen}
-      />
+    <>
       <BrandPageShell
         showBrand={true}
         variant="fill"

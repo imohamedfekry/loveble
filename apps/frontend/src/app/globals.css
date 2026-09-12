@@ -23,6 +23,12 @@
   --color-sidebar-nav-hover: var(--sidebar-nav-hover);
   --color-sidebar-nav-active: var(--sidebar-nav-active);
   --color-sidebar-nav-active-hover: var(--sidebar-nav-active-hover);
+  --color-projects-bg: var(--projects-bg);
+  --color-projects-surface: var(--projects-surface);
+  --color-projects-elevated: var(--projects-elevated);
+  --color-projects-border: var(--projects-border);
+  --color-projects-foreground: var(--projects-foreground);
+  --color-projects-muted: var(--projects-muted);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -136,6 +142,16 @@
   --sidebar-nav-hover: oklch(0 0 0 / 6%);
   --sidebar-nav-active: oklch(0 0 0 / 10%);
   --sidebar-nav-active-hover: oklch(0 0 0 / 14%);
+
+  /* Projects — dark surface scale derived from #212120.
+     Layers are stepped up from the base (+5 surface, +13 elevated),
+     text is warm off-white to match the brand background tone. */
+  --projects-bg: #212120;
+  --projects-surface: #262624;
+  --projects-elevated: #2e2e2c;
+  --projects-border: rgb(255 255 255 / 8%);
+  --projects-foreground: #f4f2ed;
+  --projects-muted: #a8a29e;
 
   /* Motion tokens — transitions.dev scale */
   --duration-stagger: 40ms;

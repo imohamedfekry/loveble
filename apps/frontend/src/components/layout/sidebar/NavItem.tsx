@@ -6,6 +6,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import type { IconSvgElement } from "@hugeicons/react";
 import type { LucideIcon } from "lucide-react";
 import { useModKeyLabel } from "@/lib/hooks/useModKeyLabel";
+import Link from "next/link";
 
 export function NavItem({
   icon,
@@ -13,51 +14,37 @@ export function NavItem({
   shortcut,
   active,
   open,
+  href,
+  onClick,
 }: {
   icon: LucideIcon | IconSvgElement;
   label: string;
   shortcut?: string;
   active?: boolean;
   open: boolean;
+  href?: string;
+  onClick?: () => void;
 }) {
   const Icon = icon as LucideIcon;
   const modKey = useModKeyLabel();
 
-  return (
-    <button
-      type="button"
-      title={label}
-      onClick={(e) => {
-        if (!open) e.stopPropagation();
-      }}
-      className={cn(
-        "group relative flex h-8 w-full items-center rounded-lg p-0 ring-1",
-        "text-[13.5px] font-[450] tracking-[-0.01em]",
-        "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
-
-        !active &&
-          cn(
-            "ring-transparent text-muted-foreground",
-            "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
-            "dark:hover:bg-white/[0.06] dark:hover:ring-white/10"
-          ),
-
-        active &&
-          cn(
-            "bg-foreground/[0.06] dark:bg-white/[0.06] ring-border/50 dark:ring-white/10 text-sidebar-foreground shadow-sm",
-            "hover:bg-foreground/[0.08] dark:hover:bg-white/[0.08]"
-          ),
-
-        !open && "cursor-pointer"
-      )}
-    >
-      {/* Icon — مربع 32×32 ثابت، في النص بالظبط بدون حركة */}
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center">
+  const content = (
+    <>
+      {/* Icon box — 32×32 ثابت للتوسيط. الأيقونة مطفية افتراضيًا
+          (text-muted-foreground/60) وبترجع للون الطبيعي مع hover/active.
+          حجم الرسم 18px على الـ svg */}
+      <span
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center transition-colors duration-200",
+          active
+            ? "text-sidebar-foreground"
+            : "text-muted-foreground/60 group-hover:text-sidebar-foreground",
+        )}
+      >
         {Array.isArray(Icon) ? (
-          <HugeiconsIcon icon={Icon} className="size-4 shrink-0" />
+          <HugeiconsIcon icon={Icon} className="size-4.5 shrink-0" />
         ) : (
-          <Icon className="size-4 shrink-0" />
+          <Icon className="size-4.5 shrink-0" />
         )}
       </span>
 
@@ -82,6 +69,76 @@ export function NavItem({
           {modKey} {shortcut}
         </span>
       )}
+    </>
+  );
+
+  const handleClick = () => {
+    onClick?.();
+  };
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={cn(
+          "group relative flex h-8 w-full items-center rounded-lg p-0 ring-1",
+          "text-[13.5px] font-[450] tracking-[-0.01em]",
+          "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
+
+          !active &&
+            cn(
+              "ring-transparent text-muted-foreground",
+              "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
+              "dark:hover:bg-white/[0.06] dark:hover:ring-white/10"
+            ),
+
+          active &&
+            cn(
+              "bg-foreground/[0.06] dark:bg-white/[0.06] ring-border/50 dark:ring-white/10 text-sidebar-foreground shadow-sm",
+              "hover:bg-foreground/[0.08] dark:hover:bg-white/[0.08]"
+            ),
+
+          !open && "cursor-pointer"
+        )}
+        onClick={handleClick}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      title={label}
+      onClick={(e) => {
+        if (!open) e.stopPropagation();
+        onClick?.();
+      }}
+      className={cn(
+        "group relative flex h-8 w-full items-center rounded-lg p-0 ring-1",
+        "text-[13.5px] font-[450] tracking-[-0.01em]",
+        "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
+
+        !active &&
+          cn(
+            "ring-transparent text-muted-foreground",
+            "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
+            "dark:hover:bg-white/[0.06] dark:hover:ring-white/10"
+          ),
+
+        active &&
+          cn(
+            "bg-foreground/[0.06] dark:bg-white/[0.06] ring-border/50 dark:ring-white/10 text-sidebar-foreground shadow-sm",
+            "hover:bg-foreground/[0.08] dark:hover:bg-white/[0.08]"
+          ),
+
+        !open && "cursor-pointer"
+      )}
+    >
+      {content}
     </button>
   );
 }
