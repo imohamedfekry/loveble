@@ -4,6 +4,8 @@ import { indentWithTab } from "@codemirror/commands";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { colorPicker, colorPickerTheme } from "@replit/codemirror-css-color-picker";
 import { getLanguageExtension } from "./extensions/language-extension";
+import { getLintExtension } from "./extensions/lint";
+import { getAutocompleteExtension } from "./extensions/autocomplete";
 import { interactiveValues } from "./extensions/interact";
 import { customTheme, editorHighlightExtension } from "./extensions/theme";
 import { customSetup } from "./extensions/custom-setup";
@@ -59,6 +61,14 @@ export const CodeEditor = ({
     return getLanguageExtension(fileName)
   }, [fileName])
 
+  const lintExtension = useMemo(() => {
+    return getLintExtension(fileName)
+  }, [fileName])
+
+  const autocompleteExtension = useMemo(() => {
+    return getAutocompleteExtension(fileName)
+  }, [fileName])
+
   const isTypeScript = useMemo(() => {
     const ext = fileName.split(".").pop()?.toLowerCase();
     return ext === "ts" || ext === "tsx";
@@ -72,6 +82,8 @@ export const CodeEditor = ({
       editorHighlightExtension,
       customSetup,
       languageExtension,
+      autocompleteExtension,
+      lintExtension,
       colorPicker,
       colorPickerTheme,
       ...interactiveValues,
@@ -122,7 +134,7 @@ export const CodeEditor = ({
     // Recreate when the collab snapshot version or file language changes.
     // initialValue is captured at construction; parent remounts via `key`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [languageExtension, collaboration?.clientID, collaboration?.startVersion]);
+  }, [languageExtension, lintExtension, autocompleteExtension, collaboration?.clientID, collaboration?.startVersion]);
 
   useEffect(() => {
     const view = viewRef.current;
