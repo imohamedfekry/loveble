@@ -80,7 +80,7 @@ export const TreeItemWrapper = ({
             ref={setDropRef}
             className={cn(
                 "w-full transition-colors duration-150",
-                canDrop && isOver && "bg-foreground/10 dark:bg-foreground/15 ring-1 ring-inset ring-foreground/20 dark:ring-foreground/25",
+                canDrop && isOver && "bg-foreground/10 ring-1 ring-inset ring-foreground/20",
             )}
         >
             <ContextMenu>

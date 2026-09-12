@@ -1,14 +1,14 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useEffect } from "react";
 import { getModKeyLabel, isMacOS } from "@/lib/keyboard";
 
 export function useModKeyLabel() {
-  const subscribe = () => () => {};
+  const [modKey, setModKey] = useState("Ctrl");
 
-  return useSyncExternalStore(
-    subscribe,
-    () => getModKeyLabel(isMacOS()),
-    () => "Ctrl",
-  );
+  useEffect(() => {
+    setModKey(getModKeyLabel(isMacOS()));
+  }, []);
+
+  return modKey;
 }

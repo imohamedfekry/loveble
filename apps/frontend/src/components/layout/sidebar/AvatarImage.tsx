@@ -14,7 +14,8 @@ export function AvatarImage({
   if (!src) {
     return (
       <div
-        className={`flex shrink-0 items-center justify-center border border-[#a22665] bg-[#b30d61] font-semibold text-white ${className}`}
+        /* Brand kit: Deep Onyx on Vibrant Magenta (6.86:1, AA) — no off-palette hex. */
+        className={`flex shrink-0 items-center justify-center border border-primary/60 bg-primary font-semibold text-primary-foreground ${className}`}
       >
         {alt.slice(0, 1).toUpperCase()}
       </div>

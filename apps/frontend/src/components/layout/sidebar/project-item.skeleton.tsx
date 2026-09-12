@@ -16,7 +16,7 @@ export const ProjectItemSkeleton = ({
         <li key={index}>
           <div
             className={cn(
-              "flex w-full items-center rounded-md px-2 py-1.5",
+              "flex w-full items-center rounded-sm px-2 py-1.5",
               className
             )}
           >

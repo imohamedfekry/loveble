@@ -259,7 +259,7 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
                                     dropAnimation={null}
                                 >
                                     {activeItem && (
-                                        <div className="flex h-5.5 items-center gap-1 rounded-md bg-popover/90 px-2 text-sm shadow-lg ring-1 ring-foreground/10 dark:bg-popover/90">
+                                        <div className="flex h-5.5 items-center gap-1 rounded-md bg-popover/90 px-2 text-sm shadow-lg ring-1 ring-foreground/10">
                                             {activeItem.type === "folder" ? (
                                                 <FolderIcon
                                                     folderName={activeItem.name}

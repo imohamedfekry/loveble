@@ -52,7 +52,7 @@ function PresenceDotsView({ viewers }: { viewers: FileViewer[] }) {
         {visible.map((viewer) => (
           <span
             key={viewer.socketId}
-            className="flex size-3.5 items-center justify-center rounded-full text-[8px] font-semibold text-white ring-1 ring-sidebar"
+             className="flex size-3.5 items-center justify-center rounded-full text-[8px] font-semibold text-foreground ring-1 ring-sidebar"
             style={{ backgroundColor: viewer.color }}
           >
             {(displayNames.get(viewer.socketId) ?? viewer.userName)

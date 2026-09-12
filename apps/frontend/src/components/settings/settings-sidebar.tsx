@@ -27,8 +27,8 @@ function SidebarNavItem({
       className={cn(
         "flex h-8 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] font-[450] tracking-[-0.01em] ring-1 transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
         isActive
-          ? "bg-foreground/[0.06] dark:bg-white/[0.06] text-foreground ring-border/50 dark:ring-white/10 shadow-sm"
-          : "text-muted-foreground ring-transparent hover:bg-foreground/[0.06] hover:text-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10"
+          ? "bg-foreground/[0.06] text-foreground ring-border/50 shadow-sm"
+          : "text-muted-foreground ring-transparent hover:bg-foreground/[0.06] hover:text-foreground hover:ring-border/50"
       )}
     >
       <Icon className="size-4 shrink-0" />
@@ -53,8 +53,8 @@ function SidebarSubNavItem({
       className={cn(
         "relative flex h-7 w-full items-center rounded-lg ps-8 pe-2.5 text-left text-[13px] font-[450] tracking-[-0.01em] ring-1 transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
         isActive
-          ? "bg-foreground/[0.06] dark:bg-white/[0.06] font-medium text-foreground ring-border/50 dark:ring-white/10"
-          : "text-muted-foreground ring-transparent hover:bg-foreground/[0.04] hover:text-foreground hover:ring-border/30 dark:hover:bg-white/[0.04]"
+          ? "bg-foreground/[0.06] font-medium text-foreground ring-border/50 shadow-sm"
+          : "text-muted-foreground ring-transparent hover:bg-foreground/[0.04] hover:text-foreground hover:ring-border/30"
       )}
     >
       <span

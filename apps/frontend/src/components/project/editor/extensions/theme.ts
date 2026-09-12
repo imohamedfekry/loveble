@@ -16,7 +16,7 @@ export const customTheme = EditorView.theme({
   },
   ".cm-content": {
     caretColor: "var(--editor-caret)",
-    fontFamily: "var(--font-plex-mono), monospace",
+    fontFamily: "var(--font-roboto-mono), monospace",
     fontSize: "14px",
     padding: "0 0 0 8px",
   },

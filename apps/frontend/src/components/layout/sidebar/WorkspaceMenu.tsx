@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon, ChevronDown, LogOutIcon, SettingsIcon } from "lucide-react";
-import { FaGithub } from "react-icons/fa";
+import { ChevronDown, LayoutGrid, Plus, SettingsIcon } from "lucide-react";
 
 import { useGithubAccount } from "@/components/user/hooks/useGithubAccount";
 import { useSettings } from "@/components/settings/use-settings";
@@ -14,26 +13,22 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 
 import { cn } from "@/lib/utils";
-import { AvatarImage } from "./AvatarImage";
 import { CollapseLabel } from "./CollapseLabel";
 
 export function WorkspaceMenu({ open }: { open: boolean }) {
-  const { github, connectGithub } = useGithubAccount();
+  const { github } = useGithubAccount();
   const user = useUserStore((s) => s.user);
   const { openSettings } = useSettings();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const avatarUrl = github?.avatar_url;
   const displayName = (github?.displayName || user?.username || "User").split(
     " "
   )[0];
   const fullName = github?.displayName || user?.username || "User";
-  const email = user?.email ?? "";
 
   return (
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
@@ -43,110 +38,89 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
             aria-label="Open workspace menu"
             aria-expanded={menuOpen}
             className={cn(
-              "group relative flex h-8 w-full items-center rounded-lg p-0 text-left ring-1",
-              "text-[13.5px] font-[450] tracking-[-0.01em]",
+              "group relative flex h-7 w-full items-center overflow-hidden rounded-md p-0 text-left ring-1",
+              !open && "justify-center",
+              "text-[12.5px] font-[450] tracking-[-0.01em]",
               "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
               menuOpen
-                ? "bg-foreground/[0.06] dark:bg-white/[0.06] ring-border/50 dark:ring-white/10 text-sidebar-foreground shadow-sm"
-                : "ring-border/40 dark:ring-white/10 text-muted-foreground hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10"
+                ? "bg-white/[0.08] text-white ring-white/[0.12]"
+                : "ring-white/[0.08] text-white/70 hover:bg-white/[0.06] hover:text-white hover:ring-white/[0.12]"
             )}
           >
-            {/* Avatar — ثابت 32×32 في النص بدون حركة */}
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-              <AvatarImage
-                src={null}
-                alt={displayName}
-                className="h-5.5 w-5.5 shrink-0 rounded-sm object-cover text-[10px]"
-              />
+            <span className="flex h-7 w-8 shrink-0 items-center justify-center">
+              <div className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-[#e91e8c] text-[10px] font-bold leading-none text-white">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
             </span>
             <CollapseLabel
               open={open}
-              className="min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+              className="min-w-0 flex-1 truncate text-[12.5px] font-medium"
             >
               {displayName}&apos;s Squadra
             </CollapseLabel>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 shrink-0 text-muted-foreground transition-colors duration-200 motion-reduce:transition-none",
-                  menuOpen ? "rotate-180 text-sidebar-foreground" : "rotate-0",
-                  open ? "opacity-100" : "pointer-events-none opacity-0"
-                )}
-              />
-            </span>
+            {open && (
+              <span className="flex h-7 w-8 shrink-0 items-center justify-center">
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 text-white/50 transition-transform duration-200 motion-reduce:transition-none",
+                    menuOpen ? "rotate-180" : "rotate-0",
+                  )}
+                />
+              </span>
+            )}
           </button>
         }
       />
 
       <DropdownMenuContent
         align="start"
-        sideOffset={8}
-        className="w-64 rounded-xl border border-border/50 bg-popover p-1.5 shadow-lg ring-1 ring-black/[0.04] dark:ring-white/10"
+        sideOffset={4}
+        className="w-[280px] rounded-xl border border-white/[0.08] bg-[#1c1c1c] p-2 shadow-2xl"
       >
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex items-center gap-3 rounded-lg px-2.5 py-2.5 font-normal">
-            <AvatarImage
-              src={avatarUrl}
-              alt={fullName}
-              className="h-9 w-9 shrink-0 rounded-full object-cover text-xs ring-1 ring-border shadow-sm"
-            />
+          <DropdownMenuLabel className="flex items-center gap-3 px-2.5 py-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#e91e8c] text-[13px] font-bold text-white">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
             <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
+              <span className="truncate text-[13px] font-semibold text-white">
                 {fullName}
               </span>
-              <span className="truncate text-xs text-muted-foreground">
-                {email || "Signed in"}
+              <span className="truncate text-[11px] text-white/40">
+                Free Plan
               </span>
             </div>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
 
-        <DropdownMenuSeparator className="my-1.5 bg-border/50" />
+        <div className="mx-2 my-1 h-px bg-white/[0.08]" />
 
-        <DropdownMenuGroup className="space-y-0.5">
-          {github ? (
-            <DropdownMenuItem
-              className="gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] font-[450] tracking-[-0.01em] transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] dark:hover:bg-white/[0.06] focus:bg-foreground/[0.06] dark:focus:bg-white/[0.06] focus:text-foreground data-highlighted:bg-foreground/[0.06] dark:data-highlighted:bg-white/[0.06]"
-              onClick={() => openSettings("integrations", "github")}
-            >
-              <FaGithub className="size-4 text-muted-foreground transition-colors duration-200 group-hover/dropdown-menu-item:text-foreground group-focus/dropdown-menu-item:text-foreground" />
-              <div className="flex min-w-0 flex-col">
-                <span className="text-[13.5px] font-medium text-foreground">GitHub</span>
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <CheckIcon className="size-3 text-emerald-500" />
-                  Connected as @{github.username}
-                </span>
-              </div>
-            </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem
-              className="gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] font-[450] tracking-[-0.01em] transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] dark:hover:bg-white/[0.06] focus:bg-foreground/[0.06] dark:focus:bg-white/[0.06] focus:text-foreground data-highlighted:bg-foreground/[0.06] dark:data-highlighted:bg-white/[0.06]"
-              onClick={connectGithub}
-            >
-              <FaGithub className="size-4 text-muted-foreground" />
-              <span className="text-[13.5px] font-medium text-foreground">Connect GitHub</span>
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuGroup>
-
-        <DropdownMenuSeparator className="my-1.5 bg-border/50" />
-
-        <DropdownMenuGroup className="space-y-0.5">
+        <DropdownMenuGroup>
           <DropdownMenuItem
-            className="gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] font-[450] tracking-[-0.01em] transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] dark:hover:bg-white/[0.06] focus:bg-foreground/[0.06] dark:focus:bg-white/[0.06] focus:text-foreground data-highlighted:bg-foreground/[0.06] dark:data-highlighted:bg-white/[0.06]"
+            className="flex items-center justify-center gap-2.5 rounded-lg border border-white/[0.12] px-3 py-2 text-[12.5px] font-medium text-white/60 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white"
             onClick={() => openSettings("account", "profile")}
           >
-            <SettingsIcon className="size-4 text-muted-foreground" />
-            <span className="text-[13.5px] font-medium text-foreground">Settings</span>
+            <SettingsIcon className="h-4 w-4" />
+            <span>Settings</span>
           </DropdownMenuItem>
+        </DropdownMenuGroup>
 
-          <DropdownMenuItem
-            variant="destructive"
-            className="gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] font-[450] tracking-[-0.01em] transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20"
-          >
-            <LogOutIcon className="size-4" />
-            <span className="text-[13.5px] font-medium">Sign out</span>
+        <div className="mx-2 my-1 h-px bg-white/[0.08]" />
+
+        <DropdownMenuGroup className="space-y-0.5">
+          <DropdownMenuItem className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-white/50 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white">
+            <Plus className="h-4 w-4" />
+            <span>New workspace</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+
+        <div className="mx-2 my-1 h-px bg-white/[0.08]" />
+
+        <DropdownMenuGroup className="space-y-0.5">
+          <DropdownMenuItem className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-white/50 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white">
+            <LayoutGrid className="h-4 w-4" />
+            <span>All projects</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

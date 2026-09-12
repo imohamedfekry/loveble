@@ -96,11 +96,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                       className="rounded-sm outline outline-1 outline-border"
                     />
 
-                    <span
-                      className={cn(
-                        "text-sm font-semibold text-foreground transition-colors group-hover:text-primary"
-                      )}
-                    >
+                    <span className="text-sm font-semibold text-foreground">
                       loveble
                     </span>
                   </Link>
@@ -148,7 +144,8 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                     </BreadcrumbPage>
 
                     {isSaving && (
-                      <div className="absolute inset-0 rounded bg-emerald-500/20 backdrop-blur-[1px] animate-pulse" />
+                      /* Brand kit: saving shimmer uses Soft Sky tint (decorative). */
+                      <div className="absolute inset-0 rounded bg-accent/20 backdrop-blur-[1px] animate-pulse" />
                     )}
                   </div>
 

@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 import {
   Inbox,
@@ -41,6 +42,8 @@ import { useGithubAccount } from "@/components/user/hooks/useGithubAccount";
 import { useUserStore } from "@/store/user.store";
 import { AvatarImage } from "./AvatarImage";
 import { WorkspaceMenu } from "./WorkspaceMenu";
+import { useSearchStore } from "@/store/search.store";
+import { useConnectorsStore } from "@/store/connectors.store";
 
 const iconSwapMotion =
   "transition-[opacity,transform] duration-(--duration-quick) ease-(--ease-in-out) motion-reduce:transition-none";
@@ -63,8 +66,11 @@ export function AppSidebar({
     }
   }
 
+  const { openSearch } = useSearchStore();
+  const { openConnectors } = useConnectorsStore();
   const { github } = useGithubAccount();
   const user = useUserStore((s) => s.user);
+  const pathname = usePathname();
 
   const avatarUrl = github?.avatar_url;
 
@@ -156,20 +162,20 @@ export function AppSidebar({
                 }}
                 aria-label={open ? "Loveble" : "Open sidebar"}
                 className={cn(
-                  "group/logo grid h-8 w-8 shrink-0 place-items-center rounded-lg ring-1 ring-transparent",
-                  "transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10 motion-reduce:transition-none",
+                  "group/logo grid h-7 w-8 shrink-0 place-items-center rounded-md ring-1 ring-transparent",
+                   "transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] hover:ring-border/50 motion-reduce:transition-none",
                   open ? "cursor-default" : "cursor-e-resize"
                 )}
               >
                 <Image
                   src="/logo.svg"
                   alt="loveble"
-                  width={16}
-                  height={16}
+                  width={18}
+                  height={18}
                   loading="eager"
                   className={cn(
                     iconSwapMotion,
-                    "col-start-1 row-start-1 h-4 w-4 object-contain",
+                    "col-start-1 row-start-1 size-4.5 object-contain",
                     showExpandedChrome
                       ? "scale-100 opacity-100"
                       : cn(
@@ -184,7 +190,7 @@ export function AppSidebar({
                     aria-hidden={isClosing}
                     className={cn(
                       iconSwapMotion,
-                      "col-start-1 row-start-1 h-4 w-4 text-sidebar-foreground",
+                      "col-start-1 row-start-1 size-4.5 text-sidebar-foreground",
                       isClosing
                         ? "scale-75 opacity-0"
                         : cn(
@@ -221,13 +227,13 @@ export function AppSidebar({
                   }}
                   aria-label="Close sidebar"
                   className={cn(
-                    "ml-auto flex h-8 w-8 shrink-0 cursor-e-resize items-center justify-center rounded-lg text-muted-foreground ring-1 ring-transparent",
+                    "ml-auto flex h-7 w-8 shrink-0 cursor-e-resize items-center justify-center rounded-md text-muted-foreground ring-1 ring-transparent",
                     "transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-                    "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10",
+                     "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
                     open ? "opacity-100" : "pointer-events-none opacity-0"
                   )}
                 >
-                  <PanelLeftClose className="h-4 w-4" />
+                  <PanelLeftClose className="size-4.5" />
                 </button>
               }
             />
@@ -259,7 +265,8 @@ export function AppSidebar({
           open={open}
           icon={Home12Icon}
           label="Dashboard"
-          active
+          active={pathname === "/dashboard" || pathname?.startsWith("/dashboard/")}
+          href="/dashboard"
         />
 
         <NavItem
@@ -267,6 +274,7 @@ export function AppSidebar({
           icon={Search01Icon}
           label="Search"
           shortcut="K"
+          onClick={() => openSearch()}
         />
 
         <NavItem
@@ -279,6 +287,7 @@ export function AppSidebar({
           open={open}
           icon={WorkflowSquare09Icon}
           label="Connectors"
+          onClick={() => openConnectors()}
         />
       </nav>
 
@@ -295,24 +304,32 @@ export function AppSidebar({
           open={open}
           icon={FolderLibraryIcon}
           label="All projects"
+          active={pathname === "/projects" || pathname?.startsWith("/project/")}
+          href="/projects"
         />
 
         <NavItem
           open={open}
           icon={StarIcon}
           label="Starred"
+          active={pathname === "/projects/starred"}
+          href="/projects/starred"
         />
 
         <NavItem
           open={open}
           icon={User03Icon}
           label="Created by me"
+          active={pathname === "/projects/created"}
+          href="/projects/created"
         />
 
         <NavItem
           open={open}
           icon={UsersRoundIcon}
           label="Shared with me"
+          active={pathname === "/projects/shared"}
+          href="/projects/shared"
         />
       </nav>
 
@@ -373,9 +390,9 @@ export function AppSidebar({
 
           <div
             className={cn(
-              "absolute [&>button]:size-8 [&>button]:rounded-lg [&>button]:ring-1 [&>button]:ring-transparent [&>button]:text-muted-foreground",
+              "absolute [&>button]:size-7 [&>button]:rounded-md [&>button]:ring-1 [&>button]:ring-transparent [&>button]:text-muted-foreground",
               "[&>button]:transition-colors [&>button]:duration-200 [&>button]:ease-[cubic-bezier(0.22,1,0.36,1)]",
-              "[&>button]:hover:bg-foreground/[0.06] [&>button]:hover:text-sidebar-foreground [&>button]:hover:ring-border/50 dark:[&>button]:hover:bg-white/[0.06] dark:[&>button]:hover:ring-white/10",
+               "[&>button]:hover:bg-foreground/[0.06] [&>button]:hover:text-sidebar-foreground [&>button]:hover:ring-border/50",
               "transition-[bottom,right] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none will-change-transform",
               open ? "bottom-0 right-8" : "bottom-10 right-0"
             )}
@@ -395,9 +412,9 @@ export function AppSidebar({
               onClick={(e) => {
                 if (!open) e.stopPropagation();
               }}
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground ring-1 ring-transparent transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10 motion-reduce:transition-none"
+               className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground ring-1 ring-transparent transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50 motion-reduce:transition-none"
             >
-              <Inbox className="h-4 w-4" />
+              <Inbox className="size-4.5" />
             </button>
           </div>
         </div>

@@ -6,7 +6,13 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
-  --font-mono: var(--font-plex-mono);
+  --font-mono: var(--font-roboto-mono);
+  /* Brand kit: heading = Camera Plain (commercial, not bundled) → Inter substitute.
+     This activates the `font-heading` utility used across dialogs/cards. */
+  --font-heading: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Brand kit tokens: section-gap 80px, card-shadow, button-radius via --radius. */
+  --spacing-section-gap: 80px;
+  --shadow-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   --color-brand-primary: #4b73ff;
   --color-brand-secondary: #ff66f4;
   --color-brand-accent: #fe7b02;
@@ -23,6 +29,12 @@
   --color-sidebar-nav-hover: var(--sidebar-nav-hover);
   --color-sidebar-nav-active: var(--sidebar-nav-active);
   --color-sidebar-nav-active-hover: var(--sidebar-nav-active-hover);
+  --color-projects-bg: var(--projects-bg);
+  --color-projects-surface: var(--projects-surface);
+  --color-projects-elevated: var(--projects-elevated);
+  --color-projects-border: var(--projects-border);
+  --color-projects-foreground: var(--projects-foreground);
+  --color-projects-muted: var(--projects-muted);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -56,7 +68,8 @@
 
 
 :root {
-  --radius: 0.625rem;
+  /* Brand kit: button-radius 12px → rounded-lg used for all buttons. */
+  --radius: 0.75rem;
 
   --background: #fcfbf8;
   --foreground: #1c1c1c;
@@ -137,6 +150,15 @@
   --sidebar-nav-active: oklch(0 0 0 / 10%);
   --sidebar-nav-active-hover: oklch(0 0 0 / 14%);
 
+  /* Projects — light: brand surfaces; dark: scale derived from #212120.
+     Layers are stepped up from the base, text stays AA on both. */
+  --projects-bg: #f4f2ed;
+  --projects-surface: #ffffff;
+  --projects-elevated: #e9e5dc;
+  --projects-border: #e7e3da;
+  --projects-foreground: #1c1c1c;
+  --projects-muted: #5c5c5c;
+
   /* Motion tokens — transitions.dev scale */
   --duration-stagger: 40ms;
   --duration-micro: 80ms;
@@ -164,7 +186,8 @@
 
 
 .dark {
-  --background: #171716;
+  /* App background = navbar/sidebar origin (#141419) — seamless dark shell. */
+  --background: #141419;
   --foreground: #f4f4f5;
 
   --card: #141419;
@@ -208,10 +231,11 @@
   --primary: #4b73ff;
   --primary-foreground: #ffffff;
 
-  --secondary: #141419;
+  /* Secondary layer = #212120 (warm lift over the #141419 shell). */
+  --secondary: #212120;
   --secondary-foreground: #f4f4f5;
 
-  --muted: #141419;
+  --muted: #212120;
   --muted-foreground: #a1a1aa;
 
   --accent: #1a1a20;
@@ -231,7 +255,7 @@
   --chart-4: #fe7b02;
   --chart-5: #2483ff;
 
-  --sidebar: #141419;
+  --sidebar: #171716;
   --sidebar-foreground: #f4f4f5;
   --sidebar-primary: #4b73ff;
   --sidebar-primary-foreground: #ffffff;
@@ -242,6 +266,14 @@
   --sidebar-nav-hover: oklch(1 0 0 / 10%);
   --sidebar-nav-active: oklch(1 0 0 / 15%);
   --sidebar-nav-active-hover: oklch(1 0 0 / 20%);
+
+  /* Projects — dark scale derived from #212120. */
+  --projects-bg: #212120;
+  --projects-surface: #262624;
+  --projects-elevated: #2e2e2c;
+  --projects-border: rgb(255 255 255 / 8%);
+  --projects-foreground: #f4f2ed;
+  --projects-muted: #a8a29e;
 }
 @layer base {
   * {
@@ -406,8 +438,131 @@
 }
 
 .composer-editor p {
-  margin: 0;
-}
+    margin: 0;
+  }
+
+  /* ───────── Project Page Color Scheme ───────── */
+  /* Set at root level so portal dropdowns (Radix/Base UI)
+     rendered at document.body level inherit the project colors. */
+  :root[data-project-page] {
+    --background: var(--projects-bg);
+    --card: var(--projects-surface);
+    --popover: var(--projects-surface);
+    --foreground: var(--projects-foreground);
+    --muted: var(--projects-bg);
+    --accent: var(--projects-bg);
+    --accent-foreground: var(--projects-foreground);
+    --secondary: var(--projects-elevated);
+    --secondary-foreground: var(--projects-foreground);
+    --border: var(--projects-border);
+    --input: var(--projects-border);
+    --ring: var(--color-brand-primary);
+    --primary: var(--color-brand-primary);
+    --primary-foreground: var(--color-brand-cta);
+    --destructive: var(--color-brand-error);
+    --destructive-foreground: var(--color-brand-cta);
+    --muted-foreground: var(--projects-muted);
+    --sidebar: var(--projects-surface);
+    --sidebar-foreground: var(--projects-foreground);
+    --sidebar-accent: var(--projects-bg);
+    --sidebar-accent-foreground: var(--projects-foreground);
+    --sidebar-border: var(--projects-border);
+    --sidebar-ring: var(--color-brand-primary);
+    --chart-1: var(--color-brand-primary);
+    --chart-2: var(--color-brand-accent-2);
+    --chart-3: var(--color-brand-secondary);
+    --chart-4: var(--color-brand-accent);
+    --chart-5: var(--color-brand-cta);
+    /* Code editor — project colors */
+    --editor-bg: var(--projects-bg);
+    --editor-gutter-bg: var(--projects-bg);
+    --editor-gutter-fg: var(--projects-muted);
+    --editor-selection: rgba(75, 115, 255, 0.22);
+    --editor-selection-match: rgba(75, 115, 255, 0.14);
+    --editor-active-line: rgba(0, 0, 0, 0.035);
+    --editor-active-line-gutter: rgba(0, 0, 0, 0.05);
+    --editor-caret: var(--color-brand-primary);
+    --editor-matching-bracket: rgba(75, 115, 255, 0.25);
+    --editor-search-match: rgba(254, 123, 2, 0.25);
+    --editor-tooltip-bg: var(--projects-surface);
+    --editor-tooltip-fg: var(--projects-foreground);
+    --editor-comment: var(--projects-muted);
+    --editor-keyword: var(--color-brand-primary);
+    --editor-string: #b3541e;
+    --editor-number: #2f855a;
+    --editor-boolean: #0e7490;
+    --editor-function: var(--color-brand-primary);
+    --editor-variable: var(--projects-foreground);
+    --editor-property: #8b1ea8;
+    --editor-type: #c2410c;
+    --editor-operator: #57534e;
+    --editor-punctuation: #78716c;
+    --editor-tag: #db2777;
+    --editor-attribute: #2f855a;
+    --editor-constant: #0e7490;
+    --editor-indent-marker: rgba(28, 28, 28, 0.16);
+    --editor-indent-marker-active: rgba(75, 115, 255, 0.35);
+  }
+
+  :root[data-project-page].dark {
+    --background: var(--projects-bg);
+    --card: var(--projects-surface);
+    --popover: var(--projects-surface);
+    --foreground: var(--projects-foreground);
+    --muted: var(--projects-bg);
+    --accent: var(--projects-bg);
+    --accent-foreground: var(--projects-foreground);
+    --secondary: var(--projects-elevated);
+    --secondary-foreground: var(--projects-foreground);
+    --border: var(--projects-border);
+    --input: var(--projects-border);
+    --ring: var(--color-brand-primary);
+    --primary: var(--color-brand-primary);
+    --primary-foreground: var(--color-brand-cta);
+    --destructive: var(--color-brand-error);
+    --destructive-foreground: var(--color-brand-cta);
+    --muted-foreground: var(--projects-muted);
+    --sidebar: var(--projects-surface);
+    --sidebar-foreground: var(--projects-foreground);
+    --sidebar-accent: var(--projects-bg);
+    --sidebar-accent-foreground: var(--projects-foreground);
+    --sidebar-border: var(--projects-border);
+    --sidebar-ring: var(--color-brand-primary);
+    --chart-1: var(--color-brand-primary);
+    --chart-2: var(--color-brand-accent-2);
+    --chart-3: var(--color-brand-secondary);
+    --chart-4: var(--color-brand-accent);
+    --chart-5: var(--color-brand-cta);
+    /* Code editor — dark project colors */
+    --editor-bg: var(--projects-bg);
+    --editor-gutter-bg: var(--projects-bg);
+    --editor-gutter-fg: #4b4b55;
+    --editor-selection: rgba(75, 115, 255, 0.32);
+    --editor-selection-match: rgba(75, 115, 255, 0.2);
+    --editor-active-line: rgba(255, 255, 255, 0.04);
+    --editor-active-line-gutter: rgba(255, 255, 255, 0.06);
+    --editor-caret: #82bcff;
+    --editor-matching-bracket: rgba(130, 188, 255, 0.3);
+    --editor-search-match: rgba(254, 123, 2, 0.3);
+    --editor-tooltip-bg: var(--projects-surface);
+    --editor-tooltip-fg: var(--projects-foreground);
+    --editor-comment: #6b6b74;
+    --editor-keyword: #82bcff;
+    --editor-string: #ffd29d;
+    --editor-number: #6fcf97;
+    --editor-boolean: #56c1d6;
+    --editor-function: #6f8bff;
+    --editor-variable: #f4f4f5;
+    --editor-property: #ff66f4;
+    --editor-type: #fe7b02;
+    --editor-operator: #a1a1aa;
+    --editor-punctuation: #9a9aa3;
+    --editor-tag: #ff66f4;
+    --editor-attribute: #6fcf97;
+    --editor-constant: #56c1d6;
+    --editor-indent-marker: rgba(255, 255, 255, 0.13);
+    --editor-indent-marker-active: rgba(130, 188, 255, 0.3);
+  }
 
 .composer-editor .composer-placeholder::before {
   content: attr(data-placeholder);

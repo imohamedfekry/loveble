@@ -20,9 +20,16 @@ import type { Project } from "@/lib/types/types";
 interface ProjectItemProps {
   data: Project;
   className?: string;
+  variant?: "default" | "onDark";
 }
 
-export const ProjectItem = ({ data, className }: ProjectItemProps) => {
+export const ProjectItem = ({
+  data,
+  className,
+  variant = "default",
+}: ProjectItemProps) => {
+  const onDark = variant === "onDark";
+
   const [editing, setEditing] = useState(false);
   const [nameValue, setNameValue] = useState(data.name);
   const [saving, setSaving] = useState(false);
@@ -77,16 +84,27 @@ export const ProjectItem = ({ data, className }: ProjectItemProps) => {
 
   return (
     <li className={className}>
-      <div className="group flex h-8 w-full items-center rounded-lg p-0 pr-2 ring-1 ring-transparent text-left whitespace-nowrap text-[13.5px] font-[450] tracking-[-0.01em] text-muted-foreground transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10">
+      <div
+        className={cn(
+          "group flex h-7 w-full items-center rounded-sm p-0 pr-2 ring-1 ring-transparent text-left whitespace-nowrap",
+          "text-[13.5px] font-[450] tracking-[-0.01em]",
+          "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          onDark
+            ? "text-projects-muted hover:bg-projects-elevated/60 hover:text-projects-foreground"
+            : "text-muted-foreground hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50"
+        )}
+      >
         <Link
           href={`/project/${data.id}`}
           className="flex h-full min-w-0 flex-1 items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 transition-colors duration-200 group-hover:bg-sidebar-foreground/60" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13.5px] font-[450] text-foreground">
+          <div className="min-w-0 flex-1 pl-2">
+            <p
+              className={cn(
+                "truncate text-[13.5px] font-[450]",
+                onDark ? "text-projects-foreground" : "text-foreground"
+              )}
+            >
               {data.name}
             </p>
           </div>
@@ -100,10 +118,12 @@ export const ProjectItem = ({ data, className }: ProjectItemProps) => {
                 aria-label="Project options"
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
-                  "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground",
+                  "flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md",
                   "opacity-0 transition-[opacity,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   "group-hover:opacity-100 group-focus-within:opacity-100",
-                  "hover:bg-foreground/[0.06] dark:hover:bg-white/[0.06]",
+                  onDark
+                    ? "hover:bg-projects-elevated/60"
+                    : "hover:bg-foreground/[0.06] dark:hover:bg-white/[0.06]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
                   "aria-expanded:opacity-100"
                 )}
