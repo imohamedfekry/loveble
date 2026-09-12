@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type MouseEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react"
 import { EditorView, keymap } from "@codemirror/view";
 import { indentWithTab } from "@codemirror/commands";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
@@ -6,6 +6,12 @@ import { colorPicker, colorPickerTheme } from "@replit/codemirror-css-color-pick
 import { getLanguageExtension } from "./extensions/language-extension";
 import { getLintExtension } from "./extensions/lint";
 import { getAutocompleteExtension } from "./extensions/autocomplete";
+import {
+  readVimModePreference,
+  vimCompartment,
+  vimModeExtension,
+  writeVimModePreference,
+} from "./extensions/vim";
 import { interactiveValues } from "./extensions/interact";
 import { customTheme, editorHighlightExtension } from "./extensions/theme";
 import { customSetup } from "./extensions/custom-setup";
@@ -69,6 +75,23 @@ export const CodeEditor = ({
     return getAutocompleteExtension(fileName)
   }, [fileName])
 
+  const [vimMode, setVimMode] = useState(readVimModePreference);
+
+  const toggleVimMode = () => {
+    setVimMode((prev) => {
+      const next = !prev;
+      writeVimModePreference(next);
+      return next;
+    });
+  };
+
+  const handleWrapperKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if ((event.ctrlKey || event.metaKey) && event.altKey && event.key.toLowerCase() === "v") {
+      event.preventDefault();
+      toggleVimMode();
+    }
+  };
+
   const isTypeScript = useMemo(() => {
     const ext = fileName.split(".").pop()?.toLowerCase();
     return ext === "ts" || ext === "tsx";
@@ -84,6 +107,7 @@ export const CodeEditor = ({
       languageExtension,
       autocompleteExtension,
       lintExtension,
+      vimCompartment.of(vimMode ? vimModeExtension : []),
       colorPicker,
       colorPickerTheme,
       ...interactiveValues,
@@ -142,6 +166,12 @@ export const CodeEditor = ({
     dispatchRemotePresence(view, peers);
   }, [peers, collaboration]);
 
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: vimCompartment.reconfigure(vimMode ? vimModeExtension : []),
+    });
+  }, [vimMode]);
+
   const emitMouse = (event: MouseEvent<HTMLDivElement>) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0 || rect.height === 0) return;
@@ -158,6 +188,7 @@ export const CodeEditor = ({
     <div
       ref={wrapperRef}
       className="relative size-full bg-background"
+      onKeyDown={handleWrapperKeyDown}
       onMouseMove={collaboration ? emitMouse : undefined}
       onMouseLeave={
         collaboration
@@ -167,6 +198,19 @@ export const CodeEditor = ({
     >
       <div ref={editorRef} className="size-full pl-4" />
       {collaboration && <RemoteMice peers={peers} />}
+      <button
+        type="button"
+        onClick={toggleVimMode}
+        title="Toggle Vim mode (Ctrl+Alt+V)"
+        aria-pressed={vimMode}
+        className={
+          vimMode
+            ? "absolute bottom-2 left-2 z-20 flex h-6 items-center rounded-md border border-border bg-accent px-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-accent-foreground"
+            : "absolute bottom-2 left-2 z-20 flex h-6 items-center rounded-md border border-border bg-secondary/80 px-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-60 transition-opacity hover:opacity-100"
+        }
+      >
+        Vim
+      </button>
     </div>
   );
 };
