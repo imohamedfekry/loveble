@@ -50,15 +50,19 @@ export class projectService {
     });
   }
   async create(body: ProjectDto, req: AuthenticatedRequest) {
-    const words = body.prompt.split(/\s+/).slice(0, 5).join(' ');
-    const defaultName = words.length > 3 ? words + '...' : words;
+    const prompt = body.prompt?.trim();
+    const name =
+      body.name?.trim() ||
+      (prompt ? prompt.split(/\s+/).slice(0, 5).join(' ') : 'Untitled Project');
 
     const project = await this.projectRepository.create({
       userId: req.user.id,
-      name: defaultName,
+      name,
     });
 
-    this.generateAndUpdateName(project.id, body.prompt);
+    if (prompt) {
+      this.generateAndUpdateName(project.id, prompt);
+    }
 
     this.realtimeEmitService.toUser(
       req.user.id.toString(),
