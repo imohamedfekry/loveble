@@ -27,7 +27,7 @@ export const useProjectsStore = create<Store>((set) => ({
 
   addProject: (project) =>
     set((state) => ({
-      projects: [project, ...(state.projects ?? [])],
+      projects: [project, ...(state.projects ?? []).filter((p) => p.id !== project.id)],
     })),
 
   updateProject: (updated) =>

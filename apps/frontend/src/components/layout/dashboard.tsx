@@ -11,9 +11,9 @@ export const Dashboard = () => {
   const router = useRouter();
 
   async function handleSend(payload: { text: string }) {
-    const res = await createProject(payload.text);
-    if (res.success && res.data?.project?.id) {
-      router.push(`/project/${res.data.project.id}`);
+    const res = await createProject({ prompt: payload.text });
+    if (res.success && res.project?.id) {
+      router.push(`/project/${res.project.id}`);
     }
     setValue("");
   }

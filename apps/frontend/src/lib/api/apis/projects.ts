@@ -1,5 +1,9 @@
 import { API_BASE_URL } from "../../api";
-import type { ApiResponse, PaginatedProjects } from "../../types/types";
+import type {
+  ApiResponse,
+  PaginatedProjects,
+  Project,
+} from "../../types/types";
 
 export type GetProjectsParams = {
   page?: number;
@@ -107,13 +111,29 @@ export async function getProjects(
   return { success: false, message: "Unexpected response shape", data: empty };
 }
 
-export async function createProject(prompt: string) {
-  return fetch(`${API_BASE_URL}/projects/create`, {
+export async function createProject(body: { name?: string; prompt?: string }) {
+  const response = await fetch(`${API_BASE_URL}/projects/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify(body),
     credentials: "include",
-  }).then((r) => r.json());
+  });
+
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok || !json) {
+    return {
+      success: false,
+      message: json?.message ?? `Request failed (${response.status})`,
+      project: undefined as Project | undefined,
+    };
+  }
+
+  return {
+    success: json.success ?? true,
+    message: json.message ?? "",
+    project: (json.data?.project ?? undefined) as Project | undefined,
+  };
 }
 
 export async function updateProjectName(
@@ -132,5 +152,41 @@ export async function updateProjectName(
     }
   );
 
-  return response.json();
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok || !json) {
+    return {
+      success: false,
+      message: json?.message ?? `Request failed (${response.status})`,
+    };
+  }
+
+  return {
+    success: json.success ?? true,
+    message: json.message ?? "",
+  };
+}
+
+export async function deleteProject(projectId: string) {
+  const response = await fetch(
+    `${API_BASE_URL}/projects?id=${projectId}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    }
+  );
+
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok || !json) {
+    return {
+      success: false,
+      message: json?.message ?? `Request failed (${response.status})`,
+    };
+  }
+
+  return {
+    success: json.success ?? true,
+    message: json.message ?? "",
+  };
 }

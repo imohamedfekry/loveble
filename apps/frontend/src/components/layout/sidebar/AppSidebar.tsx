@@ -24,6 +24,7 @@ import {
 import { NavItem } from "./NavItem";
 import { SectionLabel } from "./SectionLabel";
 import { ProjectsList } from "@/components/layout/sidebar/projects-list";
+import { CreateProjectButton } from "./create-project-button";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MOD_KEY_CODES } from "@/lib/keyboard";
@@ -320,7 +321,10 @@ export function AppSidebar({
       {/* ================================================== */}
 
       <SectionLabel open={open}>
-        Recents
+        <div className="flex items-center justify-between gap-2">
+          <span>Recents</span>
+          <CreateProjectButton />
+        </div>
       </SectionLabel>
 
       <div
