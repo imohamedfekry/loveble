@@ -30,12 +30,10 @@ export function NavItem({
 
   const content = (
     <>
-      {/* Icon box — 32×32 ثابت للتوسيط. الأيقونة مطفية افتراضيًا
-          (text-muted-foreground/60) وبترجع للون الطبيعي مع hover/active.
-          حجم الرسم 18px على الـ svg */}
+      {/* Icon box — العرض 32 ثابت للمحاذاة، الارتفاع 28 زي الصف */}
       <span
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center transition-colors duration-200",
+          "flex h-7 w-8 shrink-0 items-center justify-center transition-colors duration-200",
           active
             ? "text-sidebar-foreground"
             : "text-muted-foreground/60 group-hover:text-sidebar-foreground",
@@ -60,7 +58,7 @@ export function NavItem({
 
       {/* Shortcut */}
       {shortcut && open && (
-        <span className="ml-auto mr-2 shrink-0 rounded-md border px-1.5 py-1 text-[10px] font-medium leading-none tracking-wide bg-sidebar-accent/60 text-muted-foreground/70 border-border/40">
+        <span className="ml-auto mr-2 shrink-0 rounded-sm border px-1.5 py-1 text-[10px] font-medium leading-none tracking-wide bg-sidebar-accent/60 text-muted-foreground/70 border-border/40">
           {modKey} {shortcut}
         </span>
       )}
@@ -81,23 +79,22 @@ export function NavItem({
       <Link
         href={href}
         className={cn(
-          "group relative flex h-8 w-full items-center rounded-lg p-0 ring-1",
+          "group relative flex h-7 w-full items-center rounded-sm p-0 ring-1",
           "text-[13.5px] font-[450] tracking-[-0.01em]",
           "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
 
-          !active &&
-            cn(
-              "ring-transparent text-muted-foreground",
-              "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
-              "dark:hover:bg-white/[0.06] dark:hover:ring-white/10"
-            ),
+           !active &&
+             cn(
+               "ring-transparent text-muted-foreground",
+               "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
+             ),
 
-          active &&
-            cn(
-              "bg-foreground/[0.06] dark:bg-white/[0.06] ring-border/50 dark:ring-white/10 text-sidebar-foreground shadow-sm",
-              "hover:bg-foreground/[0.08] dark:hover:bg-white/[0.08]"
-            ),
+           active &&
+             cn(
+               "bg-foreground/[0.06] ring-border/50 text-sidebar-foreground shadow-sm",
+               "hover:bg-foreground/[0.08]"
+             ),
 
           !open && "cursor-pointer"
         )}
@@ -117,7 +114,7 @@ export function NavItem({
         onClick?.();
       }}
       className={cn(
-        "group relative flex h-8 w-full items-center rounded-lg p-0 ring-1",
+        "group relative flex h-7 w-full items-center rounded-sm p-0 ring-1",
         "text-[13.5px] font-[450] tracking-[-0.01em]",
         "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
@@ -126,13 +123,12 @@ export function NavItem({
           cn(
             "ring-transparent text-muted-foreground",
             "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
-            "dark:hover:bg-white/[0.06] dark:hover:ring-white/10"
           ),
 
         active &&
           cn(
-            "bg-foreground/[0.06] dark:bg-white/[0.06] ring-border/50 dark:ring-white/10 text-sidebar-foreground shadow-sm",
-            "hover:bg-foreground/[0.08] dark:hover:bg-white/[0.08]"
+            "bg-foreground/[0.06] ring-border/50 text-sidebar-foreground shadow-sm",
+            "hover:bg-foreground/[0.08]"
           ),
 
         !open && "cursor-pointer"

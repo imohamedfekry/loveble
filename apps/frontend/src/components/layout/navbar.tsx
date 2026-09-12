@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Poppins } from "next/font/google";
 
 import {
   Breadcrumb,
@@ -13,11 +12,6 @@ import {
 
 import { cn } from "@/lib/utils";
 import { UserAvatarButton } from "../user/user-avatar";
-
-const font = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export function Navbar() {
   return (
@@ -43,8 +37,7 @@ export function Navbar() {
 
                     <span
                       className={cn(
-                        "text-sm font-medium",
-                        font.className
+                        "font-sans text-sm font-medium",
                       )}
                     >
                       loveble

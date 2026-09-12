@@ -62,38 +62,17 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
   };
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-projects-bg py-1.5 pr-1.5">
-      <header className="flex shrink-0 items-center justify-between border-b border-projects-border bg-projects-surface/80 px-6 py-3 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <LayoutGridIcon className="h-5 w-5 text-projects-muted" />
-          <h1 className="text-lg font-semibold text-projects-foreground">Projects</h1>
-          <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-projects-muted">
-            {filteredProjects.length}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleNewProject}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            <PlusIcon className="h-3.5 w-3.5" />
-            New project
-          </button>
-        </div>
-      </header>
-
-      <nav className="flex shrink-0 gap-1 px-6 pt-4">
+    <div className="flex h-full flex-1 flex-col bg-projects-bg">
+      <nav className="flex shrink-0 gap-1 px-6 pt-3">
         {TABS.map(({ id, label, icon: Icon }) => (
           <Link
             key={id}
             href={`/projects${id !== "all" ? `/${id}` : ""}`}
             className={cn(
-              "relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "relative flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors",
               tab === id
-                ? "bg-white/10 text-projects-foreground"
-                : "text-projects-muted hover:bg-white/5 hover:text-projects-foreground",
+                ? "bg-projects-elevated text-projects-foreground"
+                : "text-projects-muted hover:bg-projects-elevated/50 hover:text-projects-foreground",
             )}
           >
             <Icon className="h-4 w-4" />
@@ -116,7 +95,7 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
               <EmptyHeader>
                 <EmptyMedia
                   variant="icon"
-                  className="bg-white/10 text-projects-foreground"
+                  className="bg-projects-elevated text-projects-foreground"
                 >
                   <FolderGit2Icon />
                 </EmptyMedia>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter } from "next/font/google";
+import { Inter, Roboto_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SettingsProvider } from "@/components/settings/settings-provider";
@@ -11,10 +12,11 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
+/* Brand kit mono face. */
+const robotoMono = Roboto_Mono({
+  variable: "--font-roboto-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -35,11 +37,24 @@ export default function RootLayout({
         "h-full",
         "antialiased",
         inter.variable,
-        plexMono.variable,
+        robotoMono.variable,
         "font-sans",
         inter.variable,
       )}
     >
+      <head>
+        <Script
+          id="project-page-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (window.location.pathname.startsWith('/project/')) {
+                document.documentElement.setAttribute('data-project-page', '');
+              }
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider
           attribute="class"

@@ -21,12 +21,12 @@ export const ProjectItem = ({
       <Link
         href={`/project/${data.id}`}
         className={cn(
-          "group flex h-8 w-full items-center rounded-lg p-0 pr-2 ring-1 ring-transparent text-left whitespace-nowrap",
+          "group flex h-7 w-full items-center rounded-sm p-0 pr-2 ring-1 ring-transparent text-left whitespace-nowrap",
           "text-[13.5px] font-[450] tracking-[-0.01em]",
           "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           onDark
-            ? "text-projects-muted hover:bg-white/[0.06] hover:text-projects-foreground"
-            : "text-muted-foreground hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10",
+            ? "text-projects-muted hover:bg-projects-elevated/60 hover:text-projects-foreground"
+             : "text-muted-foreground hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
           className
         )}
@@ -42,7 +42,7 @@ export const ProjectItem = ({
           </p>
         </div>
 
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center">
           <MoreHorizontal className="h-4 w-4 opacity-0 transition-opacity duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-100 group-focus-visible:opacity-100" />
         </div>
       </Link>

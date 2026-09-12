@@ -75,9 +75,10 @@ export function ComposerMenuItem({
           }}
           className={cn(
             "shrink-0 text-xs font-medium transition-colors duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
+            /* Brand kit: body text must be AA — onyx on light surfaces (AAA). */
             connected
-              ? "text-emerald-400"
-              : "text-blue-400 hover:underline"
+              ? "text-foreground"
+              : "text-foreground underline underline-offset-2 hover:no-underline"
           )}
         >
           {connected ? "Connected" : "Connect"}

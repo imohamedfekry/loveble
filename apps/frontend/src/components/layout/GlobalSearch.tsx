@@ -116,7 +116,7 @@ export function GlobalSearch() {
         onOpenChange={handleOpenChange}
         title="Search"
         description="Search projects and settings"
-        className="sm:max-w-[520px]"
+        className="sm:max-w-130"
         overlayClassName="bg-black/50"
       >
         <CommandInput
@@ -125,7 +125,7 @@ export function GlobalSearch() {
           placeholder="Search projects or settings..."
           className="border-b border-border/50 rounded-none rounded-t-xl px-4"
         />
-        <CommandList className="max-h-[320px]">
+        <CommandList className="max-h-80">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Spinner className="h-5 w-5" />
@@ -154,7 +154,7 @@ export function GlobalSearch() {
                         onSelect={() => handleSelect(result)}
                         className="gap-3"
                       >
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground/70 transition-colors group-data-selected/command-item:text-foreground">
                           <SearchIcon className="h-3.5 w-3.5" />
                         </div>
                         <span className="flex-1 truncate text-sm">
@@ -180,7 +180,7 @@ export function GlobalSearch() {
                         onSelect={() => handleSelect(result)}
                         className="gap-3"
                       >
-                        <span className="flex h-7 w-7 items-center justify-center text-muted-foreground">
+                        <span className="flex h-7 w-7 items-center justify-center text-muted-foreground/70 transition-colors group-data-selected/command-item:text-foreground">
                           {SECTION_ICONS[result.sectionId] ?? <SearchIcon className="h-4 w-4" />}
                         </span>
                         <span className="flex-1 text-sm">{result.label}</span>

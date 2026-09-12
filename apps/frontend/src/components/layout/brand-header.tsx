@@ -1,12 +1,8 @@
-import { Poppins } from "next/font/google";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-export const brandFont = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-poppins",
-});
+/* Brand kit heading face is Camera Plain (commercial, not bundled) —
+   Inter is the loaded brand substitute for display type. */
 
 type BrandHeaderProps = {
   className?: string;
@@ -30,8 +26,7 @@ export function BrandHeader({ className }: BrandHeaderProps) {
       />
       <h1
         className={cn(
-          "text-4xl font-semibold tracking-tight md:text-5xl",
-          brandFont.className,
+          "font-sans text-4xl font-semibold tracking-tight md:text-5xl",
         )}
       >
         loveble

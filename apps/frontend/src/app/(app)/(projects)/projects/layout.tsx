@@ -31,10 +31,10 @@ export default function ProjectsLayout({
       {isInitialLoading ? (
         <ConnectionLoading className="flex-1" message="Loading..." />
       ) : (
-        <div className="flex h-screen bg-background">
+        <div className="flex h-screen">
           <AppSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
-          <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden py-1.5 pr-1.5">
+            <div className="flex min-h-0 flex-1 flex-col overflow-auto rounded-2xl">
               {children}
             </div>
           </main>

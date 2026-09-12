@@ -43,7 +43,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         : Sun;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu >
       <DropdownMenuTrigger
         render={
           <Button
@@ -52,7 +52,7 @@ export function ThemeToggle({ className }: { className?: string }) {
             size="icon"
             aria-label="Toggle theme"
             className={cn(
-              "size-8 rounded-lg ring-1 ring-transparent text-muted-foreground transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] hover:text-foreground hover:ring-border/50 dark:hover:bg-white/[0.06] dark:hover:ring-white/10",
+               "size-8 rounded-lg ring-1 ring-transparent text-muted-foreground transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-foreground/[0.06] hover:text-foreground hover:ring-border/50",
               className
             )}
           >
@@ -61,15 +61,9 @@ export function ThemeToggle({ className }: { className?: string }) {
         }
       />
 
-      <DropdownMenuContent align="end" side="top" className="w-48 p-1.5">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Theme</DropdownMenuLabel>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-
+      <DropdownMenuContent align="end" side="top" className="w-48 p-1.5 bg-projects-bg">
         {OPTIONS.map(({ value, label, icon: Icon }) => {
           const active = mounted && current === value;
-
           return (
             <DropdownMenuItem
               key={value}

@@ -83,8 +83,9 @@ export function ConnectorsDialog({
               </div>
 
               {connector.connected ? (
-                <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-500">
-                  <div className="h-1 w-1 rounded-full bg-emerald-500" />
+                /* Brand kit has no green — connected state uses Soft Sky tint + Deep Onyx (8.59:1, AAA). */
+                <div className="flex items-center gap-1.5 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                  <div className="h-1 w-1 rounded-full bg-primary" />
                   Connected
                 </div>
               ) : (
