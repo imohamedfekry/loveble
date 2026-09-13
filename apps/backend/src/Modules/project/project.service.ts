@@ -14,13 +14,14 @@ import { PROJECT_EVENTS } from '../realtime/events/project.events';
 import { getModel } from 'src/ai/providers';
 import type { ModelId } from 'src/ai/providers/types';
 import { inngest } from 'src/common/inngest/client';
+import { words } from 'valibot';
 
 @Injectable()
 export class projectService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
-  ) {}
+  ) { }
   async findAll(req: AuthenticatedRequest, query: ProjectQueryDto) {
     if (query.recent === 'true') {
       const projects = await this.projectRepository.findRecentByUserId(
@@ -50,19 +51,13 @@ export class projectService {
     });
   }
   async create(body: ProjectDto, req: AuthenticatedRequest) {
-    const prompt = body.prompt?.trim();
-    const name =
-      body.name?.trim() ||
-      (prompt ? prompt.split(/\s+/).slice(0, 5).join(' ') : 'Untitled Project');
-
+     const words = body.prompt.split(/\s+/).slice(0, 5).join(' ');
+    const defaultName = words.length > 3 ? words + '...' : words;
     const project = await this.projectRepository.create({
       userId: req.user.id,
-      name,
+      name: defaultName,
     });
-
-    if (prompt) {
-      this.generateAndUpdateName(project.id, prompt);
-    }
+    this.generateAndUpdateName(project.id, body.prompt);
 
     this.realtimeEmitService.toUser(
       req.user.id.toString(),

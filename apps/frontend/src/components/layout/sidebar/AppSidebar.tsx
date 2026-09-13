@@ -340,7 +340,7 @@ export function AppSidebar({
       <SectionLabel open={open}>
         <div className="flex items-center justify-between gap-2">
           <span>Recents</span>
-          <CreateProjectButton />
+          {/* <CreateProjectButton /> */}
         </div>
       </SectionLabel>
 

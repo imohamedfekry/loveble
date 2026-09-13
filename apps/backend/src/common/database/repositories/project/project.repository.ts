@@ -28,7 +28,7 @@ export class ProjectRepository extends BaseRepository {
       .from(projects)
       .where(eq(projects.userId, userId))
       .orderBy(desc(projects.updatedAt))
-      .limit(6);
+      .limit(5);
   }
   async findByUserIdPaginated(userId: bigint, page: number, limit: number) {
     const offset = (page - 1) * limit;

@@ -7,18 +7,17 @@ enum ImportStatus {
 }
 
 const projectSchema = v.object({
-  name: v.optional(
-    v.pipe(
-      v.string('Name must be a string'),
-      v.nonEmpty('Name is required'),
-      v.maxLength(100, 'Name cannot exceed 100 characters'),
-    ),
-  ),
-  prompt: v.optional(
-    v.pipe(
-      v.string('Prompt must be a string'),
-      v.maxLength(2000, 'Prompt cannot exceed 2000 characters'),
-    ),
+  // name: v.optional(
+  //   v.pipe(
+  //     v.string('Name must be a string'),
+  //     v.nonEmpty('Name is required'),
+  //     v.maxLength(100, 'Name cannot exceed 100 characters'),
+  //   ),
+  // ),
+  prompt: v.pipe(
+    v.string('Prompt must be a string'),
+    v.minLength(50, 'Prompt must be at least 50 characters'),
+    v.maxLength(2000, 'Prompt cannot exceed 2000 characters'),
   ),
 });
 const updateProjectSchema = v.object({
@@ -43,6 +42,6 @@ const projectQuerySchema = v.object({
   page: v.optional(v.string()),
   limit: v.optional(v.string()),
 });
-export class ProjectQueryDto extends createStandardDto(projectQuerySchema) {}
-export class ProjectDto extends createStandardDto(projectSchema) {}
-export class UpdateProjectDto extends createStandardDto(updateProjectSchema) {}
+export class ProjectQueryDto extends createStandardDto(projectQuerySchema) { }
+export class ProjectDto extends createStandardDto(projectSchema) { }
+export class UpdateProjectDto extends createStandardDto(updateProjectSchema) { }
