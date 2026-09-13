@@ -2,10 +2,7 @@
 
 import { ConnectionLoading } from "@/components/layout/connection-loading";
 import { AppSidebar } from "@/components/layout/sidebar/AppSidebar";
-
 import { useLoadProjects } from "@/lib/hooks/projects/useLoadProjects";
-import { useLoadUser } from "@/lib/hooks/user/useLoadUser";
-import { useRealtimeProjects } from "@/lib/socket/hooks/useRealtimeProjects";
 import { useProjectsStore } from "@/store/project.store";
 import { useUserStore } from "@/store/user.store";
 import { useState } from "react";
@@ -15,16 +12,16 @@ export default function ProjectsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  useLoadUser();
+  // /projects needs the full list. The hook skips itself when
+  // hasLoadedAll is already true (recents alone don't satisfy it).
   useLoadProjects();
-  useRealtimeProjects();
 
   const userLoading = useUserStore((s) => s.isLoading);
   const projectsLoading = useProjectsStore((s) => s.loading);
   const projectsCount = useProjectsStore((s) => s.projects.length);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const isInitialLoading =
-    userLoading || (projectsLoading && projectsCount === 0);
+
+  const isInitialLoading = userLoading || (projectsLoading && projectsCount === 0);
 
   return (
     <>

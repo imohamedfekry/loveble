@@ -16,3 +16,15 @@ export const useUserStore = create<UserStore>((set) => ({
       isLoading: false,
     }),
 }));
+
+// Module-level flag: true once /user/@me has resolved successfully.
+// Checked synchronously inside the hook so remounts never refetch.
+let hasLoadedUser = false;
+
+export const isUserLoaded = () => hasLoadedUser;
+export const markUserLoaded = () => {
+  hasLoadedUser = true;
+};
+export const resetUserLoaded = () => {
+  hasLoadedUser = false;
+};

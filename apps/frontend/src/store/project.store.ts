@@ -4,9 +4,14 @@ import { create } from "zustand";
 type Store = {
   projects: Project[];
   loading: boolean;
+  hasLoadedRecent: boolean;
+  hasLoadedAll: boolean;
 
   setProjects: (projects: Project[]) => void;
   setLoading: (v: boolean) => void;
+  markLoadedRecent: () => void;
+  markLoadedAll: () => void;
+  resetProjects: () => void;
 
   addProject: (p: Project) => void;
   updateProject: (p: Project) => void;
@@ -17,12 +22,26 @@ type Store = {
 export const useProjectsStore = create<Store>((set) => ({
   projects: [],
   loading: true,
+  hasLoadedRecent: false,
+  hasLoadedAll: false,
 
   setLoading: (loading) => set({ loading }),
 
   setProjects: (projects) =>
     set({
       projects: Array.isArray(projects) ? projects : [],
+    }),
+
+  markLoadedRecent: () => set({ hasLoadedRecent: true }),
+  markLoadedAll: () =>
+    set({ hasLoadedAll: true, hasLoadedRecent: true }),
+
+  resetProjects: () =>
+    set({
+      projects: [],
+      loading: true,
+      hasLoadedRecent: false,
+      hasLoadedAll: false,
     }),
 
   addProject: (project) =>
