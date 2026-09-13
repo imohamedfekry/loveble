@@ -1,6 +1,6 @@
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangleIcon, FileWarningIcon, TerminalIcon } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
+import { AlertTriangleIcon, FileWarningIcon } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import { FileBreadcrumbs } from "./file-breadcrumbs";
 import { TopNavigation } from "./top-navigation";
@@ -10,7 +10,6 @@ import { useFile, useFileContent } from "@/lib/hooks/file/useFiles";
 import { useCollaboration } from "@/lib/socket/hooks/useCollaboration";
 import { serializeSelections } from "@/lib/socket/collab-protocol";
 import { useSocketStatus } from "@/lib/socket/socket-store";
-import { writeVimModePreference } from "./extensions/vim";
 
 const DEBOUNCE_MS = 1500;
 
@@ -180,7 +179,6 @@ function BinaryFileNotice({ fileName }: { fileName: string }) {
 
 export const EditorView = ({ projectId }: { projectId: string }) => {
   const { activeTabId } = useEditor(projectId);
-  const [vimMode, setVimMode] = useState(false);
   const activeFile = useFile(projectId, activeTabId);
   const isActiveFileText = activeFile?.type === "file";
 
@@ -231,23 +229,6 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
       {activeTabId && (
         <FileBreadcrumbs
           projectId={projectId}
-          action={
-            vimMode ? (
-              <button
-                type="button"
-                onClick={() => {
-                  writeVimModePreference(false);
-                  setVimMode(false);
-                }}
-                title="Disable Vim mode (Ctrl+Alt+V)"
-                aria-label="Disable Vim mode"
-                aria-pressed={true}
-                className="flex size-6 items-center justify-center rounded-md border border-border bg-accent text-accent-foreground transition-colors hover:bg-accent/80"
-              >
-                <TerminalIcon className="size-3.5" />
-              </button>
-            ) : null
-          }
         />
       )}
       <div className="flex-1 min-h-0 bg-card">
@@ -325,8 +306,6 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
               collaboration={collabConfig}
               peers={peers}
               onLocalAwareness={sendAwareness}
-              vimMode={vimMode}
-              onVimModeChange={setVimMode}
               onViewReady={(view) => {
                 setView(view);
                 if (!view) return;
