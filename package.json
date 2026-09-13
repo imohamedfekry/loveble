@@ -10,6 +10,7 @@
     "build": "pnpm -r --parallel build",
     "build:backend": "pnpm --filter @loveble/backend build",
     "build:frontend": "pnpm --filter @loveble/frontend build",
+    "typecheck": "pnpm -r --parallel typecheck",
     "lint": "pnpm -r lint",
     "db:generate": "pnpm --filter @loveble/backend db:generate",
     "db:migrate": "pnpm --filter @loveble/backend db:migrate",
