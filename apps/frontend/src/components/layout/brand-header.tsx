@@ -1,0 +1,36 @@
+import Image from "next/image";
+import { cn } from "@/lib/utils";
+
+/* Brand kit heading face is Camera Plain (commercial, not bundled) —
+   Inter is the loaded brand substitute for display type. */
+
+type BrandHeaderProps = {
+  className?: string;
+};
+
+export function BrandHeader({ className }: BrandHeaderProps) {
+  return (
+    <div
+      className={cn(
+        "group/logo flex w-full items-center justify-center gap-2.5",
+        className,
+      )}
+    >
+      <Image
+        src="/logo.svg"
+        alt="loveble"
+        width={40}
+        height={40}
+        loading="eager"
+        className="size-9 rounded-xl outline outline-1 -outline-offset-1 outline-black/10 opacity-90 transition-transform duration-(--duration-fast) ease-(--ease-smooth-out) motion-reduce:transition-none group-hover/logo:scale-105 group-hover/logo:opacity-100 md:size-11"
+      />
+      <h1
+        className={cn(
+          "font-sans text-4xl font-semibold tracking-tight md:text-5xl",
+        )}
+      >
+        loveble
+      </h1>
+    </div>
+  );
+}
