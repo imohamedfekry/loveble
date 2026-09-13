@@ -2,13 +2,13 @@
 
 import { useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { createSchema } from '@/lib/validators/register'
+import { createSchema } from '@loveble/validation/register'
 import { createAccount } from '@/lib/api/apis/auth'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import { Input } from '@loveble/ui/input'
+import { Button } from '@loveble/ui/button'
 import { AuthCard } from '@/components/auth/auth-card'
 
 export default function CreatePage() {

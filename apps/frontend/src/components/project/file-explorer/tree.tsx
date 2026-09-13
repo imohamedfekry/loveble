@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { FileIcon, FolderIcon } from "@react-symbols/icons/utils";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import type { CreateFileRequest, ProjectFileType, UpdateFile } from "@/lib/api/apis/files/types";
 import { CreateInput } from "./create-input";
 import {

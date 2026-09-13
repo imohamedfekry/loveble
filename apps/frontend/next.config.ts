@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: [
+    "@loveble/types",
+    "@loveble/validation",
+    "@loveble/utils",
+    "@loveble/ui",
+  ],
 };
 
 export default nextConfig;

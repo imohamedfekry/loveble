@@ -4,7 +4,7 @@ import type { MutableRefObject } from "react";
 
 import { Check } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 
 import { MODELS } from "./composer-data";
 import type { ComposerModel } from "./types";

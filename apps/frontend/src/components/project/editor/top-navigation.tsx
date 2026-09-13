@@ -1,8 +1,8 @@
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Spinner } from "@/components/ui/spinner";
+import { ScrollArea, ScrollBar } from "@loveble/ui/scroll-area"
+import { Spinner } from "@loveble/ui/spinner";
 import { useFile } from "@/lib/hooks/file/useFiles";
 import { useEditor } from "@/lib/hooks/use-editor";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { XIcon } from "lucide-react";
 import { FileIcon } from "@react-symbols/icons/utils";
 

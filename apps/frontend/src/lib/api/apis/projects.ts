@@ -3,7 +3,7 @@ import type {
   ApiResponse,
   PaginatedProjects,
   Project,
-} from "../../types/types";
+} from "@loveble/types";
 
 export type GetProjectsParams = {
   page?: number;

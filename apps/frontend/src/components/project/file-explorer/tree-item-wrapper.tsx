@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import type { ProjectFileType } from "@/lib/api/apis/files/types";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import {
@@ -12,8 +12,8 @@ import {
     ContextMenuTrigger,
     ContextMenuShortcut,
     ContextMenuSeparator,
-} from "@/components/ui/context-menu";
-import { useModKeyLabel } from "@/lib/hooks/useModKeyLabel";
+} from "@loveble/ui/context-menu";
+import { useModKeyLabel } from "@loveble/ui";
 
 import { getItemPadding } from "./constants";
 import { isValidDropTarget, useTreeDndContext } from "./tree-dnd";

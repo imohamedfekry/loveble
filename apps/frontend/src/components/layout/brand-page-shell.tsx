@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { BrandHeader } from "./brand-header";
 
 type BrandPageShellProps = {

@@ -1,14 +1,14 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@loveble/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { UserOAuthAccount } from "@/lib/types/types";
+} from "@loveble/ui/dropdown-menu";
+import type { UserOAuthAccount } from "@loveble/types";
 
 const triggerClassName =
   "cursor-pointer outline-none border-none bg-transparent p-0 hover:opacity-80 transition-opacity";

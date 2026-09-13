@@ -12,7 +12,7 @@ import {
   PlusIcon,
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { useProjectsStore } from "@/store/project.store";
 import { ProjectItem } from "@/components/layout/sidebar/project.item";
 import { ProjectItemSkeleton } from "@/components/layout/sidebar/project-item.skeleton";
@@ -22,9 +22,9 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
-import { Spinner } from "@/components/ui/spinner";
-import type { Project } from "@/lib/types/types";
+} from "@loveble/ui/empty";
+import { Spinner } from "@loveble/ui/spinner";
+import type { Project } from "@loveble/types";
 
 type FilterTab = "all" | "starred" | "created" | "shared";
 

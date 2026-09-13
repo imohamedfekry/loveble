@@ -1,16 +1,16 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@loveble/ui/avatar";
+import { Button } from "@loveble/ui/button";
+import { Skeleton } from "@loveble/ui/skeleton";
 import { useGithubAccount } from "./hooks/useGithubAccount";
 import { GithubConnectButton } from "./github-connect-button";
-import { surfacePanelClassName } from "@/lib/styles";
+import { surfacePanelClassName } from "@loveble/utils";
 import { useUserStore } from "@/store/user.store";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { useSettings } from "@/components/settings/use-settings";
 import { Settings } from "lucide-react";
-import { Badge } from "../ui/badge";
+import { Badge } from "@loveble/ui/badge";
 
 export function GithubAccountCard() {
   const { github, connectGithub } = useGithubAccount();

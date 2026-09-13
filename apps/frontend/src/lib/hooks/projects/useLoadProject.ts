@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { useProjectsStore } from "@/store/project.store";
-import type { Project } from "@/lib/types/types";
+import type { Project } from "@loveble/types";
 
 export const useLoadProject = (projectId?: string | null) => {
   const projects = useProjectsStore((s) => s.projects);

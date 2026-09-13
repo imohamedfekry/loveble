@@ -6,8 +6,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@loveble/ui/dialog";
+import { Button } from "@loveble/ui/button";
 import { PlugIcon, MailIcon } from "lucide-react";
 import { FaGithub, FaSlack } from "react-icons/fa";
 import { useGithubAccount } from "@/components/user/hooks/useGithubAccount";

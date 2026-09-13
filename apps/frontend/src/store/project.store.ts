@@ -1,4 +1,4 @@
-import { Project } from "@/lib/types/types";
+import { Project } from "@loveble/types";
 import { create } from "zustand";
 
 type Store = {

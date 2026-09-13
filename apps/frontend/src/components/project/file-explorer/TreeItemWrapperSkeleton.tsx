@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@loveble/ui/skeleton";
 
 export const TreeItemWrapperSkeleton = ({
   level = 0,

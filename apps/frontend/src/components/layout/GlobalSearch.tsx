@@ -10,8 +10,8 @@ import {
   PaletteIcon,
 } from "lucide-react";
 
-import { useKeyboardShortcut } from "@/lib/hooks/useKeyboardShortcut";
-import { MOD_KEY_CODES } from "@/lib/keyboard";
+import { useKeyboardShortcut } from "@loveble/ui";
+import { MOD_KEY_CODES } from "@loveble/utils";
 import { useProjectsStore } from "@/store/project.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { useSearchStore } from "@/store/search.store";
@@ -25,9 +25,9 @@ import {
   CommandGroup,
   CommandItem,
   CommandShortcut,
-} from "@/components/ui/command";
-import { Spinner } from "@/components/ui/spinner";
-import type { Project } from "@/lib/types/types";
+} from "@loveble/ui/command";
+import { Spinner } from "@loveble/ui/spinner";
+import type { Project } from "@loveble/types";
 
 type SearchResult =
   | { type: "project"; data: Project }

@@ -6,9 +6,9 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@loveble/ui/dialog";
+import { Button } from "@loveble/ui/button";
+import { ScrollArea } from "@loveble/ui/scroll-area";
 import { useSettingsStore } from "@/store/settings.store";
 import { XIcon } from "lucide-react";
 import { getSettingsNavItem } from "./settings-config";

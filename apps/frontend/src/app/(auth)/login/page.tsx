@@ -5,10 +5,10 @@ import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import { Input } from '@loveble/ui/input'
+import { Button } from '@loveble/ui/button'
 import { AuthCard } from '@/components/auth/auth-card'
-import { loginSchema, LoginSchema } from '@/lib/validators/login'
+import { loginSchema, LoginSchema } from '@loveble/validation/login'
 import { loginUser } from '@/lib/api/apis'
 
 export default function LoginPage() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@loveble/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+} from "@loveble/ui/dropdown-menu";
 import { SettingsIcon, LogOutIcon } from "lucide-react";
 import { useUserStore } from "@/store/user.store";
 import { useSettings } from "@/components/settings/use-settings";

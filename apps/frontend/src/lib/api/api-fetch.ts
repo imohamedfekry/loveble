@@ -1,4 +1,4 @@
-import type { ApiResponse, ApiSuccess } from "./response.types";
+import type { ApiResponse, ApiSuccess } from "@loveble/types/envelope";
 
 const API_BASE_URL = 'http://localhost:3001/api/v1'
 const DEFAULT_TIMEOUT = 15000; // 15 seconds

@@ -1,7 +1,7 @@
 "use client";
 
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { ScrollArea } from "@loveble/ui/scroll-area";
+import { cn } from "@loveble/utils";
 import { useSettingsStore } from "@/store/settings.store";
 import {
   SETTINGS_NAV,
