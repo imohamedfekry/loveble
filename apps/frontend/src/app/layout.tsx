@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SettingsProvider } from "@/components/settings/settings-provider";
@@ -42,19 +41,6 @@ export default function RootLayout({
         inter.variable,
       )}
     >
-      <head>
-        <Script
-          id="project-page-init"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              if (window.location.pathname.startsWith('/project/')) {
-                document.documentElement.setAttribute('data-project-page', '');
-              }
-            `,
-          }}
-        />
-      </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider
           attribute="class"

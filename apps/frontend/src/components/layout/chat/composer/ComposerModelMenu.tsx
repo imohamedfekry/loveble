@@ -35,9 +35,7 @@ export function ComposerModelMenu({
       onMouseLeave={onMouseLeave}
       className={cn(
         "absolute right-0 bottom-full z-30 mb-2 w-48",
-        "rounded-xl border border-border bg-popover p-1",
-        "shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_-8px_rgba(0,0,0,0.24)]",
-        "dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_8px_24px_-8px_rgba(0,0,0,0.7)]",
+        "rounded-xl border border-border bg-muted p-1",
         "animate-in fade-in-0 slide-in-from-bottom-1 duration-(--duration-quick) motion-reduce:animate-none"
       )}
     >

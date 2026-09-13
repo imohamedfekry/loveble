@@ -44,8 +44,8 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
               "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
               menuOpen
-                ? "bg-white/[0.08] text-white ring-white/[0.12]"
-                : "ring-white/[0.08] text-white/70 hover:bg-white/[0.06] hover:text-white hover:ring-white/[0.12]"
+                ? "bg-foreground/[0.06] text-sidebar-foreground ring-border shadow-sm"
+                : "ring-border text-muted-foreground hover:bg-foreground/[0.06] hover:text-sidebar-foreground"
             )}
           >
             <span className="flex h-7 w-8 shrink-0 items-center justify-center">
@@ -63,7 +63,7 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
               <span className="flex h-7 w-8 shrink-0 items-center justify-center">
                 <ChevronDown
                   className={cn(
-                    "h-3.5 w-3.5 shrink-0 text-white/50 transition-transform duration-200 motion-reduce:transition-none",
+                    "h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform duration-200 motion-reduce:transition-none",
                     menuOpen ? "rotate-180" : "rotate-0",
                   )}
                 />
@@ -76,7 +76,7 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
       <DropdownMenuContent
         align="start"
         sideOffset={4}
-        className="w-[280px] rounded-xl border border-white/[0.08] bg-[#1c1c1c] p-2 shadow-2xl"
+        className="w-[280px] rounded-xl p-2 shadow-2xl"
       >
         <DropdownMenuGroup>
           <DropdownMenuLabel className="flex items-center gap-3 px-2.5 py-2.5">
@@ -84,21 +84,21 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="truncate text-[13px] font-semibold text-white">
+              <span className="truncate text-[13px] font-semibold text-popover-foreground">
                 {fullName}
               </span>
-              <span className="truncate text-[11px] text-white/40">
+              <span className="truncate text-[11px] text-muted-foreground">
                 Free Plan
               </span>
             </div>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
 
-        <div className="mx-2 my-1 h-px bg-white/[0.08]" />
+        <div className="mx-2 my-1 h-px bg-border" />
 
         <DropdownMenuGroup>
           <DropdownMenuItem
-            className="flex items-center justify-center gap-2.5 rounded-lg border border-white/[0.12] px-3 py-2 text-[12.5px] font-medium text-white/60 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white"
+            className="flex items-center justify-center gap-2.5 rounded-lg border border-border px-3 py-2 text-[12.5px] font-medium text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
             onClick={() => openSettings("account", "profile")}
           >
             <SettingsIcon className="h-4 w-4" />
@@ -106,19 +106,19 @@ export function WorkspaceMenu({ open }: { open: boolean }) {
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
-        <div className="mx-2 my-1 h-px bg-white/[0.08]" />
+        <div className="mx-2 my-1 h-px bg-border" />
 
         <DropdownMenuGroup className="space-y-0.5">
-          <DropdownMenuItem className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-white/50 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white">
+          <DropdownMenuItem className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-accent-foreground">
             <Plus className="h-4 w-4" />
             <span>New workspace</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
-        <div className="mx-2 my-1 h-px bg-white/[0.08]" />
+        <div className="mx-2 my-1 h-px bg-border" />
 
         <DropdownMenuGroup className="space-y-0.5">
-          <DropdownMenuItem className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-white/50 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white">
+          <DropdownMenuItem className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-accent-foreground">
             <LayoutGrid className="h-4 w-4" />
             <span>All projects</span>
           </DropdownMenuItem>

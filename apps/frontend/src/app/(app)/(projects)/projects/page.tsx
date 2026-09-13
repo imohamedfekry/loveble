@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function ProjectsPageRoute() {
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-background">
+    <div className="flex min-h-full flex-1 flex-col bg-sidebar py-1.5 pr-1.5 rounded-2xl">
       <ProjectsPage params={{ tab: "all" }} />
     </div>
   );

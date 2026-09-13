@@ -75,7 +75,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
   };
 
   return (
-    <nav className="flex items-center justify-between gap-x-2 border-b border-border bg-card/85 px-3 py-2 backdrop-blur-md">
+    <nav className="flex items-center justify-between gap-x-2 border-b border-border bg-card px-3 py-2">
       <div className="flex items-center gap-x-2">
         <Breadcrumb>
           <BreadcrumbList className="gap-0!">
@@ -123,7 +123,7 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                         handleCancel();
                       }
                     }}
-                    className="h-7 w-56 rounded-md border border-border bg-popover px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/30"
+                    className="h-7 w-56 rounded-md border border-border bg-muted px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/30"
                   />
                 ) : (
                   <div

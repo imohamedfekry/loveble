@@ -46,7 +46,7 @@ import { useSearchStore } from "@/store/search.store";
 import { useConnectorsStore } from "@/store/connectors.store";
 
 const iconSwapMotion =
-  "transition-[opacity,transform] duration-(--duration-quick) ease-(--ease-in-out) motion-reduce:transition-none";
+  "transition-[opacity,transform] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none";
 
 export function AppSidebar({
   open,

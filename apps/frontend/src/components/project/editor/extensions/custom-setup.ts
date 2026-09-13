@@ -2,6 +2,7 @@ import {
   keymap,
   highlightSpecialChars,
   drawSelection,
+  rectangularSelection,
   highlightActiveLine,
   dropCursor,
   crosshairCursor,
@@ -20,7 +21,6 @@ import {
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import {
-  autocompletion,
   completionKeymap,
   closeBrackets,
   closeBracketsKeymap,
@@ -46,13 +46,15 @@ export const customSetup: Extension = (() => [
     },
   }),
   drawSelection(),
+  rectangularSelection(),
   dropCursor(),
   EditorState.allowMultipleSelections.of(true),
   indentOnInput(),
   syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
   bracketMatching(),
   closeBrackets(),
-  autocompletion(),
+  // NOTE: autocompletion() lives in ./autocomplete.ts (autocompleteConfig)
+  // so it can be tuned per file language instead of using bare defaults.
   crosshairCursor(),
   highlightActiveLine(),
   highlightSelectionMatches(),

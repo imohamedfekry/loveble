@@ -13,8 +13,10 @@ import { getFilePath, useEditor } from "@/lib/hooks/use-editor";
 
 export const FileBreadcrumbs = ({
   projectId,
+  action,
 }: {
   projectId: string;
+  action?: React.ReactNode;
 }) => {
   const { activeTabId } = useEditor(projectId);
 
@@ -24,7 +26,7 @@ export const FileBreadcrumbs = ({
 
   if (!activeTabId) {
     return (
-      <div className="flex h-8.75 items-center border-b bg-sidebar pl-4">
+      <div className="flex h-8.75 items-center justify-between border-b bg-sidebar pl-4 pr-2">
         <Breadcrumb>
           <BreadcrumbList className="gap-0.5">
             <BreadcrumbItem className="text-sm">
@@ -32,6 +34,7 @@ export const FileBreadcrumbs = ({
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+        {action}
       </div>
     );
   }
@@ -39,7 +42,7 @@ export const FileBreadcrumbs = ({
   const filePath = getFilePath(files, activeTabId);
 
   return (
-    <div className="flex h-8.75 items-center border-b bg-sidebar pl-4">
+    <div className="flex h-8.75 items-center justify-between border-b bg-sidebar pl-4 pr-2">
       <Breadcrumb>
         <BreadcrumbList className="gap-0.5">
           {filePath.map((item, index) => {
@@ -70,6 +73,7 @@ export const FileBreadcrumbs = ({
           })}
         </BreadcrumbList>
       </Breadcrumb>
+      {action}
     </div>
   );
 };

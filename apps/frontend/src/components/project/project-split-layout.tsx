@@ -38,8 +38,7 @@ export function ProjectSplitLayout({
 
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
               <div className="relative">
-                <div className="absolute -inset-2 rounded-full bg-primary/10 blur-md" />
-                <div className="relative flex size-10 items-center justify-center rounded-full border border-border bg-popover">
+                <div className="relative flex size-10 items-center justify-center rounded-full border border-border bg-muted">
                   <MessagesSquareIcon className="size-4 text-primary" />
                 </div>
               </div>
