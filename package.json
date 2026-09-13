@@ -1,0 +1,18 @@
+{
+  "name": "loveble",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:backend": "pnpm --filter @loveble/backend dev",
+    "dev:frontend": "pnpm --filter @loveble/frontend dev",
+    "build": "pnpm -r --parallel build",
+    "build:backend": "pnpm --filter @loveble/backend build",
+    "build:frontend": "pnpm --filter @loveble/frontend build",
+    "lint": "pnpm -r lint",
+    "db:generate": "pnpm --filter @loveble/backend db:generate",
+    "db:migrate": "pnpm --filter @loveble/backend db:migrate",
+    "db:studio": "pnpm --filter @loveble/backend db:studio"
+  }
+}
