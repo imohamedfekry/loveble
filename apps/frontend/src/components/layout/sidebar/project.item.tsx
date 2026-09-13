@@ -6,16 +6,12 @@ import { cn } from "@/lib/utils";
 interface ProjectItemProps {
   data: Project;
   className?: string;
-  variant?: "default" | "onDark";
 }
 
 export const ProjectItem = ({
   data,
   className,
-  variant = "default",
 }: ProjectItemProps) => {
-  const onDark = variant === "onDark";
-
   return (
     <li>
       <Link
@@ -24,9 +20,7 @@ export const ProjectItem = ({
           "group flex h-7 w-full items-center rounded-sm p-0 pr-2 ring-1 ring-transparent text-left whitespace-nowrap",
           "text-[13.5px] font-[450] tracking-[-0.01em]",
           "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-          onDark
-            ? "text-projects-muted hover:bg-projects-elevated/60 hover:text-projects-foreground"
-             : "text-muted-foreground hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
+          "text-muted-foreground hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
           className
         )}
@@ -35,7 +29,7 @@ export const ProjectItem = ({
           <p
             className={cn(
               "truncate text-[13.5px] font-[450]",
-              onDark ? "text-projects-foreground" : "text-foreground"
+              "text-foreground"
             )}
           >
             {data.name}

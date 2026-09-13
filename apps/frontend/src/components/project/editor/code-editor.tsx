@@ -165,7 +165,7 @@ export const CodeEditor = ({
           : undefined
       }
     >
-      <div ref={editorRef} className="size-full pl-4" />
+      <div ref={editorRef} className="size-full" />
       {collaboration && <RemoteMice peers={peers} />}
     </div>
   );

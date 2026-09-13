@@ -11,8 +11,6 @@ import { useCollaboration } from "@/lib/socket/hooks/useCollaboration";
 import { serializeSelections } from "@/lib/socket/collab-protocol";
 import { useSocketStatus } from "@/lib/socket/socket-store";
 
-const DEBOUNCE_MS = 1500;
-
 function generateClientID(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
@@ -231,7 +229,7 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
           projectId={projectId}
         />
       )}
-      <div className="flex-1 min-h-0 bg-card">
+      <div className="flex-1 min-h-0 bg-muted">
         {!activeFile && !activeTabId && (
           <div className="size-full flex items-center justify-center">
             <Image

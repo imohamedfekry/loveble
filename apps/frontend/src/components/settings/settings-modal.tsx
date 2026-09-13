@@ -30,8 +30,7 @@ export function SettingsModal() {
     <Dialog open={isOpen} onOpenChange={setOpen}>
       <DialogContent
         showCloseButton={false}
-        overlayClassName="bg-foreground/30"
-        className="flex h-[92vh] max-h-[92vh] w-[calc(100vw-1rem)] !max-w-[1140px] flex-col overflow-hidden rounded-xl border border-border/40 bg-card p-0 shadow-lg sm:h-[min(88vh,780px)] sm:max-h-[calc(100vh-2rem)] sm:w-[min(96vw,1140px)] sm:!max-w-[1140px] sm:flex-row"
+        className="flex h-[92vh] max-h-[92vh] w-[calc(100vw-1rem)] max-w-285! flex-col overflow-hidden rounded-xl border border-border/40 bg-card p-0 shadow-lg sm:h-[min(88vh,780px)] sm:max-h-[calc(100vh-2rem)] sm:w-[min(96vw,1140px)] sm:!max-w-[1140px] sm:flex-row"
       >
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">

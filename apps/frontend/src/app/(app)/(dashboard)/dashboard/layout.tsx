@@ -37,7 +37,7 @@ export default function DashboardLayout({
       ) : (
         <div className="flex h-screen bg-background">
           <AppSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
-          <main className="flex min-w-0 flex-1 flex-col overflow-hidden ">
+          <main className="flex min-w-0 flex-1 flex-col bg-sidebar overflow-hidden ">
             <div className="flex min-h-0 flex-1 flex-col overflow-auto ">
               {children}
             </div>

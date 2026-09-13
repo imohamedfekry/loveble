@@ -42,7 +42,8 @@ export const customTheme = EditorView.theme({
     borderRight: "1px solid var(--border)",
   },
   ".cm-lineNumbers .cm-gutterElement": {
-    minWidth: "2.5rem",
+    minWidth: "min-content",
+
   },
   ".cm-foldPlaceholder": {
     backgroundColor: "transparent",

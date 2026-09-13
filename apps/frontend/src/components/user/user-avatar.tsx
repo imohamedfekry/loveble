@@ -52,9 +52,9 @@ export function UserAvatarButton() {
               <span className="text-sm font-semibold">
                 {user?.username ?? "User"}
               </span>
-              <span className="text-xs text-muted-foreground">
+              {/* <span className="text-xs text-muted-foreground">
                 {user?.email ?? ""}
-              </span>
+              </span> */}
             </div>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
