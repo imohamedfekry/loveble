@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckIcon, Loader2Icon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,14 @@ const statusConfig = {
 } as const;
 
 export default function CallbackPage() {
+  return (
+    <Suspense fallback={null}>
+      <CallbackPageContent />
+    </Suspense>
+  );
+}
+
+function CallbackPageContent() {
   const router = useRouter();
   const params = useSearchParams();
   const called = useRef(false);
