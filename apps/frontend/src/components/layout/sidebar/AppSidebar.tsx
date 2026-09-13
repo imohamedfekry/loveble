@@ -26,17 +26,17 @@ import { NavItem } from "./NavItem";
 import { SectionLabel } from "./SectionLabel";
 import { ProjectsList } from "@/components/layout/sidebar/projects-list";
 import { CreateProjectButton } from "./create-project-button";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { MOD_KEY_CODES } from "@/lib/keyboard";
-import { useKeyboardShortcut } from "@/lib/hooks/useKeyboardShortcut";
-import { useModKeyLabel } from "@/lib/hooks/useModKeyLabel";
+import { MOD_KEY_CODES } from "@loveble/utils";
+import { useKeyboardShortcut } from "@loveble/ui";
+import { useModKeyLabel } from "@loveble/ui";
 
 import {
   TooltipContent,
   TooltipTrigger,
   Tooltip,
-} from "../../ui/tooltip";
+} from "@loveble/ui/tooltip";
 
 import { useGithubAccount } from "@/components/user/hooks/useGithubAccount";
 import { useUserStore } from "@/store/user.store";

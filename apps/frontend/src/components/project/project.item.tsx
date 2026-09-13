@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ImportStatus, Project } from "@/lib/types/types";
+import type { ImportStatus, Project } from "@loveble/types";
 import {
   AlertCircleIcon,
   ChevronRightIcon,
@@ -8,8 +8,8 @@ import {
 } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
 import { formatDistanceToNow } from "date-fns";
-import { cn } from "@/lib/utils";
-import { iconBadgeClassName } from "@/lib/styles";
+import { cn } from "@loveble/utils";
+import { iconBadgeClassName } from "@loveble/utils";
 
 interface ProjectItemProps {
   data: Project;

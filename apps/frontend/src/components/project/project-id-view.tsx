@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa";
 import { Allotment } from "allotment";

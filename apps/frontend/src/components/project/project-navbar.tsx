@@ -11,14 +11,14 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from "@loveble/ui/breadcrumb";
 
 import { useLoadProject } from "@/lib/hooks/projects/useLoadProject";
 import { updateProjectName } from "@/lib/api/apis/projects";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { UserAvatarButton } from "../user/user-avatar";
 import { CloudCheckIcon, LoaderIcon } from "lucide-react";
-import { TooltipContent, TooltipTrigger, Tooltip } from "../ui/tooltip";
+import { TooltipContent, TooltipTrigger, Tooltip } from "@loveble/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
 
 export function ProjectNavbar({ projectId }: { projectId: string }) {

@@ -8,7 +8,7 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from "@loveble/ui/breadcrumb";
 import { getFilePath, useEditor } from "@/lib/hooks/use-editor";
 
 export const FileBreadcrumbs = ({

@@ -9,7 +9,7 @@ import {
   Upload,
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 
 import { ComposerAttachments } from "./ComposerAttachments";
 import { ComposerMenu } from "./ComposerMenu";

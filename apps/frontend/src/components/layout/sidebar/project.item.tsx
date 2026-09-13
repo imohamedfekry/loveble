@@ -6,16 +6,16 @@ import { useState } from "react";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@loveble/ui/alert-dialog";
+import { Button } from "@loveble/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@loveble/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@loveble/ui/dropdown-menu";
+import { Input } from "@loveble/ui/input";
+import { Spinner } from "@loveble/ui/spinner";
 import { deleteProject, updateProjectName } from "@/lib/api/apis/projects";
 import { useProjectsStore } from "@/store/project.store";
-import { cn } from "@/lib/utils";
-import type { Project } from "@/lib/types/types";
+import { cn } from "@loveble/utils";
+import type { Project } from "@loveble/types";
 
 interface ProjectItemProps {
   data: Project;

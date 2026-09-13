@@ -1,8 +1,8 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ShortcutKbd } from "../ui/shortcut-kbd";
+import { cn } from "@loveble/utils";
+import { ShortcutKbd } from "@loveble/ui/shortcut-kbd";
 
 type ProjectActionCardProps = {
   icon: LucideIcon | React.ComponentType<{ className?: string }>;

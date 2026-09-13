@@ -1,12 +1,12 @@
 import { ChevronRightIcon, CopyMinusIcon, FilePlusCornerIcon, FolderPlusIcon, RotateCw } from "lucide-react"
 import React, { useMemo, useState } from "react";
-import { cn } from "@/lib/utils"
+import { cn } from "@loveble/utils"
 import { CreateFileRequest, ProjectFileType } from "@/lib/api/apis/files/types";
 import { useLoadProject } from "@/lib/hooks/projects/useLoadProject";
 import { useCreateFile, useLoadFiles, useLoadFolderContent, useMoveFile, useReloadFiles, useFile } from "@/lib/hooks/file/useFiles";
-import { Button } from "@/components/ui/button";
+import { Button } from "@loveble/ui/button";
 import { CreateInput } from "./create-input";
-import { ScrollArea } from "../../ui/scroll-area"
+import { ScrollArea } from "@loveble/ui/scroll-area"
 import { Tree } from "./tree";
 import { TreeItemWrapperSkeleton } from "./TreeItemWrapperSkeleton";
 import { FileIcon, FolderIcon } from "@react-symbols/icons/utils";

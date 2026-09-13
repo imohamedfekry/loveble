@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 
 import { ComposerMenuItem } from "./ComposerMenuItem";
 import { SOURCES } from "./composer-data";

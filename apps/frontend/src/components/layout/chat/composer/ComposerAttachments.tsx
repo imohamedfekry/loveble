@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import { FileIcon } from "@react-symbols/icons/utils";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 
 import type { ComposerAttachment, ComposerVariant } from "./types";
 

@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { BackgroundGradient } from "./BackgroundGradient";
 type ConnectionLoadingProps = {
   message?: string;

@@ -3,7 +3,7 @@ import { FileIcon, FolderIcon } from "@react-symbols/icons/utils";
 import type { UpdateFile } from "@/lib/api/apis/files/types";
 import { useEffect, useRef, useState } from "react";
 import { getItemPadding } from "./constants";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 
 export const RenameInput = ({
     type,

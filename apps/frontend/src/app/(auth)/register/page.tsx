@@ -5,11 +5,11 @@ import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useRouter } from 'next/navigation'
 
 import { AuthCard } from '@/components/auth/auth-card'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import { Input } from '@loveble/ui/input'
+import { Button } from '@loveble/ui/button'
 import { FormError } from '@/components/auth/form-error'
 import { requestOtp } from '@/lib/api/apis/auth'
-import { emailSchema } from '@/lib/validators/register'
+import { emailSchema } from '@loveble/validation/register'
 
 
 export default function RegisterPage() {

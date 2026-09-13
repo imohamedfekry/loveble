@@ -1,4 +1,4 @@
-import { UserStore } from "@/lib/types/types";
+import { UserStore } from "@loveble/types";
 import { create } from "zustand";
 
 export const useUserStore = create<UserStore>((set) => ({

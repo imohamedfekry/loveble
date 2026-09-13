@@ -14,9 +14,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "../../ui/dropdown-menu";
+} from "@loveble/ui/dropdown-menu";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { CollapseLabel } from "./CollapseLabel";
 
 export function WorkspaceMenu({ open }: { open: boolean }) {

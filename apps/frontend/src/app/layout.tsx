@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { SettingsProvider } from "@/components/settings/settings-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@loveble/ui/sonner";
 
 const inter = Inter({
   variable: "--font-inter",

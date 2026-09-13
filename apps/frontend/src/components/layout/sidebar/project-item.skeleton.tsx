@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@loveble/ui/skeleton";
+import { cn } from "@loveble/utils";
 
 interface ProjectItemSkeletonProps {
   className?: string;

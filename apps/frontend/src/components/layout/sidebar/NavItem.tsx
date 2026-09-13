@@ -1,11 +1,11 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { CollapseLabel } from "./CollapseLabel";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { IconSvgElement } from "@hugeicons/react";
 import type { LucideIcon } from "lucide-react";
-import { useModKeyLabel } from "@/lib/hooks/useModKeyLabel";
+import { useModKeyLabel } from "@loveble/ui";
 import Link from "next/link";
 
 export function NavItem({

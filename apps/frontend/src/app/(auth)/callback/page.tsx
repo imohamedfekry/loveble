@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckIcon, Loader2Icon, XIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { githubCallback } from "@/lib/api/apis/auth";
 
 type Status = "loading" | "success" | "error";

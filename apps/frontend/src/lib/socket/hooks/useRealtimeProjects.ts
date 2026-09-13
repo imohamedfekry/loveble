@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { socket } from "../socket";
 import { useProjectsStore } from "@/store/project.store";
-import type { Project } from "@/lib/types/types";
+import type { Project } from "@loveble/types";
 
 export const useRealtimeProjects = () => {
   useEffect(() => {

@@ -4,7 +4,7 @@ import { AlertTriangleIcon, FileWarningIcon } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import { FileBreadcrumbs } from "./file-breadcrumbs";
 import { TopNavigation } from "./top-navigation";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@loveble/ui/skeleton";
 import { useEditor } from "@/lib/hooks/use-editor";
 import { useFile, useFileContent } from "@/lib/hooks/file/useFiles";
 import { useCollaboration } from "@/lib/socket/hooks/useCollaboration";

@@ -3,15 +3,15 @@
 import * as React from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@loveble/ui/avatar";
+import { Button } from "@loveble/ui/button";
+import { Switch } from "@loveble/ui/switch";
 import { GithubConnectButton } from "@/components/user/github-connect-button";
 import { useGithubAccount } from "@/components/user/hooks/useGithubAccount";
 import { useUserStore } from "@/store/user.store";
 import { FaGithub } from "react-icons/fa";
 import { useSettingsStore } from "@/store/settings.store";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { SettingsRow } from "./settings-row";
 import { SettingsSectionHeader } from "./settings-section-header";
 

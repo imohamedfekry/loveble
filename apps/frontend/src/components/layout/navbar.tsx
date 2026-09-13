@@ -8,9 +8,9 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-} from "@/components/ui/breadcrumb";
+} from "@loveble/ui/breadcrumb";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 import { UserAvatarButton } from "../user/user-avatar";
 
 export function Navbar() {

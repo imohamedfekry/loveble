@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 
 /* Brand kit heading face is Camera Plain (commercial, not bundled) —
    Inter is the loaded brand substitute for display type. */

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@loveble/ui/button";
 import { BrandPageShell } from "@/components/layout/brand-page-shell";
 
 export default function Home() {

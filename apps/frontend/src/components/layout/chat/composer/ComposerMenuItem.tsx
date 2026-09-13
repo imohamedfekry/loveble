@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 
 import { ComposerIcon } from "./ComposerIcon";
 import type { ComposerSource } from "./types";

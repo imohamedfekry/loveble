@@ -1,4 +1,4 @@
-// import { Project } from "@/lib/types/types";
+// import { Project } from "@loveble/types";
 // import Link from "next/link";
 // import { ArrowRightIcon } from "lucide-react";
 // import { formatDistanceToNow } from "date-fns";
@@ -6,8 +6,8 @@
 //   getImportStatusLabel,
 //   ProjectIconBadge,
 // } from "./project.item";
-// import { cn } from "@/lib/utils";
-// import { surfacePanelClassName } from "@/lib/styles";
+// import { cn } from "@loveble/utils";
+// import { surfacePanelClassName } from "@loveble/utils";
 
 // interface ContinueCardProps {
 //   data: Project;

@@ -6,14 +6,14 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@loveble/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@loveble/ui/dialog";
+import { Input } from "@loveble/ui/input";
+import { Spinner } from "@loveble/ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@loveble/ui/tooltip";
 import { createProject } from "@/lib/api/apis/projects";
 import { useProjectsStore } from "@/store/project.store";
-import { cn } from "@/lib/utils";
+import { cn } from "@loveble/utils";
 
 export function CreateProjectButton() {
   const [open, setOpen] = useState(false);
