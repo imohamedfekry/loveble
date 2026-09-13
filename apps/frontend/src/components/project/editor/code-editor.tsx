@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react"
+import { useEffect, useMemo, useRef, type KeyboardEvent, type MouseEvent } from "react"
 import { EditorView, keymap } from "@codemirror/view";
 import { indentWithTab } from "@codemirror/commands";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
@@ -7,7 +7,6 @@ import { getLanguageExtension } from "./extensions/language-extension";
 import { getLintExtension } from "./extensions/lint";
 import { getAutocompleteExtension } from "./extensions/autocomplete";
 import {
-  readVimModePreference,
   vimCompartment,
   vimModeExtension,
   writeVimModePreference,
@@ -43,6 +42,8 @@ interface Props {
   peers?: RemotePeer[];
   onViewReady?: (view: EditorView | null) => void;
   onLocalAwareness?: (awareness: LocalAwareness) => void;
+  vimMode: boolean;
+  onVimModeChange: (vim: boolean) => void;
 }
 
 export const CodeEditor = ({
@@ -53,15 +54,20 @@ export const CodeEditor = ({
   peers = [],
   onViewReady,
   onLocalAwareness,
+  vimMode,
+  onVimModeChange,
 }: Props) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onLocalAwarenessRef = useRef(onLocalAwareness);
+  const vimModeRef = useRef(vimMode);
+  const lastAppliedVimRef = useRef<boolean | null>(null);
 
   onChangeRef.current = onChange;
   onLocalAwarenessRef.current = onLocalAwareness;
+  vimModeRef.current = vimMode;
 
   const languageExtension = useMemo(() => {
     return getLanguageExtension(fileName)
@@ -75,18 +81,20 @@ export const CodeEditor = ({
     return getAutocompleteExtension(fileName)
   }, [fileName])
 
-  const [vimMode, setVimMode] = useState(readVimModePreference);
-
   const toggleVimMode = () => {
-    setVimMode((prev) => {
-      const next = !prev;
-      writeVimModePreference(next);
-      return next;
-    });
+    const next = !vimModeRef.current;
+    writeVimModePreference(next);
+    onVimModeChange(next);
   };
 
   const handleWrapperKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if ((event.ctrlKey || event.metaKey) && event.altKey && event.key.toLowerCase() === "v") {
+      event.preventDefault();
+      toggleVimMode();
+    }
+    // Esc enables vim mode only. Disabling is done via the toolbar icon or
+    // Ctrl+Alt+V so we don't fight vim's own Esc (insert -> normal).
+    if (event.key === "Escape" && !vimModeRef.current) {
       event.preventDefault();
       toggleVimMode();
     }
@@ -107,7 +115,7 @@ export const CodeEditor = ({
       languageExtension,
       autocompleteExtension,
       lintExtension,
-      vimCompartment.of(vimMode ? vimModeExtension : []),
+      vimCompartment.of(vimModeRef.current ? vimModeExtension : []),
       colorPicker,
       colorPickerTheme,
       ...interactiveValues,
@@ -148,6 +156,7 @@ export const CodeEditor = ({
     });
 
     viewRef.current = view;
+    lastAppliedVimRef.current = vimModeRef.current;
     onViewReady?.(view);
 
     return () => {
@@ -167,9 +176,21 @@ export const CodeEditor = ({
   }, [peers, collaboration]);
 
   useEffect(() => {
-    viewRef.current?.dispatch({
-      effects: vimCompartment.reconfigure(vimMode ? vimModeExtension : []),
-    });
+    // Creation already applied the current value — skip the first run so we
+    // never dispatch on a view that isn't ready (or is already destroyed in
+    // StrictMode remounts). This was crashing with
+    // "Cannot read properties of undefined (reading 'state')".
+    if (lastAppliedVimRef.current === vimMode) return;
+    const view = viewRef.current;
+    if (!view) return;
+    try {
+      view.dispatch({
+        effects: vimCompartment.reconfigure(vimMode ? vimModeExtension : []),
+      });
+      lastAppliedVimRef.current = vimMode;
+    } catch (error) {
+      console.error("[CodeEditor] failed to toggle vim mode", error);
+    }
   }, [vimMode]);
 
   const emitMouse = (event: MouseEvent<HTMLDivElement>) => {
@@ -198,19 +219,6 @@ export const CodeEditor = ({
     >
       <div ref={editorRef} className="size-full pl-4" />
       {collaboration && <RemoteMice peers={peers} />}
-      <button
-        type="button"
-        onClick={toggleVimMode}
-        title="Toggle Vim mode (Ctrl+Alt+V)"
-        aria-pressed={vimMode}
-        className={
-          vimMode
-            ? "absolute bottom-2 left-2 z-20 flex h-6 items-center rounded-md border border-border bg-accent px-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-accent-foreground"
-            : "absolute bottom-2 left-2 z-20 flex h-6 items-center rounded-md border border-border bg-secondary/80 px-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-60 transition-opacity hover:opacity-100"
-        }
-      >
-        Vim
-      </button>
     </div>
   );
 };
