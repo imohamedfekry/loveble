@@ -1,31 +1,93 @@
-# dependencies
+# ============================================
+# Dependencies
+# ============================================
 node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# compiled output
+# ============================================
+# Build / Compiled Output
+# ============================================
 dist/
 build/
 .next/
 out/
 *.tsbuildinfo
+next-env.d.ts
 
-# testing
+# ============================================
+# Testing
+# ============================================
 coverage/
+.nyc_output/
 
-# env files
+# ============================================
+# Environment Variables
+# ============================================
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.*.local
 
-# logs
+# ============================================
+# Logs
+# ============================================
 *.log
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
-# OS / editors
+# ============================================
+# OS / Editors
+# ============================================
 .DS_Store
 .idea/
 *.sublime-workspace
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# ============================================
+# Docker (dev-specific, not needed in repo)
+# ============================================
+docker-compose.yml
+docker-compose.dev.yml
+
+# ============================================
+# Tooling / Misc
+# ============================================
+walgit.toml
+.vercel
+*.pem
+.agents*
+skills-lock.json
+AGENTS.md
+CLAUDE.md
+lovable-brand-kit
+
+# ============================================
+# Runtime / Temp
+# ============================================
+.temp
+.tmp
+pids/
+*.pid
+*.seed
+*.pid.lock
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
