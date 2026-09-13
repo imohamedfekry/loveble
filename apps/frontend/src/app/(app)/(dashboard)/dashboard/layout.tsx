@@ -4,10 +4,7 @@ import { useState } from "react";
 
 import { ConnectionLoading } from "@/components/layout/connection-loading";
 import { AppSidebar } from "@/components/layout/sidebar/AppSidebar";
-
 import { useLoadProjects } from "@/lib/hooks/projects/useLoadProjects";
-import { useLoadUser } from "@/lib/hooks/user/useLoadUser";
-import { useRealtimeProjects } from "@/lib/socket/hooks/useRealtimeProjects";
 import { useProjectsStore } from "@/store/project.store";
 import { useUserStore } from "@/store/user.store";
 
@@ -16,11 +13,9 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  useLoadUser();
-
+  // Dashboard only needs recents (sidebar shows first 5).
+  // Skips automatically if recents — or the full list — are already loaded.
   useLoadProjects({ recent: true });
-
-  useRealtimeProjects();
 
   const userLoading = useUserStore((s) => s.isLoading);
   const projectsLoading = useProjectsStore((s) => s.loading);
