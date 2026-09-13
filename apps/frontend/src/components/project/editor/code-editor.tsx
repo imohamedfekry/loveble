@@ -63,7 +63,7 @@ export const CodeEditor = ({
   const onChangeRef = useRef(onChange);
   const onLocalAwarenessRef = useRef(onLocalAwareness);
   const vimModeRef = useRef(vimMode);
-  const lastAppliedVimRef = useRef<boolean | null>(null);
+  const lastAppliedVimRef = useRef(vimMode);
 
   onChangeRef.current = onChange;
   onLocalAwarenessRef.current = onLocalAwareness;
@@ -156,7 +156,6 @@ export const CodeEditor = ({
     });
 
     viewRef.current = view;
-    lastAppliedVimRef.current = vimModeRef.current;
     onViewReady?.(view);
 
     return () => {
@@ -176,13 +175,11 @@ export const CodeEditor = ({
   }, [peers, collaboration]);
 
   useEffect(() => {
-    // Creation already applied the current value — skip the first run so we
-    // never dispatch on a view that isn't ready (or is already destroyed in
-    // StrictMode remounts). This was crashing with
-    // "Cannot read properties of undefined (reading 'state')".
+    // The view was already created with the correct compartment value.
+    // Only reconfigure when the value actually changed since last time.
     if (lastAppliedVimRef.current === vimMode) return;
     const view = viewRef.current;
-    if (!view) return;
+    if (!view || !view.state) return;
     try {
       view.dispatch({
         effects: vimCompartment.reconfigure(vimMode ? vimModeExtension : []),
