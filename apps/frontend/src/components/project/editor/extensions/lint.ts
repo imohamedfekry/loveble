@@ -4,6 +4,7 @@ import { syntaxTree } from "@codemirror/language";
 import { linter, lintGutter, type Diagnostic } from "@codemirror/lint";
 import { jsonParseLinter } from "@codemirror/lang-json";
 import type { SyntaxNode } from "@lezer/common";
+import { copyableLintSource } from "./diagnostic-copy";
 
 /**
  * Generic syntax-error linter.
@@ -208,9 +209,16 @@ const yamlRulesLinter = (view: EditorView): Diagnostic[] => {
 };
 
 const combine =
-  (...sources: ((view: EditorView) => Diagnostic[])[]) =>
-  (view: EditorView): Diagnostic[] =>
-    sources.flatMap((source) => source(view));
+  (fileName: string, ...sources: ((view: EditorView) => Diagnostic[])[]) =>
+  copyableLintSource(
+    (view: EditorView): Diagnostic[] => sources.flatMap((source) => source(view)),
+    fileName,
+  );
+
+const copyable = (
+  source: (view: EditorView) => Diagnostic[],
+  fileName: string,
+) => copyableLintSource(source, fileName);
 
 export const lintTheme = EditorView.baseTheme({
   ".cm-lintRange-error": {
@@ -239,6 +247,30 @@ export const lintTheme = EditorView.baseTheme({
     borderRadius: "var(--radius-md)",
     padding: "2px 8px",
     maxWidth: "28rem",
+    userSelect: "text",
+    cursor: "text",
+  },
+  ".cm-panel-lint ul": {
+    userSelect: "text",
+  },
+  ".cm-diagnostic-copyable": {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+  },
+  ".cm-diagnostic-copy-btn": {
+    flexShrink: "0",
+    font: "inherit",
+    fontSize: "11px",
+    lineHeight: "1",
+    padding: "2px 5px",
+    borderRadius: "var(--radius-sm)",
+    border: "1px solid var(--border)",
+    backgroundColor: "var(--secondary)",
+    color: "var(--secondary-foreground)",
+    cursor: "pointer",
+    opacity: "0.7",
+    "&:hover": { opacity: "1" },
   },
 });
 
@@ -255,25 +287,25 @@ export const getLintExtension = (fileName: string): Extension => {
 
   switch (ext) {
     case "json":
-      return [linter(jsonParseLinter(), delay), gutter, lintTheme];
+      return [linter(copyable(jsonParseLinter(), fileName), delay), gutter, lintTheme];
     case "js":
     case "jsx":
     case "ts":
     case "tsx":
       return [
-        linter(combine(syntaxErrorLinter, javascriptRulesLinter), delay),
+        linter(combine(fileName, syntaxErrorLinter, javascriptRulesLinter), delay),
         gutter,
         lintTheme,
       ];
     case "css":
       return [
-        linter(combine(syntaxErrorLinter, cssRulesLinter), delay),
+        linter(combine(fileName, syntaxErrorLinter, cssRulesLinter), delay),
         gutter,
         lintTheme,
       ];
     case "py":
       return [
-        linter(combine(syntaxErrorLinter, pythonRulesLinter), delay),
+        linter(combine(fileName, syntaxErrorLinter, pythonRulesLinter), delay),
         gutter,
         lintTheme,
       ];
@@ -282,15 +314,15 @@ export const getLintExtension = (fileName: string): Extension => {
     case "svg":
     case "md":
     case "mdx":
-      return [linter(syntaxErrorLinter, delay), gutter, lintTheme];
+      return [linter(copyable(syntaxErrorLinter, fileName), delay), gutter, lintTheme];
     case "yaml":
     case "yml":
       return [
-        linter(combine(syntaxErrorLinter, yamlRulesLinter), delay),
+        linter(combine(fileName, syntaxErrorLinter, yamlRulesLinter), delay),
         gutter,
         lintTheme,
       ];
     default:
-      return [linter(syntaxErrorLinter, delay), gutter, lintTheme];
+      return [linter(copyable(syntaxErrorLinter, fileName), delay), gutter, lintTheme];
   }
 };

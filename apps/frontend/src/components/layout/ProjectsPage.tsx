@@ -2,15 +2,19 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import {
-  FolderGit2Icon,
   StarIcon,
-  UserIcon,
-  UsersIcon,
-  LayoutGridIcon,
-  PlusIcon,
+  UsersRoundIcon,
 } from "lucide-react";
+
+import type { LucideIcon } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+
+import {
+  FolderLibraryIcon,
+  User03Icon,
+} from "@hugeicons/core-free-icons";
 
 import { cn } from "@loveble/utils";
 import { useProjectsStore } from "@/store/project.store";
@@ -24,18 +28,16 @@ import {
   EmptyTitle,
 } from "@loveble/ui/empty";
 import { Spinner } from "@loveble/ui/spinner";
-import type { Project } from "@loveble/types";
 
 type FilterTab = "all" | "starred" | "created" | "shared";
 
-const TABS: { id: FilterTab; label: string; icon: React.ElementType }[] = [
-  { id: "all", label: "All projects", icon: FolderGit2Icon },
+const TABS: { id: FilterTab; label: string; icon: LucideIcon | any }[] = [
+  { id: "all", label: "All projects", icon: FolderLibraryIcon },
   { id: "starred", label: "Starred", icon: StarIcon },
-  { id: "created", label: "Created by me", icon: UserIcon },
-  { id: "shared", label: "Shared with me", icon: UsersIcon },
+  { id: "created", label: "Created by me", icon: User03Icon },
+  { id: "shared", label: "Shared with me", icon: UsersRoundIcon },
 ];
 
-import { useParams } from "next/navigation";
 
 export function ProjectsPage({ params: _params }: { params: { tab?: string } }) {
   const router = useRouter();
@@ -69,13 +71,18 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
             key={id}
             href={`/projects${id !== "all" ? `/${id}` : ""}`}
             className={cn(
-              "relative flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors",
+              "relative flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ring-1",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
               tab === id
-                ? "bg-card text-foreground"
-                : "text-muted-foreground hover:bg-card/50 hover:text-foreground",
+                ? "bg-foreground/[0.06] ring-border/50 text-foreground shadow-sm"
+                : "ring-transparent text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground hover:ring-border/50",
             )}
           >
-            <Icon className="h-4 w-4" />
+            {Array.isArray(Icon) ? (
+              <HugeiconsIcon icon={Icon} className="h-4 w-4" />
+            ) : (
+              <Icon className="h-4 w-4" />
+            )}
             {label}
           </Link>
         ))}
@@ -97,7 +104,7 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
                   variant="icon"
                   className="bg-card text-foreground"
                 >
-                  <FolderGit2Icon />
+                  <HugeiconsIcon icon={FolderLibraryIcon} className="h-5 w-5" />
                 </EmptyMedia>
                 <EmptyTitle className="text-foreground">
                   {tab === "all" ? "No projects yet" : `No ${tab} projects`}
