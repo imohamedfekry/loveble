@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+
+# compiled output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# testing
+coverage/
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# OS / editors
+.DS_Store
+.idea/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
