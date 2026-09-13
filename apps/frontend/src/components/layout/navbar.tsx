@@ -1,0 +1,58 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+} from "@/components/ui/breadcrumb";
+
+import { cn } from "@/lib/utils";
+import { UserAvatarButton } from "../user/user-avatar";
+
+export function Navbar() {
+  return (
+    <nav className="flex items-center justify-between gap-x-2 border-b border-border/50 bg-sidebar/80 px-3 py-2 backdrop-blur-md sticky top-0 z-99">
+      <div className="flex items-center gap-x-2">
+        <Breadcrumb>
+          <BreadcrumbList className="gap-0!">
+            <BreadcrumbItem>
+              <BreadcrumbLink
+                render={
+                  <Link
+                    href="/"
+                    className="flex items-center gap-1.5"
+                  >
+                    <Image
+                      src="/logo.svg"
+                      alt="Logo"
+                      width={20}
+                      height={20}
+                      loading="eager"
+                      className="rounded-sm"
+                    />
+
+                    <span
+                      className={cn(
+                        "font-sans text-sm font-medium",
+                      )}
+                    >
+                      loveble
+                    </span>
+                  </Link>
+                }
+              />
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <UserAvatarButton />
+      </div>
+    </nav>
+  );
+}

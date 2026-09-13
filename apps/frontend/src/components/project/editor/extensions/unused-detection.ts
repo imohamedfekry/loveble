@@ -1,0 +1,210 @@
+import { EditorState, StateField, Text } from "@codemirror/state";
+import { Decoration, DecorationSet, EditorView } from "@codemirror/view";
+import { syntaxTree } from "@codemirror/language";
+import type { SyntaxNode, Tree } from "@lezer/common";
+
+interface DeclInfo {
+  isImport: boolean;
+  used: boolean;
+  from: number;
+  to: number;
+}
+
+class Scope {
+  decls = new Map<string, DeclInfo>();
+  constructor(public parent: Scope | null) {}
+
+  declare(name: string, isImport: boolean, from: number, to: number) {
+    if (!this.decls.has(name)) this.decls.set(name, { isImport, used: false, from, to });
+  }
+
+  resolve(name: string): DeclInfo | null {
+    for (let s: Scope | null = this; s; s = s.parent) {
+      const d = s.decls.get(name);
+      if (d) return d;
+    }
+    return null;
+  }
+}
+
+function children(node: SyntaxNode): SyntaxNode[] {
+  const out: SyntaxNode[] = [];
+  for (let c = node.firstChild; c; c = c.nextSibling) out.push(c);
+  return out;
+}
+
+interface Reference {
+  name: string;
+  scope: Scope;
+}
+
+function buildScopes(tree: Tree, doc: Text): { root: Scope; allScopes: Scope[]; unresolved: Reference[] } {
+  const text = (n: SyntaxNode) => doc.sliceString(n.from, n.to);
+  const references: Reference[] = [];
+  const allScopes: Scope[] = [];
+  let root!: Scope;
+
+  function declareBindingsIn(node: SyntaxNode, scope: Scope, isImport: boolean) {
+    if (node.name === "VariableDefinition") {
+      scope.declare(text(node), isImport, node.from, node.to);
+      return;
+    }
+    if (node.name === "PatternProperty") {
+      const kids = children(node);
+      if (!kids.some((k) => k.name === "VariableDefinition")) {
+        const pn = kids.find((k) => k.name === "PropertyName");
+        if (pn) scope.declare(text(pn), isImport, pn.from, pn.to);
+      }
+    }
+    for (const c of children(node)) declareBindingsIn(c, scope, isImport);
+  }
+
+  function walk(node: SyntaxNode, scope: Scope | null) {
+    switch (node.name) {
+      case "Script": {
+        root = new Scope(null);
+        allScopes.push(root);
+        for (const c of children(node)) walk(c, root);
+        break;
+      }
+      case "ImportDeclaration": {
+        for (const c of children(node)) declareBindingsIn(c, scope!, true);
+        break;
+      }
+      case "VariableDeclaration": {
+        for (const c of children(node)) {
+          if (c.name === "VariableDefinition" || c.name === "ObjectPattern" || c.name === "ArrayPattern") {
+            declareBindingsIn(c, scope!, false);
+          } else walk(c, scope);
+        }
+        break;
+      }
+      case "FunctionDeclaration":
+      case "FunctionExpression": {
+        const inner = new Scope(scope);
+        allScopes.push(inner);
+        for (const c of children(node)) {
+          if (c.name === "VariableDefinition") scope!.declare(text(c), false, c.from, c.to);
+          else if (c.name === "ParamList") declareBindingsIn(c, inner, false);
+          else walk(c, inner);
+        }
+        break;
+      }
+      case "ArrowFunction": {
+        const inner = new Scope(scope);
+        allScopes.push(inner);
+        for (const c of children(node)) {
+          if (c.name === "ParamList") declareBindingsIn(c, inner, false);
+          else walk(c, inner);
+        }
+        break;
+      }
+      case "MethodDeclaration": {
+        const inner = new Scope(scope);
+        allScopes.push(inner);
+        for (const c of children(node)) {
+          if (c.name === "ParamList") declareBindingsIn(c, inner, false);
+          else if (c.name === "PropertyDefinition") { }
+          else walk(c, inner);
+        }
+        break;
+      }
+      case "ClassDeclaration": {
+        for (const c of children(node)) {
+          if (c.name === "VariableDefinition") scope!.declare(text(c), false, c.from, c.to);
+          else walk(c, scope);
+        }
+        break;
+      }
+      case "ForStatement": {
+        const inner = new Scope(scope);
+        allScopes.push(inner);
+        for (const c of children(node)) {
+          if (c.name.startsWith("For")) {
+            declareBindingsIn(c, inner, false);
+            for (const gc of children(c)) {
+              if (gc.name === "VariableDefinition" || gc.name === "ObjectPattern" || gc.name === "ArrayPattern") continue;
+              walk(gc, inner);
+            }
+          } else walk(c, inner);
+        }
+        break;
+      }
+      case "CatchClause": {
+        const inner = new Scope(scope);
+        allScopes.push(inner);
+        for (const c of children(node)) {
+          if (c.name === "VariableDefinition") inner.declare(text(c), false, c.from, c.to);
+          else walk(c, inner);
+        }
+        break;
+      }
+      case "Block": {
+        const inner = new Scope(scope);
+        allScopes.push(inner);
+        for (const c of children(node)) walk(c, inner);
+        break;
+      }
+      case "VariableName":
+      case "TypeName": {
+        references.push({ name: text(node), scope: scope! });
+        break;
+      }
+      default:
+        for (const c of children(node)) walk(c, scope);
+    }
+  }
+
+  walk(tree.topNode, null);
+  return { root, allScopes, unresolved: references };
+}
+
+function findUnused(state: EditorState): { imports: { from: number; to: number }[]; variables: { from: number; to: number }[] } {
+  const tree = syntaxTree(state);
+  const { allScopes, unresolved } = buildScopes(tree, state.doc);
+
+  for (const ref of unresolved) {
+    const decl = ref.scope.resolve(ref.name);
+    if (decl) decl.used = true;
+  }
+
+  const unusedImports: { from: number; to: number }[] = [];
+  const unusedVariables: { from: number; to: number }[] = [];
+
+  for (const scope of allScopes) {
+    for (const d of scope.decls.values()) {
+      if (d.isImport && !d.used) unusedImports.push({ from: d.from, to: d.to });
+      else if (!d.isImport && !d.used) unusedVariables.push({ from: d.from, to: d.to });
+    }
+  }
+
+  return { imports: unusedImports, variables: unusedVariables };
+}
+
+const importMark = Decoration.mark({ class: "cm-unused-import" });
+const variableMark = Decoration.mark({ class: "cm-unused-variable" });
+
+function buildDecorations(state: EditorState): DecorationSet {
+  const { imports, variables } = findUnused(state);
+  const ranges = [
+    ...imports.map(({ from, to }) => ({ from, to, mark: importMark })),
+    ...variables.map(({ from, to }) => ({ from, to, mark: variableMark })),
+  ];
+  ranges.sort((a, b) => a.from - b.from);
+  return Decoration.set(ranges.map(({ from, to, mark }) => mark.range(from, to)));
+}
+
+export const unusedDetectionField = StateField.define<DecorationSet>({
+  create(state) { return buildDecorations(state); },
+  update(deco, tr) { return tr.docChanged ? buildDecorations(tr.state) : deco; },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
+export const unusedDetectionTheme = EditorView.baseTheme({
+  ".cm-unused-import": { opacity: "0.55" },
+  ".cm-unused-variable": { opacity: "0.6" },
+});
+
+export function unusedDetection() {
+  return [unusedDetectionField, unusedDetectionTheme];
+}
