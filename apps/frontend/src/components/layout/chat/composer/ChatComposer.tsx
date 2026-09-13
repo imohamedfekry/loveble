@@ -251,7 +251,7 @@ export function ChatComposer({
           className={cn(
             "relative isolate flex flex-col gap-1.5 overflow-hidden",
             "border border-border bg-card",
-            "p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.18)]",
+            "p-1.5",
             "transition-[border-color,border-radius] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
             "focus-within:border-ring",
             isDragging && "border-primary/60 ring-2 ring-primary/30",

@@ -26,7 +26,7 @@
 //       create() {
 //         const dom = document.createElement("div");
 //         dom.className =
-//           "bg-popover text-popover-foreground z-50 rounded-sm border border-input p-1 shadow-md flex items-center gap-2 text-sm";
+//           "bg-muted text-popover-foreground z-50 rounded-sm border border-input p-1 shadow-md flex items-center gap-2 text-sm";
 
 //         const addToChatButton = document.createElement("button");
 //         addToChatButton.textContent = "Add to Chat";

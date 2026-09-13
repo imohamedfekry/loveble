@@ -23,13 +23,13 @@ export function RemoteMice({ peers }: { peers: RemotePeer[] }) {
             }}
           >
             <MousePointer2
-              className="size-4 drop-shadow-sm"
+              className="size-4"
               fill={peer.color}
               stroke="white"
               strokeWidth={1.25}
             />
             <span
-               className="mt-0.5 ml-2 inline-block max-w-32 truncate rounded-sm px-1 py-px text-[10px] font-medium text-foreground shadow-sm"
+               className="mt-0.5 ml-2 inline-block max-w-32 truncate rounded-sm px-1 py-px text-[10px] font-medium text-foreground"
               style={{ backgroundColor: peer.color }}
             >
               {peer.displayName || peer.userName}

@@ -62,7 +62,7 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
   };
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-projects-bg">
+    <div className="flex h-full flex-1 flex-col bg-muted rounded-2xl">
       <nav className="flex shrink-0 gap-1 px-6 pt-3">
         {TABS.map(({ id, label, icon: Icon }) => (
           <Link
@@ -71,8 +71,8 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
             className={cn(
               "relative flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors",
               tab === id
-                ? "bg-projects-elevated text-projects-foreground"
-                : "text-projects-muted hover:bg-projects-elevated/50 hover:text-projects-foreground",
+                ? "bg-card text-foreground"
+                : "text-muted-foreground hover:bg-card/50 hover:text-foreground",
             )}
           >
             <Icon className="h-4 w-4" />
@@ -83,9 +83,9 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
 
       <main className="flex min-h-0 flex-1 overflow-auto">
         {loading && projects.length === 0 ? (
-          <div className="flex w-full flex-col items-center justify-center py-20 text-projects-muted">
+          <div className="flex w-full flex-col items-center justify-center py-20 text-muted-foreground">
             <Spinner className="h-6 w-6" />
-            <p className="mt-4 text-sm text-projects-muted">
+            <p className="mt-4 text-sm text-muted-foreground">
               Loading projects…
             </p>
           </div>
@@ -95,14 +95,14 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
               <EmptyHeader>
                 <EmptyMedia
                   variant="icon"
-                  className="bg-projects-elevated text-projects-foreground"
+                  className="bg-card text-foreground"
                 >
                   <FolderGit2Icon />
                 </EmptyMedia>
-                <EmptyTitle className="text-projects-foreground">
+                <EmptyTitle className="text-foreground">
                   {tab === "all" ? "No projects yet" : `No ${tab} projects`}
                 </EmptyTitle>
-                <EmptyDescription className="text-projects-muted">
+                <EmptyDescription className="text-muted-foreground">
                   {tab === "all"
                     ? "Create your first project to get started"
                     : `You don't have any ${tab} projects`}
@@ -113,7 +113,7 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
         ) : (
           <ul className="w-full max-w-3xl space-y-1 px-6 py-4">
             {filteredProjects.map((project) => (
-              <ProjectItem key={project.id} data={project} variant="onDark" />
+              <ProjectItem key={project.id} data={project} />
             ))}
           </ul>
         )}

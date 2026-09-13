@@ -61,7 +61,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         }
       />
 
-      <DropdownMenuContent align="end" side="top" className="w-48 p-1.5 bg-projects-bg">
+      <DropdownMenuContent align="end" side="top" className="w-48 p-1.5 bg-muted">
         {OPTIONS.map(({ value, label, icon: Icon }) => {
           const active = mounted && current === value;
           return (
