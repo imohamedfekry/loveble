@@ -142,6 +142,8 @@ export const customTheme = EditorView.theme({
   },
   ".cm-remote-selection": {
     pointerEvents: "none",
+    borderRadius: "2px",
+    opacity: "0.9",
   },
 })
 

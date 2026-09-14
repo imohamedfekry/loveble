@@ -75,8 +75,8 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
   };
 
   return (
-    <nav className="flex items-center justify-between gap-x-2 border-b border-border bg-card px-3 py-2">
-      <div className="flex items-center gap-x-2">
+    <nav className="flex h-8 shrink-0 items-center justify-between gap-x-2 border-b border-border bg-card px-2">
+      <div className="flex h-8 items-center gap-x-2">
         <Breadcrumb>
           <BreadcrumbList className="gap-0!">
             <BreadcrumbItem>
@@ -85,17 +85,18 @@ export function ProjectNavbar({ projectId }: { projectId: string }) {
                 render={
                   <Link
                     href="/dashboard"
-                    className="group flex items-center gap-1.5 rounded-md transition-opacity hover:opacity-80"
+                    className="group flex items-center gap-1.5 transition-opacity hover:opacity-80"
                   >
-                    <Image
-                      src="/logo.svg"
-                      alt="Logo"
-                      width={20}
-                      height={20}
-                      loading="eager"
-                      className="rounded-sm outline outline-1 outline-border"
-                    />
-
+                    <span className="grid h-7 w-8 shrink-0 place-items-center">
+                      <Image
+                        src="/logo.svg"
+                        alt="loveble"
+                        width={18}
+                        height={18}
+                        loading="eager"
+                        className="size-4.5 object-contain"
+                      />
+                    </span>
                     <span className="text-sm font-semibold text-foreground">
                       loveble
                     </span>

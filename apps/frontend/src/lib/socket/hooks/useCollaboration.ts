@@ -135,26 +135,31 @@ export function useCollaboration({
     const onSync = (payload: {
       fileId: string;
       version: number;
-      document: string;
+      document?: string;
+      doc?: string;
       fromVersion?: number;
       updates?: CollabPayload["updates"];
+      missing?: CollabPayload["updates"];
     }) => {
       if (payload.fileId !== fileIdRef.current) return;
 
+      const doc = payload.document ?? payload.doc ?? "";
+      const updates = payload.updates ?? payload.missing ?? [];
+
       const view = viewRef.current;
-      if (view && payload.updates?.length) {
+      if (view && updates.length) {
         collabLog("received sync catch-up", {
           fileId: payload.fileId,
           version: payload.version,
           fromVersion: payload.fromVersion ?? 0,
-          updates: payload.updates.length,
+          updates: updates.length,
         });
         try {
           applyIncoming(view, {
             fileId: payload.fileId,
             fromVersion: payload.fromVersion ?? 0,
             version: payload.version,
-            updates: payload.updates,
+            updates,
           });
         } catch (err) {
           console.error("[collab] error applying sync updates:", err);
@@ -165,11 +170,11 @@ export function useCollaboration({
       collabLog("received snapshot", {
         fileId: payload.fileId,
         version: payload.version,
-        documentLength: payload.document?.length ?? 0,
+        documentLength: doc.length,
       });
       setSnapshot({
         version: payload.version,
-        document: payload.document,
+        document: doc,
       });
     };
 
@@ -328,39 +333,79 @@ export function useCollaboration({
       }
     }, 2000);
 
-    socket.emit(COLLAB_EVENTS.UPDATE, payload, (ack?: CollabPayload) => {
+    // Extend ack type to handle backend forceResync / missing fields
+    type AckPayload = CollabPayload & {
+      accepted?: boolean;
+      document?: string;
+      doc?: string;
+      forceResync?: boolean;
+      error?: string;
+      missing?: CollabPayload["updates"];
+    };
+
+    socket.emit(COLLAB_EVENTS.UPDATE, payload, (ack?: AckPayload) => {
       if (pushGenRef.current !== pushGen) return;
       clearTimeout(ackTimeout);
       try {
         const currentView = viewRef.current;
         if (ack && currentView) {
           const synced = getSyncedVersion(currentView.state);
+          const serverDoc = (ack as AckPayload).document ?? (ack as AckPayload).doc;
+          const hasForceResync =
+            (ack as AckPayload).forceResync === true ||
+            (typeof ack.error === "string" && ack.error.includes("Length mismatch")) ||
+            (ack.accepted === false && typeof serverDoc === "string");
+
+          // Normalize missing updates (backend may send `missing` instead of `updates`)
+          const ackUpdates = (ack.updates as CollabPayload["updates"]) ?? (ack as AckPayload).missing ?? [];
+
           const authorityReset =
-            ack.accepted === false &&
-            typeof ack.document === "string" &&
-            ack.version < synced &&
-            (ack.updates?.length ?? 0) === 0;
+            hasForceResync ||
+            (ack.accepted === false &&
+              typeof serverDoc === "string" &&
+              ack.version <= synced &&
+              ackUpdates.length === 0);
 
           collabLog("received update ack", {
             fileId: ack.fileId,
             accepted: ack.accepted,
             fromVersion: ack.fromVersion,
             version: ack.version,
-            updates: ack.updates?.length ?? 0,
+            updates: ackUpdates.length,
             authorityReset,
+            forceResync: (ack as AckPayload).forceResync,
           });
 
-          if (authorityReset) {
+          if (authorityReset && typeof serverDoc === "string") {
+            // Full resync — discard local pending and reload from authority doc
             setSnapshot({
               version: ack.version,
-              document: ack.document!,
+              document: serverDoc,
             });
-          } else {
+            // Clear pushing state; next flush will be after remount
+          } else if (ackUpdates.length > 0) {
             applyIncoming(currentView, {
               ...ack,
               fromVersion: ack.fromVersion ?? synced,
-              updates: ack.updates ?? [],
+              updates: ackUpdates,
             });
+          } else if (ack.accepted === true) {
+            // Accepted — still need to confirm local updates via empty receive to advance synced version
+            // CodeMirror collab tracks synced version via receiveUpdates; apply empty to bump version
+            try {
+              const pending = sendableUpdates(currentView.state);
+              if (pending.length === 0) {
+                // No pending means our sent updates were already considered synced locally;
+                // force a no-op receive to align version if server version advanced
+                // (collab extension updates synced version on receiveUpdates)
+                applyIncoming(currentView, {
+                  fileId: ack.fileId,
+                  fromVersion: synced,
+                  version: ack.version,
+                  updates: [],
+                });
+              }
+            } catch {}
           }
         }
       } catch (err) {

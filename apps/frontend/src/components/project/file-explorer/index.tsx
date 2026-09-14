@@ -227,12 +227,16 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
                             >
                                 <TreeRootDropZone>
                                     {(loading || filesLoading) &&
-                                        Array.from({ length: 4 }).map((_, index) => (
-                                            <TreeItemWrapperSkeleton
-                                                key={index}
-                                                level={0}
-                                            />
-                                        ))}
+                                        <>
+                                            <TreeItemWrapperSkeleton level={0} isFile={true} width="w-24" />
+                                            <TreeItemWrapperSkeleton level={0} isFile={true} width="w-20" />
+                                            <TreeItemWrapperSkeleton level={0} isFile={false} width="w-[88px]" />
+                                            <TreeItemWrapperSkeleton level={0} isFile={true} width="w-[72px]" />
+                                            <TreeItemWrapperSkeleton level={0} isFile={true} width="w-[96px]" />
+                                            <TreeItemWrapperSkeleton level={1} isFile={true} width="w-[84px]" />
+                                            <TreeItemWrapperSkeleton level={0} isFile={true} width="w-[56px]" />
+                                        </>
+                                    }
                                     {!loading && !filesLoading && creating && (
                                         <CreateInput
                                             type={creating}

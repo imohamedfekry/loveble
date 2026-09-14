@@ -1,11 +1,12 @@
 "use client";
 
-import { ConnectionLoading } from "@/components/layout/connection-loading";
 import { AppSidebar } from "@/components/layout/sidebar/AppSidebar";
 import { useLoadProjects } from "@/lib/hooks/projects/useLoadProjects";
 import { useProjectsStore } from "@/store/project.store";
 import { useUserStore } from "@/store/user.store";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { ProjectsSkeleton } from "@/components/layout/Skeleton/dashboard/ProjectsSkeleton";
 
 export default function ProjectsLayout({
   children,
@@ -21,12 +22,22 @@ export default function ProjectsLayout({
   const projectsCount = useProjectsStore((s) => s.projects.length);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  const pathname = usePathname();
+  const tab =
+    pathname === "/projects/starred"
+      ? "starred"
+      : pathname === "/projects/created"
+        ? "created"
+        : pathname === "/projects/shared"
+          ? "shared"
+          : "all";
+
   const isInitialLoading = userLoading || (projectsLoading && projectsCount === 0);
 
   return (
     <>
       {isInitialLoading ? (
-        <ConnectionLoading className="flex-1" message="Loading..." />
+        <ProjectsSkeleton tab={tab as "all" | "starred" | "created" | "shared"} />
       ) : (
         <div className="flex h-screen bg-sidebar">
           <AppSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />

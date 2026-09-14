@@ -4,7 +4,7 @@ import {
   WidgetType,
   type DecorationSet,
 } from "@codemirror/view";
-import { RangeSetBuilder, StateEffect, StateField } from "@codemirror/state";
+import { StateEffect, StateField } from "@codemirror/state";
 import { clampDocPos, type RemotePeer } from "@/lib/socket/collab-protocol";
 
 export const setRemotePresence = StateEffect.define<RemotePeer[]>();
@@ -48,7 +48,7 @@ class RemoteCaretWidget extends WidgetType {
 }
 
 function decorationsForPeers(peers: RemotePeer[], docLength: number): DecorationSet {
-  const ranges: { from: number; to: number; deco: Decoration; side: number }[] = [];
+  const ranges: Array<{ from: number; to: number; value: Decoration }> = [];
 
   for (const peer of peers) {
     if (!peer.selection?.length) continue;
@@ -63,20 +63,19 @@ function decorationsForPeers(peers: RemotePeer[], docLength: number): Decoration
         ranges.push({
           from,
           to,
-          deco: Decoration.mark({
+          value: Decoration.mark({
             class: "cm-remote-selection",
             attributes: {
-              style: `background-color: ${peer.color}33`,
+              style: `background-color: ${peer.color}66; border-radius: 2px; outline: 1px solid ${peer.color};`,
             },
           }),
-          side: 0,
         });
       }
 
       ranges.push({
         from: head,
         to: head,
-        deco: Decoration.widget({
+        value: Decoration.widget({
           widget: new RemoteCaretWidget(
             peer.color,
             peer.displayName || peer.userName,
@@ -84,19 +83,17 @@ function decorationsForPeers(peers: RemotePeer[], docLength: number): Decoration
           ),
           side: head < anchor ? -1 : 1,
         }),
-        side: head < anchor ? -1 : 1,
       });
     });
   }
 
-  ranges.sort((a, b) => a.from - b.from || a.side - b.side || a.to - b.to);
-
-  const builder = new RangeSetBuilder<Decoration>();
-  for (const range of ranges) {
-    builder.add(range.from, range.to, range.deco);
-  }
-
-  return builder.finish();
+  // Decoration.set with `true` sorts by `from` and `startSide` automatically,
+  // preventing "Ranges must be added sorted" when peers have overlapping
+  // selections (e.g. Ctrl+A from multiple users) or reversed ranges.
+  return Decoration.set(
+    ranges.map((r) => r.value.range(r.from, r.to)),
+    true,
+  );
 }
 
 const remotePresenceField = StateField.define<DecorationSet>({

@@ -22,6 +22,7 @@ import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { StorageService } from '../storage/storage.service';
 import { File } from 'src/common/database/schema';
+import { RedisService } from 'src/common/redis/redis.service';
 @Injectable()
 export class FileService {
   constructor(
@@ -29,6 +30,7 @@ export class FileService {
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
     private readonly storageService: StorageService,
+    private readonly redisService: RedisService,
     // private readonly S3client: S3Client,
     private readonly config: ConfigService,
   ) { }
@@ -253,6 +255,43 @@ export class FileService {
 
     await this.storageService.updateFileContent(file.storageKey, body.content);
 
+    {
+      const bytes = Buffer.byteLength(body.content, 'utf8');
+      const now = new Date().toISOString();
+      const line = '━'.repeat(78);
+      const banner = [
+        '',
+        `┏${line}┓`,
+        `┃  💾  S3 DIRECT SAVE  —  REST bulk (PUT /content)${' '.repeat(33)}┃`,
+        `┃  ${line}  ┃`,
+        `┃  fileId     : ${fileId.toString().padEnd(59)}┃`,
+        `┃  projectId  : ${projectId.toString().padEnd(59)}┃`,
+        `┃  storageKey : ${(file.storageKey ?? '').padEnd(59)}┃`,
+        `┃  bytes      : ${String(bytes).padEnd(59)}┃`,
+        `┃  savedAt    : ${now.padEnd(59)}┃`,
+        `┃  source     : REST bulk → S3 (immediate)${' '.repeat(35)}┃`,
+        `┗${line}┛`,
+        '',
+      ].join('\n');
+      console.log(banner);
+    }
+
+    // Invalidate collab hot state so next join loads fresh S3 content and
+    // existing collaborators get forceResync instead of length-mismatch loop.
+    try {
+      const redis = this.redisService.getClient();
+      if (redis) {
+        await redis.del(
+          `doc:${fileId.toString()}:content`,
+          `doc:${fileId.toString()}:updates`,
+          `doc:${fileId.toString()}:persistedVersion`,
+          `doc:${fileId.toString()}:meta`,
+        );
+      }
+    } catch (e) {
+      // non-fatal: collab will self-heal via resync
+    }
+
     this.realtimeEmitService.toProject(
       projectId.toString(),
       FILE_EVENTS.CONTENT_UPDATED,
@@ -260,6 +299,14 @@ export class FileService {
         fileId: file.id,
       },
     );
+
+    // Also notify collab room to force resync for online editors
+    this.realtimeEmitService.toFile?.(fileId.toString(), 'file:collab:sync', {
+      fileId: fileId.toString(),
+      doc: body.content,
+      document: body.content,
+      version: 0,
+    });
 
     return success(RESPONSE_MESSAGES.FILE.UPDATED);
   }
