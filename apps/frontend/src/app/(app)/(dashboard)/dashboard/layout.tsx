@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/layout/sidebar/AppSidebar";
 import { useLoadProjects } from "@/lib/hooks/projects/useLoadProjects";
 import { useProjectsStore } from "@/store/project.store";
 import { useUserStore } from "@/store/user.store";
+import DashboardSkeleton from "@/components/layout/Skeleton/DashboardSkeleton";
 
 export default function DashboardLayout({
   children,
@@ -27,8 +28,10 @@ export default function DashboardLayout({
 
   return (
     <>
+        {/* <DashboardSkeleton/> */}
+
       {isInitialLoading ? (
-        <ConnectionLoading className="flex-1" message="Loading..." />
+        <DashboardSkeleton/>
       ) : (
         <div className="flex h-screen bg-background">
           <AppSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
