@@ -232,7 +232,6 @@ async handleCollabUpdate(
   }
 
 const result = await this.documentStateService.pushUpdates(fileId, version, updates);
-  this.logger.debug(`[handleCollabUpdate] result=${JSON.stringify(result)}`);
 
 if (result.accepted) {
   socket.to(`file:${fileId}`).emit(COLLAB_EVENTS.UPDATE, {
