@@ -215,9 +215,9 @@ async handleCollabUpdate(
     version: number;
   },
 ) {
-  this.logger.debug(
-    `[handleCollabUpdate] socket=${socket.id} payload=${JSON.stringify(payload)}`,
-  );
+  // this.logger.debug(
+  //   `[handleCollabUpdate] socket=${socket.id} payload=${JSON.stringify(payload)}`,
+  // );
 
   const { fileId, updates, version } = payload ?? {};
 
