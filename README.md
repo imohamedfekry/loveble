@@ -2,7 +2,7 @@
 
 Monorepo for **loveble** — a collaborative project workspace.
 
-![Dashboard Screen](apps/frontend/screens/Dashboard Screen.jpeg)
+![Dashboard Screen](https://raw.githubusercontent.com/imohamedfekry/loveble/refs/heads/main/apps/frontend/screens/Dashboard%20Screen.jpeg)
 
 ## Layout
 
