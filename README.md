@@ -2,6 +2,8 @@
 
 Monorepo for **loveble** — a collaborative project workspace.
 
+![Dashboard Screen](apps/frontend/screens/Dashboard Screen.jpeg)
+
 ## Layout
 
 ```
