@@ -6,7 +6,6 @@ import {
   varchar,
   pgEnum,
   integer,
-  uniqueIndex,
   unique,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -48,6 +47,12 @@ export const files = pgTable(
     index('files_parent_id_idx').on(table.parentId),
 
     index('files_project_parent_idx').on(table.projectId, table.parentId),
+
+    index('files_project_parent_type_idx').on(
+      table.projectId,
+      table.parentId,
+      table.type,
+    ),
 
     unique('files_unique_name_per_folder_idx')
       .on(table.projectId, table.parentId, table.name)
