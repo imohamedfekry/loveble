@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { streamText } from 'ai';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import {
   ProjectDto,
@@ -11,17 +10,16 @@ import { RESPONSE_MESSAGES } from 'src/common/utils/response-messages';
 import { fail, success } from 'src/common/utils/response.util';
 import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
 import { PROJECT_EVENTS } from '../realtime/events/project.events';
-import { getModel } from 'src/ai/providers';
-import type { ModelId } from 'src/ai/providers/types';
-import { inngest } from 'src/common/inngest/client';
-import { words } from 'valibot';
+import { ProjectGeneratorService } from './project-generator.service';
+import { deriveDefaultName } from './scaffold/scaffold.parser';
 
 @Injectable()
 export class projectService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
-  ) { }
+    private readonly generator: ProjectGeneratorService,
+  ) {}
   async findAll(req: AuthenticatedRequest, query: ProjectQueryDto) {
     if (query.recent === 'true') {
       const projects = await this.projectRepository.findRecentByUserId(
@@ -51,13 +49,13 @@ export class projectService {
     });
   }
   async create(body: ProjectDto, req: AuthenticatedRequest) {
-     const words = body.prompt.split(/\s+/).slice(0, 5).join(' ');
-    const defaultName = words.length > 3 ? words + '...' : words;
     const project = await this.projectRepository.create({
       userId: req.user.id,
-      name: defaultName,
+      name: deriveDefaultName(body.prompt),
     });
-    this.generateAndUpdateName(project.id, body.prompt);
+    // In-process background scaffold generation: works without an Inngest
+    // dev server, never blocks the response, never rejects the request.
+    void this.generator.generateFromPrompt(project, body.prompt);
 
     this.realtimeEmitService.toUser(
       req.user.id.toString(),
@@ -70,34 +68,6 @@ export class projectService {
     });
   }
 
-  private async generateAndUpdateName(projectId: bigint, prompt: string): Promise<void> {
-    const modelId: ModelId = 'google:gemini-2.5-flash';
-    const model = getModel(modelId);
-    try {
-      const result = await streamText({
-        model,
-        prompt: `Based on this description, give a short creative project name (max 50 characters). Use words from the description. Return only the name, nothing else: "${prompt}"`,
-      });
-      let projectName = '';
-      for await (const chunk of result.textStream) {
-        projectName += chunk;
-      }
-      projectName = projectName.trim();
-      if (projectName) {
-        await this.projectRepository.update(projectId, { name: projectName });
-        const updated = await this.projectRepository.findById(projectId);
-        if (updated && updated.userId) {
-          this.realtimeEmitService.toUser(
-            updated.userId.toString(),
-            PROJECT_EVENTS.UPDATED,
-            updated,
-          );
-        }
-      }
-    } catch (err) {
-      console.error('Failed to generate project name:', err);
-    }
-  }
   async update(
     projectId: bigint,
     body: UpdateProjectDto,

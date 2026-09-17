@@ -17,10 +17,7 @@ export class FileRepository extends BaseRepository {
   }
   async getProjectRootFiles(projectId: bigint): Promise<File[]> {
     return this.db.query.files.findMany({
-      where: and(
-        eq(files.projectId, projectId),
-        sql`${files.parentId} IS NULL`,
-      ),
+      where: and(eq(files.projectId, projectId), this.parentEquals(null)),
       orderBy: [
         sql`CASE WHEN ${files.type} = 'folder' THEN 0 ELSE 1 END`,
         asc(files.name),
@@ -41,39 +38,64 @@ export class FileRepository extends BaseRepository {
       where: eq(files.id, id),
     });
   }
+  async findFolderByName(
+    projectId: bigint,
+    parentId: bigint | null,
+    name: string,
+  ): Promise<File | undefined> {
+    return this.db.query.files.findFirst({
+      where: and(
+        eq(files.projectId, projectId),
+        eq(files.type, 'folder'),
+        eq(files.name, name),
+        this.parentEquals(parentId),
+      ),
+    });
+  }
   async isDescendant(
     projectId: bigint,
     ancestorId: bigint,
     descendantId: bigint,
   ): Promise<boolean> {
-    const all = await this.getAllFilesWithProjectId(projectId);
-    const byId = new Map(all.map((file) => [file.id, file]));
+    // Single recursive query instead of loading every file in the project.
+    const rows = await this.db.execute<{
+      is_descendant: boolean;
+    }>(sql`
+    WITH RECURSIVE tree AS (
+      SELECT id, parent_id
+      FROM files
+      WHERE id = ${descendantId} AND project_id = ${projectId}
+      UNION ALL
+      SELECT f.id, f.parent_id
+      FROM files f
+      JOIN tree t ON f.id = t.parent_id
+      WHERE f.project_id = ${projectId}
+    )
+    SELECT EXISTS (
+      SELECT 1 FROM tree WHERE id = ${ancestorId}
+    ) AS is_descendant
+  `);
 
-    let current = byId.get(descendantId);
-
-    while (current?.parentId) {
-      if (current.parentId === ancestorId) return true;
-      current = byId.get(current.parentId);
-    }
-
-    return false;
+    const first = (rows as { rows?: Array<{ is_descendant: boolean }> })
+      .rows?.[0];
+    return first?.is_descendant === true;
   }
   async getFolderContents(
     projectId: bigint,
     parentId: bigint | null,
   ): Promise<File[]> {
     return this.db.query.files.findMany({
-      where: and(
-        eq(files.projectId, projectId),
-        parentId === null
-          ? sql`${files.parentId} IS NULL`
-          : eq(files.parentId, parentId),
-      ),
+      where: and(eq(files.projectId, projectId), this.parentEquals(parentId)),
       orderBy: [
         sql`CASE WHEN ${files.type} = 'folder' THEN 0 ELSE 1 END`,
         asc(files.name),
       ],
     });
+  }
+  private parentEquals(parentId: bigint | null) {
+    return parentId === null
+      ? sql`${files.parentId} IS NULL`
+      : eq(files.parentId, parentId);
   }
   async createFile(data: NewFile): Promise<File> {
     const [file] = await this.db.insert(files).values(data).returning();
