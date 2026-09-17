@@ -6,6 +6,7 @@ export function ChatBox({
   value = "",
   onChange = () => {},
   onSend,
+  sending = false,
 }: {
   value?: string;
   onChange?: (value: string) => void;
@@ -13,6 +14,7 @@ export function ChatBox({
     text: string;
     files: File[];
   }) => void;
+  sending?: boolean;
 }) {
   return (
     <ChatComposer
@@ -20,6 +22,7 @@ export function ChatBox({
       value={value}
       onChange={onChange}
       onSend={onSend}
+      sending={sending}
     />
   );
 }
