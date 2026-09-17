@@ -8,6 +8,7 @@ import { useLoadProject } from "@/lib/hooks/projects/useLoadProject";
 import { ProjectNavbar } from "./project-navbar";
 import ProjectSkeleton from "@/components/layout/Skeleton/project/ProjectSkeleton";
 import { useFilesStore } from "@/store/file.store";
+import { useEditorStore } from "@/store/use-editor-store";
 
 export const ProjectIdLayout = ({
   children,
@@ -54,6 +55,15 @@ export const ProjectIdLayout = ({
       document.documentElement.removeAttribute("data-accent");
     };
   }, []);
+
+  // Release the per-project file cache and editor tabs once we leave the
+  // workspace, so long sessions don't accumulate every visited project.
+  useEffect(() => {
+    return () => {
+      useFilesStore.getState().clearProjectState(projectId);
+      useEditorStore.getState().removeProject(projectId);
+    };
+  }, [projectId]);
 
   // Unified: show full ProjectSkeleton until both project + initial files are ready
   // Subsequent file reloads keep inner TreeItemWrapperSkeleton (FileExplorer) — not this outer
