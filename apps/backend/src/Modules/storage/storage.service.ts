@@ -10,8 +10,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Readable } from 'node:stream';
 import { S3 } from './storage.constants';
-import { StorageObject } from 'src/common/utils/types';
-
 @Injectable()
 export class StorageService {
   private readonly bucket: string;
@@ -99,7 +97,9 @@ export class StorageService {
       }),
     );
   }
-  async getFileContent(key: string): Promise<{ content: string; contentType: string }> {
+  async getFileContent(
+    key: string,
+  ): Promise<{ content: string; contentType: string }> {
     try {
       const object = await this.client.send(
         new GetObjectCommand({
@@ -109,14 +109,17 @@ export class StorageService {
       );
 
       if (!object.Body) {
-        return { content: "", contentType: "text/plain; charset=utf-8" };
+        return { content: '', contentType: 'text/plain; charset=utf-8' };
       }
 
       const content = await object.Body.transformToString('utf-8');
-      return { content, contentType: object.ContentType || 'text/plain; charset=utf-8' };
+      return {
+        content,
+        contentType: object.ContentType || 'text/plain; charset=utf-8',
+      };
     } catch (error: any) {
       if (error.name === 'NoSuchKey' || error.Code === 'NoSuchKey') {
-        return { content: "", contentType: "text/plain; charset=utf-8" };
+        return { content: '', contentType: 'text/plain; charset=utf-8' };
       }
       throw error;
     }

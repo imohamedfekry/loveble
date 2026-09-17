@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { TempUserRepository } from '../../common/database/repositories/user/tempUser.repository';
-import { UserRepository } from '../../common/database/repositories/user/user.repository';
 import { success } from 'src/common/utils/response.util';
 import { RESPONSE_MESSAGES } from 'src/common/utils/response-messages';
 import * as v from 'valibot';

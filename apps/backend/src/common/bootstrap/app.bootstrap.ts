@@ -1,7 +1,6 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { ConfigService } from '@nestjs/config';
 import { BootstrapConfig } from './config/bootstrap.config';
-import { inngest } from '../inngest/client';
 
 type BootstrapResult = {
   app: NestFastifyApplication;
@@ -18,14 +17,8 @@ export class AppBootstrap {
     app: NestFastifyApplication,
   ): Promise<BootstrapResult> {
     const configService = app.get(ConfigService);
-
-    console.log('🔧 AppBootstrap: obtained ConfigService');
-    console.log('🔧 AppBootstrap: calling BootstrapConfig.configureApp');
     await BootstrapConfig.configureApp(app, configService);
-    console.log('🔧 AppBootstrap: BootstrapConfig.configureApp completed');
-
     const serverInfo = BootstrapConfig.getServerInfo(configService);
-    console.log('🔧 AppBootstrap: BootstrapConfig.getServerInfo returned', serverInfo);
 
     return {
       app,
@@ -34,7 +27,7 @@ export class AppBootstrap {
     };
   }
 
-  static logServerInfo(serverInfo: any) {
+  static logServerInfo(serverInfo: BootstrapResult['serverInfo']) {
     console.log(`🚀 Server is running on port ${serverInfo.port}`);
     console.log(`🌍 Environment: ${serverInfo.nodeEnv}`);
     console.log(`🔗 API Base URL: ${serverInfo.apiUrl}`);

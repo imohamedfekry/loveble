@@ -16,7 +16,10 @@ import { functions } from './common/inngest/index';
 import * as Sentry from '@sentry/nestjs';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+  );
 
   const fastify = app.getHttpAdapter().getInstance();
 

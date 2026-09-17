@@ -19,8 +19,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const res = host.switchToHttp().getResponse<FastifyReply>();
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse() as
-      | ValidationErrorResponse
-      | string;
+      ValidationErrorResponse | string;
 
     // ─── Validation errors (from @mag123c/nestjs-stdschema / Valibot) ─────────
     if (
