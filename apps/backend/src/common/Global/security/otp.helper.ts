@@ -1,3 +1,5 @@
+import { randomInt } from 'crypto';
+
 export type OtpOptions = {
   length?: number;
   type?: 'numeric' | 'alphanumeric';
@@ -14,12 +16,9 @@ export function generateOtp(options?: OtpOptions): string {
   const chars = type === 'numeric' ? digits : alpha;
 
   let otp = '';
-
   for (let i = 0; i < length; i++) {
-    const index = Math.floor(Math.random() * chars.length);
-    otp += chars[index];
+    otp += chars[randomInt(chars.length)];
   }
-  console.log(otp);
 
   return otp;
 }

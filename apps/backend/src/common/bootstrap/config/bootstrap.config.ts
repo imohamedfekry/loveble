@@ -7,7 +7,6 @@ import { CatchAllFilter } from '../../filters/catchAll.filter';
 import { BigIntInterceptor } from '../../interceptors/BigInt.interceptors';
 import { StandardValidationPipe } from '@mag123c/nestjs-stdschema';
 
-// import fastifyCors from '@fastify/cors';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 
@@ -18,8 +17,6 @@ export class BootstrapConfig {
     app: NestFastifyApplication,
     configService: ConfigService,
   ) {
-    console.log('BootstrapConfig: starting configureApp');
-    // ✅ CORS (Fastify plugin)
     const corsOrigins = configService.get<string | string[]>('app.cors.origin');
     const origins = Array.isArray(corsOrigins)
       ? corsOrigins
@@ -34,10 +31,8 @@ export class BootstrapConfig {
             'http://localhost:8288',
           ];
 
-    console.log('BootstrapConfig: configuring CORS with origins', origins);
     await app.register(fastifyCors as unknown as RegisterPlugin, {
       origin: origins,
-
       methods: configService.get<string[]>('app.cors.methods') || [
         'GET',
         'POST',
@@ -47,41 +42,34 @@ export class BootstrapConfig {
         'OPTIONS',
         'HEAD',
       ],
-
       credentials: configService.get<boolean>('app.cors.credentials') ?? true,
     });
-    console.log('BootstrapConfig: CORS registered');
 
-    // ✅ Cookies
-    console.log('BootstrapConfig: registering cookie plugin');
+    const cookieSecret =
+      configService.get<string>('app.cookieSecret') ||
+      process.env.COOKIE_SECRET ||
+      (process.env.NODE_ENV === 'production'
+        ? (() => {
+            throw new Error(
+              'Missing required env var COOKIE_SECRET in production',
+            );
+          })()
+        : 'dev-cookie-secret');
     await app.register(fastifyCookie as unknown as RegisterPlugin, {
-      secret: 'my-secret',
+      secret: cookieSecret,
     });
-    console.log('BootstrapConfig: cookie plugin registered');
 
     // Global prefix
     const prefix = configService.get('app.apiPrefix') || 'api';
     app.setGlobalPrefix(prefix);
-    console.log('BootstrapConfig: global prefix set to', prefix);
 
     // Validation
-    console.log('BootstrapConfig: configuring validation pipes');
     this.configureValidationPipes(app);
-    console.log('BootstrapConfig: validation pipes configured');
-
     // Filters & Interceptors
-    console.log('BootstrapConfig: configuring global filters');
     this.configureGlobalFilters(app);
-    console.log('BootstrapConfig: global filters configured');
-
-    console.log('BootstrapConfig: configuring global interceptors');
     this.configureGlobalInterceptors(app);
-    console.log('BootstrapConfig: global interceptors configured');
-
     // Versioning
-    console.log('BootstrapConfig: configuring versioning');
     this.configureVersioning(app);
-    console.log('BootstrapConfig: versioning configured');
   }
 
   private static configureValidationPipes(app: NestFastifyApplication) {
