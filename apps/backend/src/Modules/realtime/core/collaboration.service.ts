@@ -35,7 +35,7 @@ export class CollaborationService implements OnModuleInit {
       do {
         const result = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
         cursor = result[0];
-        const keys = result[1] as string[];
+        const keys = result[1];
         if (keys.length > 0) {
           await redis.del(...keys);
         }
@@ -101,7 +101,7 @@ export class CollaborationService implements OnModuleInit {
     const existingNames = new Set<string>();
     for (const value of Object.values(all)) {
       try {
-        const v: FileViewer = JSON.parse(value as string);
+        const v: FileViewer = JSON.parse(value);
         existingNames.add(v.userName);
       } catch {
         // skip invalid
@@ -135,7 +135,10 @@ export class CollaborationService implements OnModuleInit {
     return { viewer, left };
   }
 
-  async leaveFile(fileId: string, socketId: string): Promise<FileViewer | null> {
+  async leaveFile(
+    fileId: string,
+    socketId: string,
+  ): Promise<FileViewer | null> {
     const redis = this.getRedis();
     const socketJson = await redis.get(this.socketKey(socketId));
     if (!socketJson) return null;

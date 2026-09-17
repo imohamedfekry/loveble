@@ -18,7 +18,10 @@ export class SocketAuthService {
       token = token.slice(7).trim();
     }
     // إزالة اقتباسات قد تأتي من الكوكي
-    if ((token.startsWith('"') && token.endsWith('"')) || (token.startsWith("'") && token.endsWith("'"))) {
+    if (
+      (token.startsWith('"') && token.endsWith('"')) ||
+      (token.startsWith("'") && token.endsWith("'"))
+    ) {
       token = token.slice(1, -1).trim();
     }
     return token;
