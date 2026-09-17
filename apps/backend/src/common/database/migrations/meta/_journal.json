@@ -15,6 +15,20 @@
       "when": 1787026637615,
       "tag": "0001_productive_robbie_robertson",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789576751164,
+      "tag": "0002_breezy_hawkeye",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789576761340,
+      "tag": "0003_melted_gargoyle",
+      "breakpoints": true
     }
   ]
 }

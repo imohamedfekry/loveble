@@ -29,7 +29,13 @@ export const userOAuthAccounts = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
-  (table) => [index('user_oauth_user_id_idx').on(table.userId)],
+  (table) => [
+    index('user_oauth_user_id_idx').on(table.userId),
+    index('user_oauth_provider_provider_id_idx').on(
+      table.provider,
+      table.providerId,
+    ),
+  ],
 );
 export const usersRelations = relations(users, ({ many }) => ({
   oauthAccounts: many(userOAuthAccounts),
