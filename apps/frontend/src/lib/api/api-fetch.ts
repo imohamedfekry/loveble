@@ -1,6 +1,8 @@
 import type { ApiResponse, ApiSuccess } from "@loveble/types/envelope";
 
-const API_BASE_URL = 'http://localhost:3001/api/v1'
+const API_BASE_URL =
+  (process.env.NEXT_PUBLIC_API_URL as string | undefined) ??
+  "http://localhost:3001/api/v1";
 const DEFAULT_TIMEOUT = 15000; // 15 seconds
 
 export async function apiFetch<T>(
@@ -15,15 +17,11 @@ export async function apiFetch<T>(
     );
 
     try {
-        console.log(`[apiFetch] Starting request: ${input}`);
-        
         const res = await fetch(`${API_BASE_URL}${input}`, {
             credentials: "include",
             ...init,
             signal: controller.signal,
         });
-
-        console.log(`[apiFetch] Response status ${res.status} for: ${input}`);
 
         if (!res.ok) {
             const contentType = res.headers.get('content-type');
@@ -37,13 +35,10 @@ export async function apiFetch<T>(
                 }
             }
 
-            console.error(`[apiFetch] HTTP Error ${res.status} for ${input}:`, body);
             throw new Error(body?.message || `Request failed with status ${res.status}`);
         }
 
         const body = await res.json() as ApiResponse<T>;
-        
-        console.log(`[apiFetch] Success for ${input}, data present:`, !!body.data);
 
         if (!body.success) {
             body.errors?.forEach(({ field, message }) => {
@@ -55,10 +50,8 @@ export async function apiFetch<T>(
         return body;
     } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') {
-            console.error(`[apiFetch] Request timeout (${DEFAULT_TIMEOUT}ms) for: ${input}`);
             throw new Error(`Request timeout`);
         }
-        console.error(`[apiFetch] Error for ${input}:`, error);
         throw error;
     } finally {
         clearTimeout(timeoutId);
