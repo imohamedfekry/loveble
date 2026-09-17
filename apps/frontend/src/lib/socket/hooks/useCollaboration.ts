@@ -27,6 +27,7 @@ const COLLAB_EVENTS = {
   SYNC: "file:collab:sync",
   AWARENESS: "file:collab:awareness",
   AWARENESS_STATE: "file:collab:awareness-state",
+  RELOAD: "file:collab:reload",
 };
 
 function collabLog(event: string, details?: Record<string, unknown>) {
@@ -77,9 +78,11 @@ export function useCollaboration({
 }: UseCollaborationOptions) {
   const viewRef = useRef<EditorView | null>(null);
   const fileIdRef = useRef<string | null>(null);
+  const projectIdRef = useRef<string>("");
   const pushingRef = useRef(false);
   const pushGenRef = useRef(0);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const socketStatus = useSocketStatus();
   const localUserId = useUserStore((s) => s.user?.id);
   const [snapshot, setSnapshot] = useState<CollabSnapshot | null>(null);
@@ -106,6 +109,7 @@ export function useCollaboration({
     }
 
     fileIdRef.current = fileId;
+    projectIdRef.current = projectId;
     setSnapshot(null);
     setPeers({});
 
@@ -281,16 +285,35 @@ export function useCollaboration({
       setPeers(next);
     };
 
+    const onReload = (payload: { fileId: string }) => {
+      if (payload.fileId !== fileIdRef.current) return;
+      if (!projectIdRef.current) return;
+
+      collabLog("server hot state invalidated, re-fetching", {
+        fileId: payload.fileId,
+      });
+
+      // Hot state was invalidated (e.g. REST save). Re-join so the server
+      // reloads authoritative content from S3 and sends us a fresh SYNC.
+      setSnapshot(null);
+      socket.emit(COLLAB_EVENTS.JOIN, {
+        fileId: payload.fileId,
+        projectId: projectIdRef.current,
+      });
+    };
+
     socket.on(COLLAB_EVENTS.SYNC, onSync);
     socket.on(COLLAB_EVENTS.UPDATE, onUpdate);
     socket.on(COLLAB_EVENTS.AWARENESS, onAwareness);
     socket.on(COLLAB_EVENTS.AWARENESS_STATE, onAwarenessState);
+    socket.on(COLLAB_EVENTS.RELOAD, onReload);
 
     return () => {
       socket.off(COLLAB_EVENTS.SYNC, onSync);
       socket.off(COLLAB_EVENTS.UPDATE, onUpdate);
       socket.off(COLLAB_EVENTS.AWARENESS, onAwareness);
       socket.off(COLLAB_EVENTS.AWARENESS_STATE, onAwarenessState);
+      socket.off(COLLAB_EVENTS.RELOAD, onReload);
     };
   }, []);
 
@@ -332,6 +355,7 @@ export function useCollaboration({
         pushingRef.current = false;
       }
     }, 2000);
+    ackTimeoutRef.current = ackTimeout;
 
     // Extend ack type to handle backend forceResync / missing fields
     type AckPayload = CollabPayload & {
@@ -345,7 +369,10 @@ export function useCollaboration({
 
     socket.emit(COLLAB_EVENTS.UPDATE, payload, (ack?: AckPayload) => {
       if (pushGenRef.current !== pushGen) return;
-      clearTimeout(ackTimeout);
+      if (ackTimeoutRef.current) {
+        clearTimeout(ackTimeoutRef.current);
+        ackTimeoutRef.current = null;
+      }
       try {
         const currentView = viewRef.current;
         if (ack && currentView) {
@@ -430,6 +457,10 @@ export function useCollaboration({
       if (flushTimerRef.current) {
         clearTimeout(flushTimerRef.current);
         flushTimerRef.current = null;
+      }
+      if (ackTimeoutRef.current) {
+        clearTimeout(ackTimeoutRef.current);
+        ackTimeoutRef.current = null;
       }
       pushingRef.current = false;
     };
