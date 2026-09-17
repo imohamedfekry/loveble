@@ -38,6 +38,10 @@ interface EditorStore {
         projectId: string,
         fileId: string,
     ) => void;
+
+    removeProject: (
+        projectId: string,
+    ) => void;
 }
 
 export const useEditorStore = create<EditorStore>()((set, get) => ({
@@ -128,6 +132,12 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
     const tabs = new Map(get().tabs);
     const state = tabs.get(projectId) ?? defaultTabState;
     tabs.set(projectId, { ...state, activeTabId: fileId });
+    set({ tabs });
+  },
+
+  removeProject: (projectId) => {
+    const tabs = new Map(get().tabs);
+    tabs.delete(projectId);
     set({ tabs });
   },
 }));

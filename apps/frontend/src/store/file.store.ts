@@ -76,6 +76,10 @@ interface FilesState {
   clearFolderCache: (
     folderId: string,
   ) => void;
+
+  clearProjectState: (
+    projectId: string,
+  ) => void;
 }
 
 export const useFilesStore = create<FilesState>((set) => ({
@@ -238,6 +242,36 @@ export const useFilesStore = create<FilesState>((set) => ({
         folderContents,
         folderLoading,
         loadedFolders,
+      };
+    }),
+
+  clearProjectState: (projectId) =>
+    set((state) => {
+      const files = { ...state.files };
+      const loadingProjects = { ...state.loadingProjects };
+      const fileContents = { ...state.fileContents };
+      const contentLoading = { ...state.contentLoading };
+      const contentErrors = { ...state.contentErrors };
+
+      const projectFiles = files[projectId];
+
+      delete files[projectId];
+      delete loadingProjects[projectId];
+
+      if (projectFiles) {
+        for (const file of projectFiles) {
+          delete fileContents[file.id];
+          delete contentLoading[file.id];
+          delete contentErrors[file.id];
+        }
+      }
+
+      return {
+        files,
+        loadingProjects,
+        fileContents,
+        contentLoading,
+        contentErrors,
       };
     }),
 }));
