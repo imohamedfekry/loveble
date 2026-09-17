@@ -24,7 +24,10 @@ export const generateText = inngest.createFunction(
       stopWhen: stepCountIs(13),
       experimental_onToolCallStart: async ({ toolCall }) => {
         const msg = `[AI:TOOL] USED ${toolCall.toolName}`;
-        const data = { tool: toolCall.toolName, input: (toolCall as any).input };
+        const data = {
+          tool: toolCall.toolName,
+          input: (toolCall as any).input,
+        };
         if (logger?.info) logger.info(data, msg);
         console.log(msg, data.input);
       },
