@@ -1,18 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RealtimeGateway } from './realtime.gateway';
+import { serializeBigInt } from 'src/common/utils/bigint.util';
 
 @Injectable()
 export class RealtimeEmitService {
   private readonly logger = new Logger(RealtimeEmitService.name);
 
   constructor(private readonly gateway: RealtimeGateway) {}
-
-  private serializeBigInt(data: unknown): unknown {
-    // تحويل BigInt إلى string دون فقدان باقي الأنواع (Date, null...)
-    return JSON.parse(
-      JSON.stringify(data, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
-    );
-  }
 
   private ensureServer(): boolean {
     if (!this.gateway?.server) {
@@ -23,12 +17,10 @@ export class RealtimeEmitService {
   }
 
   toUser(userId: string | bigint, event: string, data: unknown) {
-    console.log('toUser called with userId:', userId, 'event:', event, 'data:', data);
     if (!this.ensureServer()) return;
     const uid = String(userId);
     try {
-      this.gateway.server.to(`user:${uid}`).emit(event, this.serializeBigInt(data));
-      console.log(`Emitted to user:${uid} event=${event}`);
+      this.gateway.server.to(`user:${uid}`).emit(event, serializeBigInt(data));
     } catch (err) {
       this.logger.error(`toUser failed user=${uid} event=${event}: ${err}`);
     }
@@ -39,9 +31,13 @@ export class RealtimeEmitService {
     const pid = String(projectId);
     try {
       this.logger.debug(`Emit to project:${pid} event=${event}`);
-      this.gateway.server.to(`project:${pid}`).emit(event, this.serializeBigInt(data));
+      this.gateway.server
+        .to(`project:${pid}`)
+        .emit(event, serializeBigInt(data));
     } catch (err) {
-      this.logger.error(`toProject failed project=${pid} event=${event}: ${err}`);
+      this.logger.error(
+        `toProject failed project=${pid} event=${event}: ${err}`,
+      );
     }
   }
 
@@ -49,7 +45,7 @@ export class RealtimeEmitService {
     if (!this.ensureServer()) return;
     const fid = String(fileId);
     try {
-      this.gateway.server.to(`file:${fid}`).emit(event, this.serializeBigInt(data));
+      this.gateway.server.to(`file:${fid}`).emit(event, serializeBigInt(data));
     } catch (err) {
       this.logger.error(`toFile failed file=${fid} event=${event}: ${err}`);
     }
