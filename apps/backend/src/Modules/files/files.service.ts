@@ -18,7 +18,7 @@ import {
 import { FILE_EVENTS } from '../realtime/events/files.events';
 import * as v from 'valibot';
 import { FileStandard } from './dto/file.dto';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
 import { ConfigService } from '@nestjs/config';
 import { StorageService } from '../storage/storage.service';
 import { File } from 'src/common/database/schema';
@@ -33,7 +33,7 @@ export class FileService {
     private readonly redisService: RedisService,
     // private readonly S3client: S3Client,
     private readonly config: ConfigService,
-  ) { }
+  ) {}
   async getRootFiles(projectId: bigint, req: AuthenticatedRequest) {
     const project = await this.projectRepository.findById(projectId);
     if (!project || project.userId !== req.user.id) {
@@ -72,12 +72,13 @@ export class FileService {
     if (!storageKey) {
       return success(RESPONSE_MESSAGES.FILE.FETCH_SUCCESS, {
         file: {
-          content: "",
-          contentType: "text/plain; charset=utf-8",
+          content: '',
+          contentType: 'text/plain; charset=utf-8',
         },
       });
     }
-    const { content, contentType } = await this.storageService.getFileContent(storageKey);
+    const { content, contentType } =
+      await this.storageService.getFileContent(storageKey);
     return success(RESPONSE_MESSAGES.FILE.FETCH_SUCCESS, {
       file: {
         content,
@@ -300,12 +301,11 @@ export class FileService {
       },
     );
 
-    // Also notify collab room to force resync for online editors
-    this.realtimeEmitService.toFile?.(fileId.toString(), 'file:collab:sync', {
+    // Lightweight notice for online editors: hot state was invalidated, so
+    // each client re-joins the file and reloads authoritative content instead
+    // of broadcasting the whole document to the room.
+    this.realtimeEmitService.toFile?.(fileId.toString(), 'file:collab:reload', {
       fileId: fileId.toString(),
-      doc: body.content,
-      document: body.content,
-      version: 0,
     });
 
     return success(RESPONSE_MESSAGES.FILE.UPDATED);

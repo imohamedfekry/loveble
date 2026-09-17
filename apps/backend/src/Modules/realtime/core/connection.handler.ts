@@ -29,7 +29,8 @@ export class ConnectionHandler {
     const authToken =
       (socket.handshake.auth as Record<string, unknown>)?.token ??
       (socket.handshake.auth as Record<string, unknown>)?.authorization;
-    if (typeof authToken === 'string' && authToken.trim()) return authToken.trim();
+    if (typeof authToken === 'string' && authToken.trim())
+      return authToken.trim();
 
     // 3) Authorization header (Bearer ...)
     const header = socket.handshake.headers.authorization;
@@ -43,8 +44,12 @@ export class ConnectionHandler {
       const rawToken = this.extractToken(socket);
 
       if (!rawToken) {
-        this.logger.warn(`Connection attempt without token (socket: ${socket.id})`);
-        socket.emit('connect:error', { message: 'Unauthorized: missing token' });
+        this.logger.warn(
+          `Connection attempt without token (socket: ${socket.id})`,
+        );
+        socket.emit('connect:error', {
+          message: 'Unauthorized: missing token',
+        });
         socket.disconnect(true);
         return;
       }

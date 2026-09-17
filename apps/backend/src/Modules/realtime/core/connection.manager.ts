@@ -20,7 +20,9 @@ export class ConnectionManager {
     // تنظيف قديم لو نفس socketId موجود (إعادة اتصال سريعة)
     const existing = this.sockets.get(socketId);
     if (existing && existing.userId !== userId) {
-      this.logger.warn(`Socket ${socketId} reassigned from ${existing.userId} to ${userId}`);
+      this.logger.warn(
+        `Socket ${socketId} reassigned from ${existing.userId} to ${userId}`,
+      );
       const oldSet = this.userSockets.get(existing.userId);
       if (oldSet) {
         oldSet.delete(socketId);

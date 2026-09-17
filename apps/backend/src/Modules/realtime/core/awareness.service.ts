@@ -18,11 +18,7 @@ export type AwarenessState = {
 };
 
 function normalizeSelection(
-  selection:
-    | AwarenessSelection
-    | AwarenessSelection[]
-    | null
-    | undefined,
+  selection: AwarenessSelection | AwarenessSelection[] | null | undefined,
 ): AwarenessSelection[] | null | undefined {
   if (selection === undefined) return undefined;
   if (selection === null) return null;
@@ -31,9 +27,7 @@ function normalizeSelection(
 
   const valid = list.filter(
     (range) =>
-      range &&
-      Number.isFinite(range.anchor) &&
-      Number.isFinite(range.head),
+      range && Number.isFinite(range.anchor) && Number.isFinite(range.head),
   );
 
   return valid.length ? valid : null;
@@ -49,6 +43,9 @@ function hashString(str: string): number {
   return Math.abs(hash);
 }
 
+// Golden-angle palette: distinct hues that stay readable against dark editors.
+const STABLE_HUES = [35, 80, 140, 190, 250, 315, 15, 55, 120, 225];
+
 function generateRandomColor(): string {
   const hue = Math.floor(Math.random() * 360);
   const sat = 65 + Math.floor(Math.random() * 20);
@@ -56,8 +53,12 @@ function generateRandomColor(): string {
   return `hsl(${hue}, ${sat}%, ${light}%)`;
 }
 
+// Deterministic per user: the same user always gets the same color, regardless
+// of which socket (or on whichever render) they are seen.
 function getStableColor(userId: string, socketId: string): string {
-  return generateRandomColor();
+  const seed = hashString(`${userId}:${socketId}`);
+  const hue = STABLE_HUES[seed % STABLE_HUES.length] + (seed % 20);
+  return `hsl(${hue}, 72%, 60%)`;
 }
 
 function safeParseAwareness(raw: string): AwarenessState | null {
@@ -86,7 +87,7 @@ export class AwarenessService implements OnModuleInit {
       do {
         const result = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
         cursor = result[0];
-        const keys = result[1] as string[];
+        const keys = result[1];
         if (keys.length > 0) {
           await redis.del(...keys);
         }
@@ -136,7 +137,11 @@ export class AwarenessService implements OnModuleInit {
           for (const [otherSid, rawOther] of Object.entries(all)) {
             if (otherSid === state.socketId) continue;
             const other = safeParseAwareness(rawOther);
-            if (other && other.userId === state.userId && other.color === candidate) {
+            if (
+              other &&
+              other.userId === state.userId &&
+              other.color === candidate
+            ) {
               collision = true;
               break;
             }
@@ -149,7 +154,8 @@ export class AwarenessService implements OnModuleInit {
               const used = new Set<string>();
               for (const v of Object.values(all)) {
                 const o = safeParseAwareness(v);
-                if (o && o.userId === state.userId && o.color) used.add(o.color);
+                if (o && o.userId === state.userId && o.color)
+                  used.add(o.color);
               }
               let altColor = generateRandomColor();
               while (used.has(altColor)) {
@@ -210,10 +216,7 @@ export class AwarenessService implements OnModuleInit {
     return peers;
   }
 
-  async removeAwareness(
-    fileId: string,
-    socketId: string,
-  ): Promise<boolean> {
+  async removeAwareness(fileId: string, socketId: string): Promise<boolean> {
     const redis = this.getRedis();
     const key = this.key(fileId);
     const removed = await redis.hdel(key, socketId);

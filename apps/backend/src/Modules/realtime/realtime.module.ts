@@ -19,8 +19,14 @@ import { StorageModule } from '../storage/storage.module';
     RealtimeEmitService,
     CollaborationService,
     AwarenessService,
-    DocumentStateService
+    DocumentStateService,
   ],
-  exports: [RealtimeGateway, ConnectionManager, RealtimeEmitService, CollaborationService, AwarenessService],
+  exports: [
+    RealtimeGateway,
+    ConnectionManager,
+    RealtimeEmitService,
+    CollaborationService,
+    AwarenessService,
+  ],
 })
 export class RealtimeModule {}

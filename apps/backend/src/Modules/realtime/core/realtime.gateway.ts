@@ -21,12 +21,19 @@ import { DocumentStateService } from './document-state.service';
 @WebSocketGateway({
   namespace: '/realtime',
   cors: {
-    origin: '*',
+    origin: process.env.WS_CORS_ORIGINS
+      ? process.env.WS_CORS_ORIGINS.split(',').map((o) => o.trim())
+      : [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'http://localhost:4200',
+        ],
     credentials: true,
   },
 })
 export class RealtimeGateway
-  implements OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -51,8 +58,23 @@ export class RealtimeGateway
     }
     for (const viewer of left) {
       await this.broadcastAwarenessLeave(viewer.fileId, socket.id);
+      await this.unloadIfEmpty(viewer.fileId);
     }
     return this.connectionHandler.handleDisconnect(socket);
+  }
+
+  /**
+   * Releases the Redis hot state (content/updates/meta) once the last
+   * collaborator leaves a file, flushing any pending S3 persistence first.
+   */
+  private async unloadIfEmpty(fileId: string): Promise<void> {
+    try {
+      const sockets = await this.server.in(`file:${fileId}`).fetchSockets();
+      if (sockets.length > 0) return;
+      await this.documentStateService.unload(fileId);
+    } catch (err) {
+      this.logger.warn(`unloadIfEmpty failed for ${fileId}: ${err}`);
+    }
   }
 
   @SubscribeMessage('project:subscribe')
@@ -80,7 +102,9 @@ export class RealtimeGateway
 
     const userId = socket.data?.user?.id?.toString() ?? socket.data?.userId;
     if (!userId || project.userId.toString() !== userId.toString()) {
-      this.logger.warn(`Unauthorized project subscribe attempt socket=${socket.id} project=${projectId} user=${userId}`);
+      this.logger.warn(
+        `Unauthorized project subscribe attempt socket=${socket.id} project=${projectId} user=${userId}`,
+      );
       socket.emit('project:error', { message: 'Unauthorized' });
       return;
     }
@@ -105,87 +129,94 @@ export class RealtimeGateway
     socket.emit('project:unsubscribed', { projectId });
   }
 
+  @SubscribeMessage(COLLAB_EVENTS.JOIN)
+  async handleCollabJoin(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() payload: { fileId: string; projectId: string },
+  ) {
+    const { fileId, projectId } = payload ?? {};
 
+    if (
+      !fileId ||
+      !projectId ||
+      typeof fileId !== 'string' ||
+      typeof projectId !== 'string'
+    ) {
+      socket.emit(COLLAB_EVENTS.SYNC, {
+        fileId: fileId ?? null,
+        error: 'Invalid payload: fileId and projectId required',
+      });
+      return;
+    }
 
+    let project: Awaited<ReturnType<ProjectRepository['findById']>> | null =
+      null;
+    try {
+      project = await this.projectRepository.findById(projectId);
+    } catch {
+      socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Invalid projectId' });
+      return;
+    }
+    if (!project) {
+      socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Project not found' });
+      return;
+    }
+    const userId = socket.data?.user?.id?.toString() ?? socket.data?.userId;
+    if (!userId || project.userId.toString() !== userId.toString()) {
+      socket.emit(COLLAB_EVENTS.SYNC, {
+        fileId,
+        error: 'Unauthorized for project',
+      });
+      return;
+    }
 
+    let file: Awaited<ReturnType<FileRepository['getFile']>> | null = null;
+    try {
+      file = await this.fileRepository.getFile(BigInt(fileId));
+      if (!file) {
+        socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'File not found' });
+        return;
+      }
+      if (file.projectId.toString() !== projectId.toString()) {
+        socket.emit(COLLAB_EVENTS.SYNC, {
+          fileId,
+          error: 'File does not belong to project',
+        });
+        return;
+      }
+    } catch {
+      socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Invalid fileId' });
+      return;
+    }
 
+    const { userId: presenceUserId, userName } = this.presenceIdentity(socket);
+    const occupancy = await this.collabService.joinFile(
+      fileId,
+      projectId,
+      socket.id,
+      presenceUserId,
+      userName,
+    );
 
-@SubscribeMessage(COLLAB_EVENTS.JOIN)
-async handleCollabJoin(
-  @ConnectedSocket() socket: Socket,
-  @MessageBody() payload: { fileId: string; projectId: string },
-) {
-  const { fileId, projectId } = payload ?? {};
+    await socket.join(`file:${fileId}`);
 
-  if (!fileId || !projectId || typeof fileId !== 'string' || typeof projectId !== 'string') {
-    socket.emit(COLLAB_EVENTS.SYNC, {
-      fileId: fileId ?? null,
-      error: 'Invalid payload: fileId and projectId required',
+    for (const left of occupancy.left) {
+      this.broadcastPresenceLeave(left);
+    }
+    this.broadcastPresenceJoin(occupancy.viewer);
+
+    // ⬅️ الجزء الجديد: يجيب المحتوى الحقيقي بدل الثابت
+    const { doc, version } =
+      await this.documentStateService.getDocument(fileId);
+    socket.emit(COLLAB_EVENTS.SYNC, { fileId, doc, document: doc, version });
+
+    socket.emit(COLLAB_EVENTS.AWARENESS_STATE, {
+      fileId,
+      peers: await this.collabService.listAwareness(fileId, socket.id),
     });
-    return;
+
+    this.logger.log(`Socket ${socket.id} joined file room: ${fileId}`);
   }
-
-  let project: Awaited<ReturnType<ProjectRepository['findById']>> | null = null;
-  try {
-    project = await this.projectRepository.findById(projectId);
-  } catch {
-    socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Invalid projectId' });
-    return;
-  }
-  if (!project) {
-    socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Project not found' });
-    return;
-  }
-  const userId = socket.data?.user?.id?.toString() ?? socket.data?.userId;
-  if (!userId || project.userId.toString() !== userId.toString()) {
-    socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Unauthorized for project' });
-    return;
-  }
-
-  let file: Awaited<ReturnType<FileRepository['getFile']>> | null = null;
-  try {
-    file = await this.fileRepository.getFile(BigInt(fileId));
-    if (!file) {
-      socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'File not found' });
-      return;
-    }
-    if (file.projectId.toString() !== projectId.toString()) {
-      socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'File does not belong to project' });
-      return;
-    }
-  } catch {
-    socket.emit(COLLAB_EVENTS.SYNC, { fileId, error: 'Invalid fileId' });
-    return;
-  }
-
-  const { userId: presenceUserId, userName } = this.presenceIdentity(socket);
-  const occupancy = await this.collabService.joinFile(
-    fileId,
-    projectId,
-    socket.id,
-    presenceUserId,
-    userName,
-  );
-
-  await socket.join(`file:${fileId}`);
-
-  for (const left of occupancy.left) {
-    this.broadcastPresenceLeave(left);
-  }
-  this.broadcastPresenceJoin(occupancy.viewer);
-
-  // ⬅️ الجزء الجديد: يجيب المحتوى الحقيقي بدل الثابت
-  const { doc, version } = await this.documentStateService.getDocument(fileId);
-  socket.emit(COLLAB_EVENTS.SYNC, { fileId, doc, document: doc, version });
-
-  socket.emit(COLLAB_EVENTS.AWARENESS_STATE, {
-    fileId,
-    peers: await this.collabService.listAwareness(fileId, socket.id),
-  });
-
-  this.logger.log(`Socket ${socket.id} joined file room: ${fileId}`);
-}
-
 
   @SubscribeMessage(COLLAB_EVENTS.LEAVE)
   async handleCollabLeave(
@@ -201,63 +232,80 @@ async handleCollabJoin(
     if (left) {
       this.broadcastPresenceLeave(left);
     }
+    await this.unloadIfEmpty(fileId);
 
     this.logger.log(`Socket ${socket.id} left file room: ${fileId}`);
   }
 
-@SubscribeMessage(COLLAB_EVENTS.UPDATE)
-async handleCollabUpdate(
-  @ConnectedSocket() socket: Socket,
-  @MessageBody()
-  payload: {
-    fileId: string;
-    updates: { clientID: string; changes: unknown }[];
-    version: number;
-  },
-) {
-  // this.logger.debug(
-  //   `[handleCollabUpdate] socket=${socket.id} payload=${JSON.stringify(payload)}`,
-  // );
+  @SubscribeMessage(COLLAB_EVENTS.UPDATE)
+  async handleCollabUpdate(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    payload: {
+      fileId: string;
+      updates: { clientID: string; changes: unknown }[];
+      version: number;
+    },
+  ) {
+    // this.logger.debug(
+    //   `[handleCollabUpdate] socket=${socket.id} payload=${JSON.stringify(payload)}`,
+    // );
 
-  const { fileId, updates, version } = payload ?? {};
+    const { fileId, updates, version } = payload ?? {};
 
-  if (!fileId || typeof fileId !== 'string' || !Array.isArray(updates) || typeof version !== 'number') {
-    this.logger.warn(`[handleCollabUpdate] Invalid payload from socket=${socket.id}`);
-    return { accepted: false, fileId: fileId ?? null, version: 0, error: 'Invalid payload' };
+    if (
+      !fileId ||
+      typeof fileId !== 'string' ||
+      !Array.isArray(updates) ||
+      typeof version !== 'number'
+    ) {
+      this.logger.warn(
+        `[handleCollabUpdate] Invalid payload from socket=${socket.id}`,
+      );
+      return {
+        accepted: false,
+        fileId: fileId ?? null,
+        version: 0,
+        error: 'Invalid payload',
+      };
+    }
+
+    if (!socket.rooms.has(`file:${fileId}`)) {
+      this.logger.warn(
+        `[handleCollabUpdate] socket=${socket.id} not in room file:${fileId}`,
+      );
+      return {
+        accepted: false,
+        fileId,
+        version: 0,
+        error: 'Not joined to this file',
+      };
+    }
+
+    const result = await this.documentStateService.pushUpdates(
+      fileId,
+      version,
+      updates,
+    );
+
+    if (result.accepted) {
+      socket.to(`file:${fileId}`).emit(COLLAB_EVENTS.UPDATE, {
+        fileId,
+        updates,
+        version: result.version,
+      });
+    } else if ((result as any).forceResync) {
+      // ⬅️ ابعت resync كامل لنفس الكلاينت بس
+      socket.emit(COLLAB_EVENTS.SYNC, {
+        fileId,
+        doc: (result as any).doc,
+        document: (result as any).doc,
+        version: result.version,
+      });
+    }
+
+    return { fileId, ...result };
   }
-
-  if (!socket.rooms.has(`file:${fileId}`)) {
-    this.logger.warn(`[handleCollabUpdate] socket=${socket.id} not in room file:${fileId}`);
-    return { accepted: false, fileId, version: 0, error: 'Not joined to this file' };
-  }
-
-const result = await this.documentStateService.pushUpdates(fileId, version, updates);
-
-if (result.accepted) {
-  socket.to(`file:${fileId}`).emit(COLLAB_EVENTS.UPDATE, {
-    fileId,
-    updates,
-    version: result.version,
-  });
-} else if ((result as any).forceResync) {
-  // ⬅️ ابعت resync كامل لنفس الكلاينت بس
-  socket.emit(COLLAB_EVENTS.SYNC, {
-    fileId,
-    doc: (result as any).doc,
-    document: (result as any).doc,
-    version: result.version,
-  });
-}
-
-  return { fileId, ...result };
-}
-
-
-
-
-
-
-
 
   @SubscribeMessage(COLLAB_EVENTS.AWARENESS)
   async handleAwareness(
@@ -273,7 +321,9 @@ if (result.accepted) {
   ) {
     if (!payload?.fileId || typeof payload.fileId !== 'string') return;
     if (!socket.rooms.has(`file:${payload.fileId}`)) {
-      this.logger.debug(`Awareness from socket not in room file=${payload.fileId} socket=${socket.id}`);
+      this.logger.debug(
+        `Awareness from socket not in room file=${payload.fileId} socket=${socket.id}`,
+      );
       return;
     }
 
@@ -297,9 +347,7 @@ if (result.accepted) {
     const user = socket.data?.user;
     const userId = socket.data?.userId ?? user?.id?.toString() ?? socket.id;
     const userName =
-      user?.username ||
-      user?.email ||
-      `User ${String(userId).slice(-4)}`;
+      user?.username || user?.email || `User ${String(userId).slice(-4)}`;
 
     return { userId: String(userId), userName: String(userName) };
   }
