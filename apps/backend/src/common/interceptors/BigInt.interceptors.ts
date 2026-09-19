@@ -6,20 +6,11 @@ import {
 } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { serializeBigInt } from 'src/common/utils/bigint.util';
 
 @Injectable()
 export class BigIntInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next
-      .handle()
-      .pipe(
-        map((data) =>
-          JSON.parse(
-            JSON.stringify(data, (_, v) =>
-              typeof v === 'bigint' ? v.toString() : v,
-            ),
-          ),
-        ),
-      );
+    return next.handle().pipe(map((data) => serializeBigInt(data)));
   }
 }

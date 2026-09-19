@@ -1,5 +1,4 @@
-import { CollaborationService, FileViewer } from '../collaboration.service';
-import { RedisService } from 'src/common/redis/redis.service';
+import { CollaborationService } from '../collaboration.service';
 
 const mockRedis = {
   get: jest.fn(),
