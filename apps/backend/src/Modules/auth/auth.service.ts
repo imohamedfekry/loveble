@@ -89,10 +89,15 @@ export class AuthService {
       otpHash: hashedOtp,
       otpExpiry: new Date(Date.now() + 2 * 60 * 1000),
     });
-    return success(RESPONSE_MESSAGES.AUTH.OTP.REQUEST.SUCCESS, {
-      otp,
-      hashedOtp,
-    });
+
+    // Dev-only convenience: echo the OTP so the flow is testable without a
+    // mail server. Never expose it in production.
+    if (process.env.NODE_ENV !== 'production') {
+      return success(RESPONSE_MESSAGES.AUTH.OTP.REQUEST.SUCCESS, {
+        otp,
+      });
+    }
+    return success(RESPONSE_MESSAGES.AUTH.OTP.REQUEST.SUCCESS);
   }
 
   async verifyOtp(res: FastifyReply, body: verfyOtpDto) {
@@ -185,7 +190,10 @@ export class AuthService {
   getAuthUrl(req: AuthenticatedRequest, res: FastifyReply) {
     const clientId = this.configService.get<string>('GITHUB_CLIENT_ID')!;
     const state = this.oauthTokenService.sign({ sub: req.user.id.toString() });
-    const callbackURL = 'http://localhost:3000/callback';
+    const callbackURL =
+      process.env.OAUTH_CALLBACK_URL ??
+      this.configService.get<string>('app.oauthCallbackUrl') ??
+      'http://localhost:3000/callback';
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: callbackURL,
@@ -239,8 +247,6 @@ export class AuthService {
 
     const user = await userRes.json();
     const emails = (await emailsRes.json()) as any[];
-    console.log('User:', user);
-    console.log('Emails:', emails);
     const primaryEmail =
       emails.find((e) => e.primary && e.verified)?.email ??
       emails[0]?.email ??
@@ -268,9 +274,6 @@ export class AuthService {
         fail(RESPONSE_MESSAGES.AUTH.oauth.LINK.FAIL.INVALID_OAUTH_RESPONSE),
       );
     }
-    console.log('state', state);
-    console.log('profile', profile);
-    // console.log(req.user.id);
 
     if (state) {
       const decoded = await this.oauthTokenService.verify<{ sub: string }>(
