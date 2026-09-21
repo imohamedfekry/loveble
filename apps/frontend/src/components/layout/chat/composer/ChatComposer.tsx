@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowUp,
   ChevronDown,
+  Loader2Icon,
   Mic,
   Plus,
   Upload,
@@ -25,6 +26,7 @@ export function ChatComposer({
   value,
   onChange,
   onSend,
+  sending = false,
 }: {
   variant?: ComposerVariant;
   value: string;
@@ -33,6 +35,7 @@ export function ChatComposer({
     text: string;
     files: File[];
   }) => void;
+  sending?: boolean;
 }) {
   const pill = variant === "Pill";
 
@@ -445,10 +448,10 @@ className={cn(
             {/* SEND — مخفي تماماً لما مش active ويظهر بسلايد من اليمين للشمال */}
             <button
               type="button"
-              aria-label="Send"
+              aria-label={sending ? "Sending" : "Send"}
               aria-hidden={!canSend}
-              tabIndex={canSend ? 0 : -1}
-              onClick={send}
+              tabIndex={canSend && !sending ? 0 : -1}
+              onClick={sending ? undefined : send}
               className={cn(
                 "flex h-8 shrink-0 items-center justify-center overflow-hidden",
                 "transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
@@ -460,7 +463,11 @@ className={cn(
                   : "pointer-events-none w-0 translate-x-4 scale-90 bg-primary text-primary-foreground opacity-0"
               )}
             >
-              <ArrowUp className="h-4 w-4 shrink-0" />
+              {sending ? (
+                <Loader2Icon className="h-4 w-4 shrink-0 animate-spin" />
+              ) : (
+                <ArrowUp className="h-4 w-4 shrink-0" />
+              )}
             </button>
           </div>
         </div>

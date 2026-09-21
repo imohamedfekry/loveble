@@ -111,7 +111,16 @@ export async function getProjects(
   return { success: false, message: "Unexpected response shape", data: empty };
 }
 
-export async function createProject(body: { name?: string; prompt?: string }) {
+export type CreateProjectResult = {
+  success: boolean;
+  message: string;
+  project?: Project | undefined;
+};
+
+export async function createProject(body: {
+  name?: string;
+  prompt?: string;
+}): Promise<CreateProjectResult> {
   const response = await fetch(`${API_BASE_URL}/projects/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -122,17 +131,23 @@ export async function createProject(body: { name?: string; prompt?: string }) {
   const json = await response.json().catch(() => null);
 
   if (!response.ok || !json) {
+    const fieldError =
+      Array.isArray(json?.errors) && json.errors[0]?.message
+        ? json.errors[0].message
+        : undefined;
     return {
       success: false,
-      message: json?.message ?? `Request failed (${response.status})`,
-      project: undefined as Project | undefined,
+      message:
+        fieldError ??
+        json?.message ??
+        `Request failed (${response.status})`,
     };
   }
 
   return {
     success: json.success ?? true,
     message: json.message ?? "",
-    project: (json.data?.project ?? undefined) as Project | undefined,
+    project: json.data?.project as Project | undefined,
   };
 }
 
