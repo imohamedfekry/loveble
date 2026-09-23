@@ -6,20 +6,29 @@ enum ImportStatus {
   failed = 'failed',
 }
 
-const projectSchema = v.object({
-  // name: v.optional(
-  //   v.pipe(
-  //     v.string('Name must be a string'),
-  //     v.nonEmpty('Name is required'),
-  //     v.maxLength(100, 'Name cannot exceed 100 characters'),
-  //   ),
-  // ),
-  prompt: v.pipe(
-    v.string('Prompt must be a string'),
-    v.minLength(10, 'Describe your app a bit more (at least 10 characters)'),
-    v.maxLength(2000, 'Prompt cannot exceed 2000 characters'),
+const promptField = v.pipe(
+  v.string('Prompt must be a string'),
+  v.minLength(10, 'Describe your app a bit more (at least 10 characters)'),
+  v.maxLength(2000, 'Prompt cannot exceed 2000 characters'),
+);
+
+const nameField = v.pipe(
+  v.string('Name must be a string'),
+  v.nonEmpty('Name is required'),
+  v.maxLength(100, 'Name cannot exceed 100 characters'),
+);
+
+// Dashboard sends a prompt (name generated async); sidebar sends an explicit name.
+const projectSchema = v.pipe(
+  v.object({
+    prompt: v.optional(promptField),
+    name: v.optional(nameField),
+  }),
+  v.check(
+    (input) => Boolean(input.prompt || input.name),
+    'Either prompt or name is required',
   ),
-});
+);
 const updateProjectSchema = v.object({
   name: v.optional(
     v.pipe(

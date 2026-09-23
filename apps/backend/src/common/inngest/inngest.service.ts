@@ -25,7 +25,7 @@ export class InngestService {
     return this.send(INNGEST_EVENTS.TEXT_GENERATE, data);
   }
 
-  createProject(data: { prompt: string; model?: string }) {
+  createProject(data: { projectId: string; prompt: string; model?: string }) {
     return this.send(INNGEST_EVENTS.PROJECT_CREATE, data);
   }
 

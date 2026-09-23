@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { CircleAlertIcon, Loader2Icon } from "lucide-react";
 import { ChatBox } from "./chat/ChatBox";
 import { createProject } from "@/lib/api/apis/projects";
+import { useProjectsStore } from "@/store/project.store";
 import NoiseBackground from "./NoiseBackground";
 import { PulseBackground } from "./PulseBackground";
 
@@ -30,6 +31,7 @@ export const Dashboard = () => {
     try {
       const res = await createProject({ prompt: text });
       if (res.success && res.project?.id) {
+        useProjectsStore.getState().addProject(res.project);
         setValue("");
         router.push(`/project/${res.project.id}`);
       } else {

@@ -50,11 +50,15 @@ export const useProjectsStore = create<Store>((set) => ({
     })),
 
   updateProject: (updated) =>
-    set((state) => ({
-      projects: (state.projects ?? []).map((p) =>
-        p.id === updated.id ? updated : p
-      ),
-    })),
+    set((state) => {
+      const list = state.projects ?? [];
+      if (!list.some((p) => p.id === updated.id)) {
+        return { projects: [updated, ...list] };
+      }
+      return {
+        projects: list.map((p) => (p.id === updated.id ? updated : p)),
+      };
+    }),
 
   removeProject: (id) =>
     set((state) => ({

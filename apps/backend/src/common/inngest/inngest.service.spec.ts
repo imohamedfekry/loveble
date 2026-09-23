@@ -44,10 +44,13 @@ describe('InngestService', () => {
   });
 
   it('sends create-project events', async () => {
-    await service.createProject({ prompt: 'todo app' });
+    await service.createProject({
+      projectId: '1',
+      prompt: 'todo app',
+    });
     expect(sendMock).toHaveBeenCalledWith({
       name: INNGEST_EVENTS.PROJECT_CREATE,
-      data: { prompt: 'todo app' },
+      data: { projectId: '1', prompt: 'todo app' },
     });
   });
 });
