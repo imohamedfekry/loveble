@@ -10,9 +10,6 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { fastifyPlugin } from 'inngest/fastify';
-import { inngest } from './common/inngest/client';
-import { functions } from './common/inngest/index';
 import * as Sentry from '@sentry/nestjs';
 
 async function bootstrap() {
@@ -20,17 +17,6 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
-
-  const fastify = app.getHttpAdapter().getInstance();
-
-  console.log('🔌 fastify: obtained instance, registering inngest plugin');
-  fastify.register(fastifyPlugin as any, {
-    client: inngest,
-    functions,
-  });
-  fastify.after(() => {
-    console.log('🔌 fastify: inngest plugin registration complete (after)');
-  });
 
   process.on('unhandledRejection', (reason) => {
     Sentry.captureException(reason);

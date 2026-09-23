@@ -3,6 +3,7 @@ import { ChangeSet, Text } from '@codemirror/state';
 import { RedisService } from 'src/common/redis/redis.service';
 import { FileRepository } from 'src/common/database/repositories/project/file.repository';
 import { StorageService } from 'src/Modules/storage/storage.service';
+import { QueueService } from 'src/common/queue/queue.service';
 
 export type StoredUpdate = {
   clientID: string;
@@ -29,16 +30,12 @@ export class DocumentStateService {
   private readonly LOCK_TTL_MS = 4000;
   private readonly LOCK_RETRY_MS = 30;
   private readonly LOCK_MAX_RETRIES = 150;
-  private readonly PERSIST_DEBOUNCE_MS = 2000;
-  private readonly PERSIST_TIMEOUT_MS = 10000;
-  private readonly persistTimers = new Map<string, NodeJS.Timeout>();
-  private readonly persistMaxTimers = new Map<string, NodeJS.Timeout>();
-  private readonly persisting = new Set<string>();
 
   constructor(
     private readonly redisService: RedisService,
     private readonly fileRepository: FileRepository,
     private readonly storageService: StorageService,
+    private readonly queueService: QueueService,
   ) {}
 
   private contentKey(fileId: string) {
@@ -347,9 +344,8 @@ export class DocumentStateService {
         `[pushUpdates] file=${fileId} SUCCESS newVersion=${currentVersion + updates.length} newDocLength=${doc.length}`,
       );
 
-      // Single persistence path: debounced in-process fallback that always
-      // works (no external Inngest dev server required).
-      this.schedulePersist(fileId);
+      // Queue-based persistence via BullMQ
+      this.queueService.persistFile({ fileId });
 
       return { accepted: true, version: currentVersion + updates.length };
     } catch (err) {
@@ -366,147 +362,9 @@ export class DocumentStateService {
     }
   }
 
-  /** Debounced direct persist — the single source of S3 writes. */
-  private schedulePersist(fileId: string): void {
-    // Debounce: reset 2s timer on every edit
-    const existing = this.persistTimers.get(fileId);
-    if (existing) clearTimeout(existing);
-
-    const timer = setTimeout(() => {
-      this.persistTimers.delete(fileId);
-      this.persistToS3(fileId).catch((err) =>
-        this.logger.error(`direct persist failed ${fileId}: ${err}`),
-      );
-      // Clear max timeout since we just persisted
-      const maxTimer = this.persistMaxTimers.get(fileId);
-      if (maxTimer) {
-        clearTimeout(maxTimer);
-        this.persistMaxTimers.delete(fileId);
-      }
-    }, this.PERSIST_DEBOUNCE_MS);
-    this.persistTimers.set(fileId, timer);
-
-    // Max timeout: ensure persist at least every 10s during continuous typing
-    if (!this.persistMaxTimers.has(fileId)) {
-      const maxTimer = setTimeout(() => {
-        const debounced = this.persistTimers.get(fileId);
-        if (debounced) {
-          clearTimeout(debounced);
-          this.persistTimers.delete(fileId);
-        }
-        this.persistMaxTimers.delete(fileId);
-        this.persistToS3(fileId).catch((err) =>
-          this.logger.error(`direct persist (max) failed ${fileId}: ${err}`),
-        );
-      }, this.PERSIST_TIMEOUT_MS);
-      this.persistMaxTimers.set(fileId, maxTimer);
-    }
-  }
-
-  private async persistToS3(fileId: string): Promise<void> {
-    // Guard against overlapping persists (debounce + max timers).
-    if (this.persisting.has(fileId)) return;
-    this.persisting.add(fileId);
-    try {
-      await this.doPersistToS3(fileId);
-    } finally {
-      this.persisting.delete(fileId);
-    }
-  }
-
-  private async doPersistToS3(fileId: string): Promise<void> {
-    const content = await this.redis.get(this.contentKey(fileId));
-    if (content === null) return;
-
-    const [currentVersion, persistedVersionStr, meta] = await Promise.all([
-      this.currentVersion(fileId),
-      this.redis.get(this.persistedVersionKey(fileId)),
-      this.readMeta(fileId),
-    ]);
-
-    const persistedVersion = parseInt(persistedVersionStr ?? '0', 10) || 0;
-    if (currentVersion <= persistedVersion) return;
-
-    let storageKey = meta?.storageKey ?? null;
-    let projectId = meta?.projectId ?? '';
-    if (!storageKey) {
-      const file = await this.fileRepository.getFile(BigInt(fileId));
-      storageKey = file?.storageKey ?? null;
-      projectId = file?.projectId?.toString() ?? projectId;
-      if (storageKey) {
-        await this.writeMeta(fileId, {
-          storageKey,
-          projectId,
-          baseVersion: meta?.baseVersion ?? 0,
-        });
-      }
-    }
-    if (!storageKey) {
-      this.logger.warn(`persistToS3 skip ${fileId}: missing storageKey`);
-      return;
-    }
-
-    // Re-check version after potential concurrent edits before S3 write
-    const versionBeforeWrite = await this.currentVersion(fileId);
-    if (versionBeforeWrite !== currentVersion) {
-      // New edits arrived, let next debounce handle latest
-      this.schedulePersist(fileId);
-      return;
-    }
-
-    try {
-      await this.storageService.updateFileContent(storageKey, content);
-    } catch (err) {
-      this.logger.error(`S3 put failed ${fileId} ${storageKey}: ${err}`);
-      throw err;
-    }
-
-    const newCurrentVersion = await this.currentVersion(fileId);
-    if (newCurrentVersion > currentVersion) {
-      // New edits arrived during S3 write — remain dirty
-      this.schedulePersist(fileId);
-      return;
-    }
-
-    await this.redis.set(
-      this.persistedVersionKey(fileId),
-      String(currentVersion),
-      'EX',
-      HOT_STATE_TTL_SECONDS,
-    );
-
-    await this.compactUpdates(fileId);
-
-    const bytes = Buffer.byteLength(content, 'utf8');
-    this.logger.log(`S3 persisted ${fileId} v${currentVersion} ${bytes}B`);
-  }
-
-  /** Compact the buffered updates list by folding the oldest edits into baseVersion. */
-  private async compactUpdates(fileId: string): Promise<void> {
-    const len = await this.redis.llen(this.updatesKey(fileId));
-    if (len <= MAX_BUFFERED_UPDATES) return;
-
-    const trimCount = len - MAX_BUFFERED_UPDATES;
-    const meta = (await this.readMeta(fileId)) ?? { baseVersion: 0 };
-
-    const pipeline = this.redis.pipeline();
-    pipeline.ltrim(this.updatesKey(fileId), trimCount, -1);
-    await pipeline.exec();
-
-    await this.writeMeta(fileId, {
-      ...(meta.storageKey ? { storageKey: meta.storageKey } : {}),
-      ...(meta.projectId ? { projectId: meta.projectId } : {}),
-      baseVersion: (meta.baseVersion ?? 0) + trimCount,
-    });
-  }
-
   /** بتتنادى لما آخر مستخدم يسيب الملف، بعد ما الـ checkpoint يتحفظ في S3 */
   async unload(fileId: string): Promise<void> {
-    this.cancelTimers(fileId);
-
-    await this.persistToS3(fileId).catch((err) => {
-      this.logger.error(`unload persist failed ${fileId}: ${err}`);
-    });
+    await this.queueService.persistFile({ fileId });
 
     await this.redis.del(
       this.contentKey(fileId),
@@ -514,18 +372,5 @@ export class DocumentStateService {
       this.persistedVersionKey(fileId),
       this.metaKey(fileId),
     );
-  }
-
-  cancelTimers(fileId: string): void {
-    const timer = this.persistTimers.get(fileId);
-    if (timer) {
-      clearTimeout(timer);
-      this.persistTimers.delete(fileId);
-    }
-    const maxTimer = this.persistMaxTimers.get(fileId);
-    if (maxTimer) {
-      clearTimeout(maxTimer);
-      this.persistMaxTimers.delete(fileId);
-    }
   }
 }

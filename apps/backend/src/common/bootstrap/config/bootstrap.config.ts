@@ -1,5 +1,5 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
-import { VersioningType } from '@nestjs/common';
+import { RequestMethod, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { HttpExceptionFilter } from '../../filters/customHttpException.filter';
@@ -28,7 +28,6 @@ export class BootstrapConfig {
             'http://localhost:3000',
             'http://localhost:4200',
             'http://localhost:3730',
-            'http://localhost:8288',
           ];
 
     await app.register(fastifyCors as unknown as RegisterPlugin, {
@@ -59,9 +58,14 @@ export class BootstrapConfig {
       secret: cookieSecret,
     });
 
-    // Global prefix
+    // Global prefix — keep the queue dashboard off the API prefix/versioning.
     const prefix = configService.get('app.apiPrefix') || 'api';
-    app.setGlobalPrefix(prefix);
+    app.setGlobalPrefix(prefix, {
+      exclude: [
+        { path: 'queues', method: RequestMethod.ALL },
+        { path: 'queues/{*path}', method: RequestMethod.ALL },
+      ],
+    });
 
     // Validation
     this.configureValidationPipes(app);

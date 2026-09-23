@@ -53,8 +53,7 @@ export class projectService {
       userId: req.user.id,
       name: deriveDefaultName(body.prompt),
     });
-    // In-process background scaffold generation: works without an Inngest
-    // dev server, never blocks the response, never rejects the request.
+    // In-process background scaffold generation: never blocks the response.
     void this.generator.generateFromPrompt(project, body.prompt);
 
     this.realtimeEmitService.toUser(

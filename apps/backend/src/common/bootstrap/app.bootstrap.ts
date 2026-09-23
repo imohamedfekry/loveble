@@ -31,5 +31,8 @@ export class AppBootstrap {
     console.log(`🚀 Server is running on port ${serverInfo.port}`);
     console.log(`🌍 Environment: ${serverInfo.nodeEnv}`);
     console.log(`🔗 API Base URL: ${serverInfo.apiUrl}`);
+    console.log(
+      `📦 Queue dashboard: http://localhost:${serverInfo.port}/queues`,
+    );
   }
 }

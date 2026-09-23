@@ -2,9 +2,9 @@ import * as v from 'valibot';
 import { tool } from 'ai';
 import { valibotSchema } from '@ai-sdk/valibot';
 
+import { cleanCrawledItems } from 'src/common/scraping/crawl-pipeline';
 import { crawl } from 'src/common/scraping/crawl.service';
 import { normalize } from 'src/common/scraping/Normalize.helper';
-import { cleanHTMLToMarkdown } from 'src/common/scraping/clean.service';
 
 export const crawlTool = tool({
   description: `
@@ -27,26 +27,10 @@ export const crawlTool = tool({
 
     const items = normalize(raw);
 
-    const dataset = items
-      .map((item: any) => {
-        try {
-          const html = item.html || item.content || '';
-          const pageUrl = item.url || item.sourceURL || '';
-
-          if (!html) return null;
-
-          const cleaned = cleanHTMLToMarkdown(html, pageUrl);
-
-          return {
-            url: pageUrl,
-            title: cleaned.title,
-            content: cleaned.markdown.slice(0, 15000), // IMPORTANT
-          };
-        } catch {
-          return null;
-        }
-      })
-      .filter(Boolean);
+    const dataset = cleanCrawledItems(items).map((page) => ({
+      ...page,
+      content: page.content.slice(0, 15000),
+    }));
 
     return dataset[0] ?? null;
   },

@@ -16,14 +16,25 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   constructor(private readonly configService: ConfigService) {}
 
+  /**
+   * Returns the shared app Redis client, creating it if needed.
+   * Safe to call from other modules during init (before onModuleInit).
+   */
+  ensureClient(): Redis {
+    if (!this.client) {
+      this.client = this.createClient();
+      this.registerEventHandlers(this.client);
+    }
+    return this.client;
+  }
+
   async onModuleInit(): Promise<void> {
-    this.client = this.createClient();
-    this.registerEventHandlers(this.client);
+    const client = this.ensureClient();
 
     this.logger.log('Redis initialization started...');
 
     // Attempt an initial ping but don't block startup or crash if it fails
-    this.client
+    client
       .ping()
       .then(() => {
         this.logger.log('Redis connected successfully');
