@@ -1,3 +1,9 @@
-import { crawlFunction, createProject, generateText } from './functions';
+import { inngestFunctions } from './functions';
 
-export const functions = [crawlFunction, generateText, createProject];
+export { inngest } from './client';
+export { InngestService, INNGEST_EVENTS } from './inngest.service';
+export { InngestModule } from './inngest.module';
+export { setNestApp, getNestApp } from './nest-context';
+export * from './functions';
+
+export const functions = inngestFunctions;

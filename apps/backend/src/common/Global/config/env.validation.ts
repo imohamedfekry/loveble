@@ -56,6 +56,10 @@ const envSchema = v.object({
   REDIS_PASSWORD: v.optional(v.string(), ''),
   REDIS_DB: v.optional(v.pipe(v.string(), v.nonEmpty()), '0'),
   SENTRY_DSN: v.optional(v.string()),
+
+  // Inngest (optional — needed for production signing, not for local dev)
+  INNGEST_SECRET: v.optional(v.string()),
+  INNGEST_SIGNING_KEY: v.optional(v.string()),
 });
 
 export type Env = v.InferOutput<typeof envSchema>;

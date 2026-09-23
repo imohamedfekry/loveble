@@ -9,6 +9,7 @@ import jwtConfig from '../Global/config/jwt.config';
 import { RedisModule } from '../redis/redis.module';
 import { SentryModule } from '@sentry/nestjs/setup';
 import storageConfig from '../Global/config/storage.config';
+import inngestConfig from '../Global/config/inngest.config';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import storageConfig from '../Global/config/storage.config';
       isGlobal: true,
       envFilePath: '.env',
       validate: env,
-      load: [appConfig, redisConfig, jwtConfig, storageConfig],
+      load: [appConfig, redisConfig, jwtConfig, storageConfig, inngestConfig],
     }),
     DatabaseModule.forRoot(),
     RedisModule,

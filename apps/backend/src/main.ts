@@ -12,7 +12,8 @@ import {
 } from '@nestjs/platform-fastify';
 import { fastifyPlugin } from 'inngest/fastify';
 import { inngest } from './common/inngest/client';
-import { functions } from './common/inngest/index';
+import { functions } from './common/inngest/functions';
+import { setNestApp } from './common/inngest/nest-context';
 import * as Sentry from '@sentry/nestjs';
 
 async function bootstrap() {
@@ -21,15 +22,12 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
 
-  const fastify = app.getHttpAdapter().getInstance();
-
-  console.log('🔌 fastify: obtained instance, registering inngest plugin');
-  fastify.register(fastifyPlugin as any, {
+  const fastify = app.getHttpAdapter().getInstance() as {
+    register: (plugin: unknown, opts?: unknown) => void;
+  };
+  fastify.register(fastifyPlugin, {
     client: inngest,
     functions,
-  });
-  fastify.after(() => {
-    console.log('🔌 fastify: inngest plugin registration complete (after)');
   });
 
   process.on('unhandledRejection', (reason) => {
@@ -49,6 +47,8 @@ async function bootstrap() {
   // ResponseInterceptor: Wraps all responses in the standard ApiResponse format
   app.useGlobalInterceptors(new BigIntInterceptor(), new ResponseInterceptor());
 
+  setNestApp(app);
+
   console.log('🧭 About to start listening on port', serverInfo.port);
   const listenPromise = app.listen(serverInfo.port, '0.0.0.0');
   const timeoutMs = 10000;
@@ -64,4 +64,4 @@ async function bootstrap() {
   AppBootstrap.logServerInfo(serverInfo);
 }
 
-bootstrap();
+void bootstrap();

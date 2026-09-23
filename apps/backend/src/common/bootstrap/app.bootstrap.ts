@@ -31,5 +31,9 @@ export class AppBootstrap {
     console.log(`🚀 Server is running on port ${serverInfo.port}`);
     console.log(`🌍 Environment: ${serverInfo.nodeEnv}`);
     console.log(`🔗 API Base URL: ${serverInfo.apiUrl}`);
+    console.log(
+      `⚡ Inngest endpoint: http://localhost:${serverInfo.port}/api/inngest`,
+    );
+    console.log(`🧪 Inngest Dev UI: http://localhost:8288`);
   }
 }

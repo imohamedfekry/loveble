@@ -1,16 +1,13 @@
 import { crawlFunction } from './crawl.function';
-import { generateText } from './ask.ai';
-import { createProject } from './createProject.function';
-import { persistFile } from './persistFile.function';
+import { generateTextFunction } from './generate-text.function';
+import { createProjectFunction } from './create-project.function';
+import { persistFileFunction } from './persist-file.function';
 
-export * from './crawl.function';
-export * from './ask.ai';
-export * from './createProject.function';
-export * from './persistFile.function';
-
-export const functions = [
+export const inngestFunctions = [
   crawlFunction,
-  generateText,
-  createProject,
-  persistFile,
-].filter(Boolean);
+  generateTextFunction,
+  createProjectFunction,
+  persistFileFunction,
+];
+
+export const functions = inngestFunctions;

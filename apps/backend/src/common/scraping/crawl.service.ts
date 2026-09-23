@@ -1,4 +1,4 @@
-export async function crawl(urls: string[]) {
+export async function crawl(urls: string[]): Promise<unknown> {
   const res = await fetch('http://localhost:11235/crawl', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -9,5 +9,5 @@ export async function crawl(urls: string[]) {
     }),
   });
 
-  return res.json();
+  return (await res.json()) as unknown;
 }

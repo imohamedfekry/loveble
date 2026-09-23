@@ -15,6 +15,10 @@ export class Redis {
   lpush = jest.fn();
   rpush = jest.fn();
   lrange = jest.fn();
+  llen = jest.fn();
+  exists = jest.fn();
+  eval = jest.fn();
+  expire = jest.fn();
   publish = jest.fn();
   subscribe = jest.fn();
   on = jest.fn();

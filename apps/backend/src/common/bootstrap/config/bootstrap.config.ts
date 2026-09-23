@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 
 import { HttpExceptionFilter } from '../../filters/customHttpException.filter';
 import { CatchAllFilter } from '../../filters/catchAll.filter';
-import { BigIntInterceptor } from '../../interceptors/BigInt.interceptors';
 import { StandardValidationPipe } from '@mag123c/nestjs-stdschema';
 
 import fastifyCookie from '@fastify/cookie';
@@ -60,14 +59,13 @@ export class BootstrapConfig {
     });
 
     // Global prefix
-    const prefix = configService.get('app.apiPrefix') || 'api';
+    const prefix = configService.get<string>('app.apiPrefix') ?? 'api';
     app.setGlobalPrefix(prefix);
 
     // Validation
     this.configureValidationPipes(app);
-    // Filters & Interceptors
+    // Filters (global interceptors are registered once in main.ts)
     this.configureGlobalFilters(app);
-    this.configureGlobalInterceptors(app);
     // Versioning
     this.configureVersioning(app);
   }
@@ -78,10 +76,6 @@ export class BootstrapConfig {
 
   private static configureGlobalFilters(app: NestFastifyApplication) {
     app.useGlobalFilters(new CatchAllFilter(), new HttpExceptionFilter());
-  }
-
-  private static configureGlobalInterceptors(app: NestFastifyApplication) {
-    app.useGlobalInterceptors(new BigIntInterceptor());
   }
 
   private static configureVersioning(app: NestFastifyApplication) {

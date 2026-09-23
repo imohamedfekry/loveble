@@ -1,10 +1,11 @@
-export function normalize(res: any) {
+export function normalize(res: unknown): unknown[] {
   if (!res) return [];
 
   if (Array.isArray(res)) return res;
-  if (Array.isArray(res.data)) return res.data;
-  if (Array.isArray(res.results)) return res.results;
-  if (Array.isArray(res.items)) return res.items;
+  const obj = res as Record<string, unknown>;
+  if (Array.isArray(obj.data)) return obj.data;
+  if (Array.isArray(obj.results)) return obj.results;
+  if (Array.isArray(obj.items)) return obj.items;
 
   return [];
 }
