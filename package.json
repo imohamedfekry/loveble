@@ -6,12 +6,20 @@
   "pnpm": {
     "overrides": {
       "@codemirror/state": "6.7.5"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "@nestjs/core",
+      "argon2",
+      "esbuild",
+      "protobufjs",
+      "unrs-resolver"
+    ]
   },
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "dev:backend": "pnpm --filter @loveble/backend dev",
     "dev:frontend": "pnpm --filter @loveble/frontend dev",
+    "inngest": "pnpm dlx inngest-cli@latest dev",
     "build": "pnpm -r --parallel build",
     "build:backend": "pnpm --filter @loveble/backend build",
     "build:frontend": "pnpm --filter @loveble/frontend build",

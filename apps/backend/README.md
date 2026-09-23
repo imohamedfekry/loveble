@@ -44,18 +44,14 @@ $ pnpm run start:dev
 $ pnpm run start:prod
 ```
 
-## Run tests
+## Run Inngest (local)
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+# root of the monorepo
+$ pnpm inngest
 ```
+
+Open http://localhost:8288 — backend must expose `http://localhost:3001/api/inngest`.
 
 ## Deployment
 

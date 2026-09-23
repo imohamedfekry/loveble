@@ -34,6 +34,8 @@ export class AppBootstrap {
     console.log(
       `⚡ Inngest endpoint: http://localhost:${serverInfo.port}/api/inngest`,
     );
-    console.log(`🧪 Inngest Dev UI: http://localhost:8288`);
+    console.log(
+      `🧪 Inngest Dev: run \`pnpm inngest\` → UI http://localhost:8288`,
+    );
   }
 }
