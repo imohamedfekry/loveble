@@ -32,7 +32,6 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       }
       socket.emit("project:subscribe", projectId);
       subscribedProjectRef.current = projectId;
-      console.log("[realtime] subscribe project", { projectId });
     };
 
     const scheduleRetry = () => {
@@ -52,7 +51,6 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       }
       socket.emit("project:unsubscribe", projectId);
       subscribedProjectRef.current = null;
-      console.log("[realtime] unsubscribe project", { projectId });
     };
 
     const onConnect = () => {
@@ -69,7 +67,6 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
 
     const onSubscribed = (payload: { projectId?: string }) => {
       if (payload?.projectId === projectId) {
-        console.log("[realtime] subscribed to project", payload);
         clearRetry();
       }
     };
@@ -112,21 +109,11 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       const file = payload;
       if (!file?.id || !file.projectId) return;
 
-      console.log("[realtime] received file created", {
-        fileId: file.id,
-        projectId: file.projectId,
-        name: file.name,
-      });
       useFilesStore.getState().addFile(file.projectId, file);
     };
 
     const onUpdated = (payload: ProjectFileType) => {
       const projectId = payload.projectId;
-      console.log("[realtime] received file updated", {
-        fileId: payload.id,
-        projectId,
-        name: payload.name,
-      });
       useFilesStore.getState().updateFile(projectId, payload);
     };
 
@@ -134,7 +121,6 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       const fileId = payload.id;
       const projectId = payload.projectId;
 
-      console.log("[realtime] received file deleted", { fileId, projectId });
       useFilesStore.getState().removeFile(projectId, fileId);
     };
 
@@ -155,7 +141,6 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       viewers: FileViewer[];
     }) => {
       if (!projectId || payload.projectId !== projectId) return;
-      console.log("[realtime] presence state", payload.viewers.length, "viewers");
       useFilePresenceStore.getState().setViewers(payload.viewers);
     };
 
@@ -170,10 +155,8 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       if (!projectId || payloadProjectId !== projectId) return;
 
       if (payload.type === "join" && payload.viewer) {
-        console.log("[realtime] presence join", payload.viewer);
         useFilePresenceStore.getState().addViewer(payload.viewer);
       } else if (payload.type === "leave" && payload.socketId) {
-        console.log("[realtime] presence leave", payload.socketId);
         useFilePresenceStore.getState().removeViewer(
           payload.socketId,
           payload.fileId,

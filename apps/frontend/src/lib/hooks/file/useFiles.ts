@@ -123,7 +123,6 @@ export const useUpdateFile = () => {
       const res = await updateFile(projectId, fileId, body);
       updateFileInStore(projectId, res.data.file);
 
-      console.log("dataaaaa",res.data.file);      
       return res.data;
     } finally {
       setLoading(false);
