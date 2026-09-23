@@ -1,31 +1,37 @@
-export function serializeBigInt(
-  value: unknown,
-  seen: WeakSet<object> = new WeakSet(),
-): unknown {
+export function serializeBigInt(value: unknown, path: Set<object> = new Set()): unknown {
   switch (typeof value) {
     case 'bigint':
       return value.toString();
     case 'object': {
       if (value === null) return null;
-      if (seen.has(value)) return undefined;
-      seen.add(value);
+      if (path.has(value)) {
+        // True cycle on the current path — break it (same as JSON.stringify).
+        return undefined;
+      }
       if (value instanceof Date) return value.toISOString();
-      if (Array.isArray(value)) {
-        const out = new Array(value.length);
-        for (let i = 0; i < value.length; i++) {
-          out[i] = serializeBigInt(value[i], seen);
+      path.add(value);
+      try {
+        if (Array.isArray(value)) {
+          const out = new Array(value.length);
+          for (let i = 0; i < value.length; i++) {
+            const item = serializeBigInt(value[i], path);
+            // JSON.stringify keeps holes/undefined-in-array as null.
+            out[i] = item === undefined ? null : item;
+          }
+          return out;
+        }
+        const out: Record<string, unknown> = {};
+        for (const key of Object.keys(value)) {
+          const serialized = serializeBigInt(
+            (value as Record<string, unknown>)[key],
+            path,
+          );
+          if (serialized !== undefined) out[key] = serialized;
         }
         return out;
+      } finally {
+        path.delete(value);
       }
-      const out: Record<string, unknown> = {};
-      for (const key of Object.keys(value)) {
-        const serialized = serializeBigInt(
-          (value as Record<string, unknown>)[key],
-          seen,
-        );
-        if (serialized !== undefined) out[key] = serialized;
-      }
-      return out;
     }
     default:
       return value;
