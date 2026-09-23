@@ -21,7 +21,7 @@ import { InngestModule } from './common/inngest/inngest.module';
     RealtimeModule,
     FileModule,
     StorageModule,
-    InngestModule
+    InngestModule,
   ],
 })
 export class AppModule {}

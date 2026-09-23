@@ -21,7 +21,6 @@ export const importStatusEnum = pgEnum('import_status_enum', [
   'failed',
 ]);
 
-
 export const projects = pgTable(
   'projects',
   {

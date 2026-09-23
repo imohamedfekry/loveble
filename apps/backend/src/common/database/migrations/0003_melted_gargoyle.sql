@@ -1,0 +1,1 @@
+CREATE INDEX "user_oauth_provider_provider_id_idx" ON "user_oauth_accounts" USING btree ("provider","provider_id");

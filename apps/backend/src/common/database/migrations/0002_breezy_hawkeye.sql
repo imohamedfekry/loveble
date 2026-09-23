@@ -1,0 +1,1 @@
+CREATE INDEX "files_project_parent_type_idx" ON "files" USING btree ("project_id","parent_id","type");

@@ -8,4 +8,9 @@ export * from './ask.ai';
 export * from './createProject.function';
 export * from './persistFile.function';
 
-export const functions = [crawlFunction, generateText, createProject, persistFile].filter(Boolean);
+export const functions = [
+  crawlFunction,
+  generateText,
+  createProject,
+  persistFile,
+].filter(Boolean);
