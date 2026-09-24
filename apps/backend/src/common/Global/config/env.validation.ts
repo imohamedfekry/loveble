@@ -22,7 +22,6 @@ const envSchema = v.object({
     v.maxValue(65535),
   ),
   CORS_ORIGIN: v.pipe(v.string(), v.nonEmpty()),
-  MONGODB_URL: v.pipe(v.string(), v.nonEmpty()),
   LOG_LEVEL: v.optional(
     v.pipe(
       v.string(),
