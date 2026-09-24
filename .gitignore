@@ -65,8 +65,8 @@ lerna-debug.log*
 # ============================================
 # Docker (dev-specific, not needed in repo)
 # ============================================
-docker-compose.yml
-docker-compose.dev.yml
+
+
 
 # ============================================
 # Tooling / Misc

@@ -1,0 +1,100 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    environment:
+      LLM_PROVIDER: gemini/gemini-2.5-flash
+      GOOGLE_API_KEY: YOUR_GOOGLE_API_KEY
+      LITELLM_MODEL: gemini/gemini-2.5-flash
+      BROWSER_MODE: "true"
+      HEADLESS: "true"
+      STEALTH: "true"
+    ports:
+      - "11235:11235"
+    shm_size: "1gb"
+    restart: unless-stopped
+
+  searxng:
+    image: searxng/searxng:latest
+    ports:
+      - "8080:8080"
+    environment:
+      BASE_URL: http://localhost:8080/
+    volumes:
+      - searxng-data:/etc/searxng
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "19000:9000"
+      - "19001:9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    restart: "no"
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 admin admin123456; do
+        echo 'Waiting for MinIO...';
+        sleep 2;
+      done;
+
+      mc mb --ignore-existing local/squadra;
+      mc version enable local/squadra;
+
+      mc mb --ignore-existing local/walgit;
+      mc version enable local/walgit;
+
+      echo 'MinIO buckets initialized successfully.';
+      "
+
+  walgit:
+    build:
+      context: ./walgit
+      dockerfile: Containerfile
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "8090:8080"
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      WALGIT_TOKEN_ME: ${WALGIT_TOKEN_ME}
+    volumes:
+      - ./walgit.toml:/etc/walgit/walgit.toml:ro
+      - walgit-cache:/var/lib/walgit
+    restart: unless-stopped
+  bifrost:
+    image: maximhq/bifrost:latest
+    ports:
+      - "8081:8080"
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8080
+      LOG_LEVEL: info
+      BIFROST_ENCRYPTION_KEY: ${BIFROST_ENCRYPTION_KEY}
+      BIFROST_SETUP_TOKEN: ${BIFROST_SETUP_TOKEN}
+    volumes:
+      - bifrost-data:/app/data
+    restart: unless-stopped
+volumes:
+  searxng-data:
+  minio_data:
+  walgit-cache:
+  bifrost-data:
