@@ -1,11 +1,9 @@
 import { Logger } from '@nestjs/common';
+import { generateText } from 'ai';
 import { inngest } from '../client';
-import { getNestApp } from '../nest-context';
-import { streamText } from 'ai';
 import { getModel } from 'src/ai/providers';
 import type { ModelId } from 'src/ai/providers/types';
 import { DEFAULT_AGENT_MODEL } from '../agents/general.agent';
-import { projectService } from 'src/Modules/project/project.service';
 
 const log = new Logger('Inngest:create-project');
 
@@ -19,7 +17,9 @@ export const createProjectFunction = inngest.createFunction(
   async ({ event, step }) => {
     const projectId = String(event.data?.projectId ?? '');
     const prompt = String(event.data?.prompt ?? '');
-    const modelId = (event.data?.model ?? DEFAULT_AGENT_MODEL) as ModelId;
+
+    const modelId = (event.data?.model ??
+      DEFAULT_AGENT_MODEL) as ModelId;
 
     log.log(
       `▶ project/create projectId=${projectId} model=${modelId} prompt="${prompt.slice(0, 120)}"`,
@@ -33,35 +33,76 @@ export const createProjectFunction = inngest.createFunction(
     const projectName = await step.run('generate-name', async () => {
       const startedAt = Date.now();
       const model = getModel(modelId);
-      const result = streamText({
+
+      const { text } = await generateText({
         model,
-        prompt: `Understand the user's intent and generate the most suitable short name for it (max 50 chars). Return only the name, nothing else: "${prompt}"`,
+        prompt: `
+Understand the user's intent and generate the most suitable short name for it.
+
+Requirements:
+- Maximum 50 characters.
+- Return only the project name.
+- No quotes.
+- No explanation.
+- No markdown.
+- Do not return an empty response.
+
+User prompt:
+"${prompt}"
+        `.trim(),
       });
 
-      let name = '';
-      for await (const chunk of result.textStream) {
-        name += chunk;
+      const finalName = text.trim();
+
+      if (!finalName) {
+        throw new Error('AI generated an empty project name');
       }
 
-      const finalName = name.trim();
       log.log(
         `✓ generate-name "${finalName}" duration=${Date.now() - startedAt}ms`,
       );
+
       return finalName;
     });
 
-    return step.run('apply-name', async () => {
-      const app = getNestApp();
-      const service = app.get(projectService);
-      const updated = await service.applyGeneratedName(projectId, projectName);
-      log.log(
-        `${updated ? '✓' : '✖'} apply-name projectId=${projectId} name="${projectName}"`,
+    const response = await step.fetch(
+      'http://localhost:3001/api/v1/projects/webhook/generated-name',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: process.env.INNGEST_WEBHOOK_SECRET!,
+        },
+        body: JSON.stringify({
+          projectId,
+          name: projectName,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+
+      log.error(
+        `✖ apply-name projectId=${projectId} status=${response.status} error="${error}"`,
       );
-      return {
-        success: Boolean(updated),
-        projectId,
-        projectName,
-      };
-    });
+
+      throw new Error(
+        `Failed to apply generated project name: ${response.status}`,
+      );
+    }
+
+    const result = await response.json();
+
+    log.log(
+      `✓ apply-name projectId=${projectId} name="${projectName}"`,
+    );
+
+    return {
+      success: true,
+      projectId,
+      projectName,
+      result,
+    };
   },
 );

@@ -1,3 +1,3 @@
 export type ProviderName = 'google' | 'openai' | 'anthropic' | 'kimi';
 
-export type ModelId = `${ProviderName}:${string}`;
+export type ModelId = `${ProviderName}/${string}`;

@@ -1,6 +1,7 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import {
+  GeneratedNameWebhookDto,
   ProjectDto,
   ProjectQueryDto,
   UpdateProjectDto,
@@ -13,16 +14,18 @@ import { PROJECT_EVENTS } from '../realtime/events/project.events';
 import { InngestService } from 'src/common/inngest/inngest.service';
 import { deriveDefaultName } from './project-name.util';
 import type { Project } from 'src/common/database/schema/projects/project.schema';
+import { ConfigService } from '@nestjs/config/dist/config.service';
 
 @Injectable()
 export class projectService {
   private readonly logger = new Logger(projectService.name);
 
   constructor(
+    private readonly configService: ConfigService,
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
     private readonly inngestService: InngestService,
-  ) {}
+  ) { }
   async findAll(req: AuthenticatedRequest, query: ProjectQueryDto) {
     if (query.recent === 'true') {
       const projects = await this.projectRepository.findRecentByUserId(
@@ -85,28 +88,6 @@ export class projectService {
       project: project,
     });
   }
-
-  /** Called by the Inngest create-project function when the short name is ready. */
-  async applyGeneratedName(
-    projectId: string,
-    name: string,
-  ): Promise<Project | null> {
-    const trimmed = name.trim();
-    if (!trimmed) return null;
-
-    const updated = await this.projectRepository.update(BigInt(projectId), {
-      name: trimmed.slice(0, 100),
-    });
-    if (!updated) return null;
-
-    this.realtimeEmitService.toUser(
-      updated.userId.toString(),
-      PROJECT_EVENTS.UPDATED,
-      updated,
-    );
-    return updated;
-  }
-
   async update(
     projectId: bigint,
     body: UpdateProjectDto,
@@ -138,5 +119,23 @@ export class projectService {
       project,
     );
     return success(RESPONSE_MESSAGES.PROJECT.DELETE_SUCCESS);
+  }
+
+  async applyGeneratedName(
+    body: GeneratedNameWebhookDto
+  ): Promise<Project | null> {
+    const updated = await this.projectRepository.update(
+      BigInt(body.projectId),
+      { name: body.name, },
+    );
+    if (!updated) return null;
+
+    this.realtimeEmitService.toUser(
+      updated.userId.toString(),
+      PROJECT_EVENTS.UPDATED,
+      updated,
+    );
+
+    return updated;
   }
 }

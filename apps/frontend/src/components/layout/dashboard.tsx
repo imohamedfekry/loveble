@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CircleAlertIcon, Loader2Icon } from "lucide-react";
 import { ChatBox } from "./chat/ChatBox";
 import { createProject } from "@/lib/api/apis/projects";
 import { useProjectsStore } from "@/store/project.store";
@@ -67,26 +66,6 @@ export const Dashboard = () => {
           sending={isSubmitting}
         />
 
-        <div className="mt-4 flex min-h-6 items-center justify-center px-4 text-center">
-          {error ? (
-            <p
-              className="flex items-center gap-2 text-sm text-destructive"
-              role="alert"
-            >
-              <CircleAlertIcon className="size-4 shrink-0" />
-              {error}
-            </p>
-          ) : isSubmitting ? (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2Icon className="size-4 shrink-0 animate-spin" />
-              Creating your project…
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Describe your app — a short phrase is enough.
-            </p>
-          )}
-        </div>
       </div>
 
       <NoiseBackground />

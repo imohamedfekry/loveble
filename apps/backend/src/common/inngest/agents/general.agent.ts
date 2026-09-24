@@ -6,7 +6,7 @@ import {
 import type { ModelId } from 'src/ai/providers/types';
 import { crawlAgentTool, searchAgentTool } from './tools';
 
-export const DEFAULT_AGENT_MODEL: ModelId = 'google:gemini-2.5-flash';
+export const DEFAULT_AGENT_MODEL = 'google/gemini-2.5-flash';
 
 type AgentKitModel = Parameters<typeof createAgent>[0]['model'];
 

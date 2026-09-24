@@ -60,6 +60,7 @@ const envSchema = v.object({
   // Inngest (optional — needed for production signing, not for local dev)
   INNGEST_SECRET: v.optional(v.string()),
   INNGEST_SIGNING_KEY: v.optional(v.string()),
+  INNGEST_WEBHOOK_SECRET: v.pipe(v.string(), v.nonEmpty()),
 });
 
 export type Env = v.InferOutput<typeof envSchema>;
