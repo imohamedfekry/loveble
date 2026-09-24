@@ -1,16 +1,26 @@
-import { createAgent, createNetwork } from '@inngest/agent-kit';
-import { getModel } from 'src/ai/providers';
+import {
+  createAgent,
+  createNetwork,
+  openai,
+} from '@inngest/agent-kit';
 import type { ModelId } from 'src/ai/providers/types';
 import { crawlAgentTool, searchAgentTool } from './tools';
 
 export const DEFAULT_AGENT_MODEL: ModelId = 'google:gemini-2.5-flash';
 
+type AgentKitModel = Parameters<typeof createAgent>[0]['model'];
+
+function getAgentKitModel(modelId: ModelId): AgentKitModel {
+  const [provider, model] = modelId.split(':') as [string, string];
+  return openai({
+    model: `${provider}/${model}`,
+    apiKey: process.env.BIFROST_VIRTUAL_KEY ?? '',
+    baseUrl: process.env.BIFROST_BASE_URL,
+  });
+}
+
 export function createGeneralAgent(modelId: ModelId = DEFAULT_AGENT_MODEL) {
-  // Agent Kit's model type is a branded wrapper; AI SDK LanguageModelV3 is
-  // compatible at runtime via agent-kit's internal adapter.
-  const model = getModel(modelId) as unknown as Parameters<
-    typeof createAgent
-  >[0]['model'];
+  const model = getAgentKitModel(modelId);
 
   const agent = createAgent({
     name: 'general-agent',
