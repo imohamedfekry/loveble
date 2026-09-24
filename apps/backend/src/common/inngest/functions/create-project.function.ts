@@ -36,7 +36,19 @@ export const createProjectFunction = inngest.createFunction(
 
       const { text } = await generateText({
         model,
-        prompt: `Generate a project name for this request. Max 50 characters. Return only the name."${prompt}"
+        prompt: `
+Understand the user's intent and generate the most suitable short name for it.
+
+Requirements:
+- Maximum 50 characters.
+- Return only the project name.
+- No quotes.
+- No explanation.
+- No markdown.
+- Do not return an empty response.
+
+User prompt:
+"${prompt}"
         `.trim(),
       });
 
