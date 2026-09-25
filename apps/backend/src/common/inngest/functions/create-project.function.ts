@@ -1,8 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { generateText } from 'ai';
-import { inngest } from '../client';
 import { getModel } from 'src/ai/providers';
-import type { ModelId } from 'src/ai/providers/types';
+import { inngest } from '../client';
 import { DEFAULT_AGENT_MODEL } from '../agents/general.agent';
 
 const log = new Logger('Inngest:create-project');
@@ -17,9 +16,7 @@ export const createProjectFunction = inngest.createFunction(
   async ({ event, step }) => {
     const projectId = String(event.data?.projectId ?? '');
     const prompt = String(event.data?.prompt ?? '');
-
-    const modelId = (event.data?.model ??
-      DEFAULT_AGENT_MODEL) as ModelId;
+    const modelId = (event.data?.model ?? DEFAULT_AGENT_MODEL) as string;
 
     log.log(
       `▶ project/create projectId=${projectId} model=${modelId} prompt="${prompt.slice(0, 120)}"`,

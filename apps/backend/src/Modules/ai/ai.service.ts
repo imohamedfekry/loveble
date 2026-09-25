@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { generateText } from 'ai';
 import { getModel } from 'src/ai/providers';
-import type { ModelId } from 'src/ai/providers/types';
 
-const MODEL: ModelId = 'ollama/gemma4:31b-cloud';
+const MODEL = 'openrouter/inclusionai/ling-3.0-flash-fin:free';
 
 @Injectable()
 export class AiService {

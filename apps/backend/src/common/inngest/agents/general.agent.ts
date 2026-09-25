@@ -3,14 +3,13 @@ import {
   createNetwork,
   openai,
 } from '@inngest/agent-kit';
-import type { ModelId } from 'src/ai/providers/types';
 import { crawlAgentTool, searchAgentTool } from './tools';
 
-export const DEFAULT_AGENT_MODEL = 'google/gemini-2.5-flash';
+export const DEFAULT_AGENT_MODEL = 'openrouter/inclusionai/ling-3.0-flash-fin:free';
 
 type AgentKitModel = Parameters<typeof createAgent>[0]['model'];
 
-function getAgentKitModel(modelId: ModelId): AgentKitModel {
+function getAgentKitModel(modelId): AgentKitModel {
   const [provider, model] = modelId.split(':') as [string, string];
   return openai({
     model: `${provider}/${model}`,
@@ -19,7 +18,7 @@ function getAgentKitModel(modelId: ModelId): AgentKitModel {
   });
 }
 
-export function createGeneralAgent(modelId: ModelId = DEFAULT_AGENT_MODEL) {
+export function createGeneralAgent(modelId: string = DEFAULT_AGENT_MODEL) {
   const model = getAgentKitModel(modelId);
 
   const agent = createAgent({

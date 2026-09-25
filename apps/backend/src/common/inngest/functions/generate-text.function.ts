@@ -3,7 +3,6 @@ import {
   createGeneralAgent,
   DEFAULT_AGENT_MODEL,
 } from '../agents/general.agent';
-import type { ModelId } from 'src/ai/providers/types';
 
 export const generateTextFunction = inngest.createFunction(
   {
@@ -14,7 +13,7 @@ export const generateTextFunction = inngest.createFunction(
   },
   async ({ event }) => {
     const prompt = String(event.data?.prompt ?? '');
-    const modelId = (event.data?.model ?? DEFAULT_AGENT_MODEL) as ModelId;
+    const modelId = (event.data?.model ?? DEFAULT_AGENT_MODEL);
 
     if (!prompt) {
       throw new Error('generate-text job requires a prompt');
