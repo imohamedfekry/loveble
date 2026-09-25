@@ -1,8 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { generateText } from 'ai';
 import { getModel } from 'src/ai/providers';
-import { inngest } from '../client';
-import { DEFAULT_AGENT_MODEL } from '../agents/general.agent';
+import { inngest } from '../../client';
+import { DEFAULT_AGENT_MODEL } from '../../agents/general.agent';
 
 const log = new Logger('Inngest:create-project');
 

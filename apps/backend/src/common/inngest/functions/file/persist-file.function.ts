@@ -1,5 +1,5 @@
-import { inngest } from '../client';
-import { getNestApp } from '../nest-context';
+import { inngest } from '../../client';
+import { getNestApp } from '../../nest-context';
 import { PersistFileService } from 'src/common/persistence/persist-file.service';
 
 export const persistFileFunction = inngest.createFunction(

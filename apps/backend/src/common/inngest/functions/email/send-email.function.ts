@@ -1,6 +1,6 @@
-import { inngest } from '../client';
+import { inngest } from '../../client';
 import { Resend } from 'resend';
-import { OtpTemplate } from '../templates/otp';
+import { OtpTemplate } from './templates/otp';
 
 const templates = {
   otp: OtpTemplate,

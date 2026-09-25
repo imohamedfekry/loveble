@@ -1,4 +1,4 @@
-import { inngest } from '../client';
+import { inngest } from '../../client';
 import { runCrawlPipeline } from 'src/common/scraping/crawl-pipeline';
 
 export const crawlFunction = inngest.createFunction(

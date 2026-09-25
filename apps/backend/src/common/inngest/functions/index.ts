@@ -1,8 +1,8 @@
-import { crawlFunction } from './crawl.function';
-import { generateTextFunction } from './generate-text.function';
-import { createProjectFunction } from './create-project.function';
-import { persistFileFunction } from './persist-file.function';
-import { sendEmailFunction } from './send-email.function';
+import { crawlFunction } from './crawl/crawl.function';
+import { generateTextFunction } from './text/generate-text.function';
+import { createProjectFunction } from './project/create-project.function';
+import { persistFileFunction } from './file/persist-file.function';
+import { sendEmailFunction } from './email/send-email.function';
 
 export const inngestFunctions = [
   crawlFunction,

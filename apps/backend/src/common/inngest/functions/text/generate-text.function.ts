@@ -1,8 +1,8 @@
-import { inngest } from '../client';
+import { inngest } from '../../client';
 import {
   createGeneralAgent,
   DEFAULT_AGENT_MODEL,
-} from '../agents/general.agent';
+} from '../../agents/general.agent';
 
 export const generateTextFunction = inngest.createFunction(
   {
