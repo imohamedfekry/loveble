@@ -1,14 +1,4 @@
 import * as v from 'valibot';
-import { createStandardDto } from '@mag123c/nestjs-stdschema';
-
-const TempUserSchema = v.object({
-  email: v.pipe(
-    v.string('Email is required'),
-    v.nonEmpty('Email cannot be empty'),
-    v.email('Must be a valid email address'),
-    v.maxLength(100, 'Email cannot exceed 100 characters'),
-  ),
-});
 export const UserOAuthAccountSchema = v.object({
   id: v.union([v.string(), v.bigint()]),
   userId: v.union([v.string(), v.bigint()]),
@@ -32,5 +22,4 @@ export const UserProfileSchema = v.object({
 });
 
 export type UserProfile = v.InferOutput<typeof UserProfileSchema>;
-
-export class TempUserDto extends createStandardDto(TempUserSchema) {}
+export type UserOAuthAccount = v.InferOutput<typeof UserOAuthAccountSchema>;

@@ -1,6 +1,6 @@
 import type { ApiResponse, ApiSuccess } from "@loveble/types/envelope";
 
-const API_BASE_URL =
+export const API_BASE_URL =
   (process.env.NEXT_PUBLIC_API_URL as string | undefined) ??
   "http://localhost:3001/api/v1";
 const DEFAULT_TIMEOUT = 15000; // 15 seconds

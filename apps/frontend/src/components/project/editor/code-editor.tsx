@@ -12,6 +12,8 @@ import { customSetup } from "./extensions/custom-setup";
 import { minimap } from "./extensions/minimap";
 import { unusedDetection } from "./extensions/unused-detection";
 import { collabExtension } from "@/lib/socket/hooks/useCollaboration";
+import { quickEdit } from "./extensions/quick-edit";
+import { selectionTooltip } from "./extensions/selection-tooltip";
 import {
   dispatchRemotePresence,
   remotePresenceExtension,
@@ -91,6 +93,8 @@ export const CodeEditor = ({
       minimap(),
       indentationMarkers(),
       ...(isTypeScript ? unusedDetection() : []),
+      quickEdit(fileName),
+      selectionTooltip(),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           onChangeRef.current?.(update.state.doc.toString());

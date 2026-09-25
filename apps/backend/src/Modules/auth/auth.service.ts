@@ -25,6 +25,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import { OauthTokenService } from 'src/common/Global/security/jwt/services/oauth-token.service';
+import { InngestService } from 'src/common/inngest/inngest.service';
 
 interface GitHubProfile {
   provider: string;
@@ -47,7 +48,8 @@ export class AuthService {
     private readonly oauthRepository: OAuthRepository,
     private readonly configService: ConfigService,
     private readonly oauthTokenService: OauthTokenService,
-  ) {}
+    private readonly inngestService: InngestService,
+  ) { }
 
   async requestOtp(body: TempUserDto) {
     const tempUser = await this.tempUserRepository.findByEmail(body.email);
@@ -59,6 +61,11 @@ export class AuthService {
         await this.tempUserRepository.updateOtpByEmail(body.email, {
           otpHash: hashedOtp,
           otpExpiry: new Date(Date.now() + 2 * 60 * 1000),
+        });
+        this.inngestService.sendEmail({
+          to: body.email,
+          template: 'otp',
+          templateData: { otp },
         });
         return success(RESPONSE_MESSAGES.AUTH.OTP.REQUEST.RESENT);
       } else {
@@ -90,13 +97,11 @@ export class AuthService {
       otpExpiry: new Date(Date.now() + 2 * 60 * 1000),
     });
 
-    // Dev-only convenience: echo the OTP so the flow is testable without a
-    // mail server. Never expose it in production.
-    if (process.env.NODE_ENV !== 'production') {
-      return success(RESPONSE_MESSAGES.AUTH.OTP.REQUEST.SUCCESS, {
-        otp,
-      });
-    }
+    this.inngestService.sendEmail({
+      to: body.email,
+      template: 'otp',
+      templateData: { otp },
+    });
     return success(RESPONSE_MESSAGES.AUTH.OTP.REQUEST.SUCCESS);
   }
 

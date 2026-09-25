@@ -10,6 +10,7 @@ import { FileModule } from './Modules/files/files.module';
 import { StorageModule } from './Modules/storage/storage.module';
 import { InngestModule } from './common/inngest/inngest.module';
 import { PersistenceModule } from './common/persistence/persistence.module';
+import { AiModule } from './Modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PersistenceModule } from './common/persistence/persistence.module';
     StorageModule,
     InngestModule,
     PersistenceModule,
+    AiModule,
   ],
 })
 export class AppModule {}

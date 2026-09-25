@@ -36,7 +36,7 @@ export function NavItem({
           "flex h-7 w-8 shrink-0 items-center justify-center transition-colors duration-200",
           active
             ? "text-sidebar-foreground"
-            : "text-muted-foreground/60 group-hover:text-sidebar-foreground",
+            : "text-muted-foreground group-hover:text-sidebar-foreground",
         )}
       >
         {Array.isArray(Icon) ? (
@@ -74,7 +74,7 @@ export function NavItem({
     onClick?.();
   };
 
-  if (href) {
+if (href) {
     return (
       <Link
         href={href}
@@ -83,18 +83,19 @@ export function NavItem({
           "text-[13.5px] font-[450] tracking-[-0.01em]",
           "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
+          "text-sidebar-foreground",
 
-           !active &&
-             cn(
-               "ring-transparent text-muted-foreground",
-               "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
-             ),
+          !active &&
+            cn(
+              "ring-transparent",
+              "hover:bg-foreground/[0.06] hover:ring-border/50",
+            ),
 
-           active &&
-             cn(
-               "bg-foreground/[0.06] ring-border/50 text-sidebar-foreground shadow-sm",
-               "hover:bg-foreground/[0.08]"
-             ),
+          active &&
+            cn(
+              "bg-foreground/[0.06] ring-border/50 shadow-sm",
+              "hover:bg-foreground/[0.08]"
+            ),
 
           !open && "cursor-pointer"
         )}
@@ -118,16 +119,17 @@ export function NavItem({
         "text-[13.5px] font-[450] tracking-[-0.01em]",
         "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
+        "text-sidebar-foreground",
 
         !active &&
           cn(
-            "ring-transparent text-muted-foreground",
-            "hover:bg-foreground/[0.06] hover:text-sidebar-foreground hover:ring-border/50",
+            "ring-transparent",
+            "hover:bg-foreground/[0.06] hover:ring-border/50",
           ),
 
         active &&
           cn(
-            "bg-foreground/[0.06] ring-border/50 text-sidebar-foreground shadow-sm",
+            "bg-foreground/[0.06] ring-border/50 shadow-sm",
             "hover:bg-foreground/[0.08]"
           ),
 

@@ -6,6 +6,7 @@ export const INNGEST_EVENTS = {
   TEXT_GENERATE: 'text/generate',
   PROJECT_CREATE: 'project/create',
   FILE_PERSIST: 'file/persist',
+  SEND_EMAIL: 'email/send',
 } as const;
 
 export type InngestEventName =
@@ -34,5 +35,9 @@ export class InngestService {
       ...data,
       fileId: String(data.fileId),
     });
+  }
+
+  sendEmail(data: { to: string; template: string; templateData: Record<string, unknown> }) {
+    return this.send(INNGEST_EVENTS.SEND_EMAIL, data);
   }
 }

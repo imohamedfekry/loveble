@@ -1,6 +1,12 @@
 import * as v from 'valibot';
 import { createStandardDto } from '@mag123c/nestjs-stdschema';
 
+export type GithubCallbackType = v.InferOutput<typeof GithubCallbackSchema>;
+export type TempUserType = v.InferOutput<typeof TempUserSchema>;
+export type verfyOtpType = v.InferOutput<typeof verfyOtpSchema>;
+export type CreateUserType = v.InferOutput<typeof CreateUserSchema>;
+export type LoginType = v.InferOutput<typeof LoginSchema>;
+
 const TempUserSchema = v.object({
   email: v.pipe(
     v.string('Email must be a string'),
@@ -84,29 +90,8 @@ const GithubCallbackSchema = v.object({
   ),
 });
 
-export class GithubCallbackDto extends createStandardDto(GithubCallbackSchema) {
-  code: string;
-  state?: string;
-}
-
-export class TempUserDto extends createStandardDto(TempUserSchema) {
-  email: string;
-}
-
-export class verfyOtpDto extends createStandardDto(verfyOtpSchema) {
-  email: string;
-
-  otp: string;
-}
-
-export class CreateUserDto extends createStandardDto(CreateUserSchema) {
-  name: string;
-
-  password: string;
-}
-
-export class LoginDto extends createStandardDto(LoginSchema) {
-  email: string;
-
-  password: string;
-}
+export class GithubCallbackDto extends createStandardDto(GithubCallbackSchema) {}
+export class TempUserDto extends createStandardDto(TempUserSchema) {}
+export class verfyOtpDto extends createStandardDto(verfyOtpSchema) {}
+export class CreateUserDto extends createStandardDto(CreateUserSchema) {}
+export class LoginDto extends createStandardDto(LoginSchema) {}

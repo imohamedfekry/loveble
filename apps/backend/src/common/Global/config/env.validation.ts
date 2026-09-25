@@ -30,6 +30,8 @@ const envSchema = v.object({
     ),
     'log',
   ),
+  // Resend
+  RESEND_API_KEY:v.pipe(v.string(), v.nonEmpty()),
   // JWT
   JWT_SECRET_ACCESS: v.pipe(v.string(), v.nonEmpty()),
   JWT_TEMP: v.pipe(v.string(), v.nonEmpty()),
