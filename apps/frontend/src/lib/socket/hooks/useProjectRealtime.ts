@@ -71,6 +71,12 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       }
     };
 
+    const onSandboxReady = (payload: { sandboxId?: string }) => {
+      if (payload?.sandboxId) {
+        console.log("[realtime] sandbox:ready", payload.sandboxId);
+      }
+    };
+
     const onProjectError = (err: unknown) => {
       console.error("[realtime] project subscribe failed:", err);
 
@@ -92,6 +98,7 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("project:subscribed", onSubscribed);
+    socket.on("sandbox:ready", onSandboxReady);
     socket.on("project:error", onProjectError);
 
     return () => {
@@ -99,6 +106,7 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("project:subscribed", onSubscribed);
+      socket.off("sandbox:ready", onSandboxReady);
       socket.off("project:error", onProjectError);
       unsubscribe();
     };

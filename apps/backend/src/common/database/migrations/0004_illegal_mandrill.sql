@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "sandbox_id" varchar(255);

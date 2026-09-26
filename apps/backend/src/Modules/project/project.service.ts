@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import {
   GeneratedNameWebhookDto,
@@ -15,6 +15,7 @@ import { InngestService } from 'src/common/inngest/inngest.service';
 import { deriveDefaultName } from './project-name.util';
 import type { Project } from 'src/common/database/schema/projects/project.schema';
 import { ConfigService } from '@nestjs/config/dist/config.service';
+import { SandboxService } from 'src/Modules/sandbox/sandbox.service';
 
 @Injectable()
 export class projectService {
@@ -25,7 +26,8 @@ export class projectService {
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
     private readonly inngestService: InngestService,
-  ) { }
+    private readonly sandboxService: SandboxService,
+  ) {}
   async findAll(req: AuthenticatedRequest, query: ProjectQueryDto) {
     if (query.recent === 'true') {
       const projects = await this.projectRepository.findRecentByUserId(
@@ -122,11 +124,11 @@ export class projectService {
   }
 
   async applyGeneratedName(
-    body: GeneratedNameWebhookDto
+    body: GeneratedNameWebhookDto,
   ): Promise<Project | null> {
     const updated = await this.projectRepository.update(
       BigInt(body.projectId),
-      { name: body.name, },
+      { name: body.name },
     );
     if (!updated) return null;
 
@@ -137,5 +139,36 @@ export class projectService {
     );
 
     return updated;
+  }
+
+  async openProject(projectId: bigint, req: AuthenticatedRequest) {
+    const project = await this.projectRepository.findById(projectId);
+    if (!project || project.userId !== req.user.id) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
+    }
+
+    const existingSandboxId =
+      await this.projectRepository.findSandboxId(projectId);
+
+    if (existingSandboxId) {
+      return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
+        sandboxId: existingSandboxId,
+      });
+    }
+
+    const { sandboxId } = await this.sandboxService.create();
+    await this.projectRepository.updateSandboxId(projectId, sandboxId);
+
+    this.realtimeEmitService.toProject(
+      projectId,
+      PROJECT_EVENTS.SANDBOX_READY,
+      {
+        sandboxId,
+      },
+    );
+
+    return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
+      sandboxId,
+    });
   }
 }

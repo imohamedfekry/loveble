@@ -52,11 +52,20 @@ const projectQuerySchema = v.object({
   limit: v.optional(v.string()),
 });
 const generatedNameWebhookSchema = v.object({
-  projectId: v.pipe(v.string('Project ID must be a string'), v.nonEmpty('Project ID is required')),
-  name: v.pipe(v.string('Name must be a string'), v.nonEmpty('Name is required'), v.maxLength(100, 'Name cannot exceed 100 characters')),
+  projectId: v.pipe(
+    v.string('Project ID must be a string'),
+    v.nonEmpty('Project ID is required'),
+  ),
+  name: v.pipe(
+    v.string('Name must be a string'),
+    v.nonEmpty('Name is required'),
+    v.maxLength(100, 'Name cannot exceed 100 characters'),
+  ),
 });
 
-export class GeneratedNameWebhookDto extends createStandardDto(generatedNameWebhookSchema) {}
+export class GeneratedNameWebhookDto extends createStandardDto(
+  generatedNameWebhookSchema,
+) {}
 export class ProjectQueryDto extends createStandardDto(projectQuerySchema) {}
 export class ProjectDto extends createStandardDto(projectSchema) {}
 export class UpdateProjectDto extends createStandardDto(updateProjectSchema) {}

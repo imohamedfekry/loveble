@@ -214,7 +214,6 @@ export function ChatComposer({
   return (
     <div
       ref={composerRef}
-      className="w-[95%] m-auto"
     >
       <div className="relative">
         <ComposerMenu
@@ -253,16 +252,16 @@ export function ChatComposer({
           onDrop={handleDrop}
           className={cn(
             "relative isolate flex flex-col gap-1.5 overflow-hidden",
-            "border border-border bg-card",
+            "border border-border bg-muted",
             "p-1.5",
             "transition-[border-color,border-radius] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-            "focus-within:border-ring",
+            // "focus-within:border-ring",
             isDragging && "border-primary/60 ring-2 ring-primary/30",
             pill
               ? attachments.length > 0 || expanded
                 ? "rounded-3xl"
                 : "rounded-full"
-              : "rounded-[24px]"
+              : "rounded-3xl"
           )}
         >
           <ComposerAttachments

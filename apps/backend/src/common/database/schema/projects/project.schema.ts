@@ -37,6 +37,7 @@ export const projects = pgTable(
     storageUsed: bigint('storage_used', { mode: 'bigint' })
       .default(sql`0`)
       .notNull(),
+    sandboxId: varchar('sandbox_id', { length: 255 }),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },

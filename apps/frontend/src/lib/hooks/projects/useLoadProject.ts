@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { useProjectsStore } from "@/store/project.store";
+import { openProject } from "@/lib/api/apis/projects";
 import type { Project } from "@loveble/types";
 
 // Module-level: StrictMode double-effect (or two components asking for
 // the same project) shares one GET /projects/project/:id request.
 const inflightById = new Map<string, Promise<Project>>();
+const inflightOpenById = new Map<string, Promise<{ sandboxId?: string }>>();
 
 async function fetchProject(projectId: string): Promise<Project> {
   const existing = inflightById.get(projectId);
@@ -52,6 +54,28 @@ async function fetchProject(projectId: string): Promise<Project> {
   return promise;
 }
 
+async function fetchOpenProject(projectId: string): Promise<{ sandboxId?: string }> {
+  const existing = inflightOpenById.get(projectId);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    const result = await openProject(projectId);
+    if (!result.success) {
+      throw new Error(result.message ?? "Failed to open project");
+    }
+    return { sandboxId: result.sandboxId };
+  })();
+
+  inflightOpenById.set(projectId, promise);
+  const cleanup = () => {
+    if (inflightOpenById.get(projectId) === promise) {
+      inflightOpenById.delete(projectId);
+    }
+  };
+  promise.then(cleanup, cleanup);
+  return promise;
+}
+
 export const useLoadProject = (projectId?: string | null) => {
   const projects = useProjectsStore((s) => s.projects);
   const addProject = useProjectsStore((s) => s.addProject);
@@ -65,10 +89,13 @@ export const useLoadProject = (projectId?: string | null) => {
   );
   const [loadedId, setLoadedId] = useState<string | null>(cached?.id ?? null);
   const [error, setError] = useState<string | null>(null);
+  const [sandboxId, setSandboxId] = useState<string | null>(null);
+  const [sandboxLoading, setSandboxLoading] = useState(false);
 
   const [prevCached, setPrevCached] = useState(cached);
+  const sandboxIdRef = useRef<string | null>(null);
 
-  if (prevCached !== cached) {
+    if (prevCached !== cached) {
     setPrevCached(cached);
     if (cached) {
       setProject(cached);
@@ -78,6 +105,9 @@ export const useLoadProject = (projectId?: string | null) => {
       setProject(undefined);
       setLoadedId(null);
       setError(null);
+      setSandboxId(null);
+      setSandboxLoading(false);
+      sandboxIdRef.current = null;
     }
   }
 
@@ -123,5 +153,38 @@ export const useLoadProject = (projectId?: string | null) => {
     };
   }, [projectId, cached, addProject]);
 
-  return { project, loading, error };
+  useEffect(() => {
+    if (!projectId || error) return;
+    if (sandboxIdRef.current) return;
+
+    let cancelled = false;
+
+    const loadSandbox = async () => {
+      setSandboxLoading(true);
+      try {
+        const result = await fetchOpenProject(projectId);
+
+        if (!cancelled && result.sandboxId) {
+          setSandboxId(result.sandboxId);
+          sandboxIdRef.current = result.sandboxId;
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          console.error("[useLoadProject] sandbox open failed:", err);
+        }
+      } finally {
+        if (!cancelled) {
+          setSandboxLoading(false);
+        }
+      }
+    };
+
+    loadSandbox();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, error]);
+
+  return { project, loading, error, sandboxId, sandboxLoading };
 };

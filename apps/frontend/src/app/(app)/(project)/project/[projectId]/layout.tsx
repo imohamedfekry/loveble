@@ -11,7 +11,7 @@ export default async function Layout({
   const { projectId } = await params;
   return (
     <ProjectIdLayout key={projectId} projectId={projectId}>
-      <ProjectSplitLayout>
+      <ProjectSplitLayout projectId={projectId}>
         {children}
       </ProjectSplitLayout>
     </ProjectIdLayout>

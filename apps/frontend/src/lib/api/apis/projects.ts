@@ -205,3 +205,35 @@ export async function deleteProject(projectId: string) {
     message: json.message ?? "",
   };
 }
+
+export type OpenProjectResult = {
+  success: boolean;
+  message: string;
+  sandboxId?: string;
+};
+
+export async function openProject(projectId: string): Promise<OpenProjectResult> {
+  const response = await fetch(
+    `${API_BASE_URL}/projects/project/${projectId}/open`,
+    {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    }
+  );
+
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok || !json) {
+    return {
+      success: false,
+      message: json?.message ?? `Request failed (${response.status})`,
+    };
+  }
+
+  return {
+    success: json.success ?? true,
+    message: json.message ?? "",
+    sandboxId: json.data?.sandboxId ?? json?.sandboxId,
+  };
+}

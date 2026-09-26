@@ -6,6 +6,7 @@ import { FaGithub } from "react-icons/fa";
 import { Allotment } from "allotment";
 import { FileExplorer } from "./file-explorer";
 import { EditorView } from "./editor/editor-view";
+import { useEditorStore } from "@/store/use-editor-store";
 
 const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 800;
@@ -38,6 +39,7 @@ const Tab = ({
 
 export const ProjectIdView = ({ projectId }: { projectId: string }) => {
     const [activeView, setActiveView] = useState<"editor" | "preview">("editor");
+    const sandboxLoading = useEditorStore((s) => s.sandboxLoadingByProject.get(projectId) ?? false);
 
     return (
         <div className="flex h-full flex-col">
@@ -78,7 +80,14 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                         </Allotment.Pane>
 
                         <Allotment.Pane>
-                            <EditorView projectId={projectId}  />                     
+                            {sandboxLoading ? (
+                                <div className="size-full flex flex-col items-center justify-center gap-3 bg-muted">
+                                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground/30 border-t-foreground" />
+                                    <span className="text-sm text-foreground/60">Starting environment...</span>
+                                </div>
+                            ) : (
+                                <EditorView projectId={projectId} />
+                            )}
                         </Allotment.Pane>
                     </Allotment>
                 </div>

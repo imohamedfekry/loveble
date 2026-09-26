@@ -14,6 +14,7 @@ const defaultTabState: TabState = {
 
 interface EditorStore {
     tabs: Map<string, TabState>;
+    sandboxLoadingByProject: Map<string, boolean>;
 
     getTabState: (projectId: string) => TabState;
 
@@ -42,10 +43,13 @@ interface EditorStore {
     removeProject: (
         projectId: string,
     ) => void;
+
+    setSandboxLoading: (projectId: string, loading: boolean) => void;
 }
 
 export const useEditorStore = create<EditorStore>()((set, get) => ({
   tabs: new Map(),
+  sandboxLoadingByProject: new Map(),
 
   getTabState: (projectId) => {
     return get().tabs.get(projectId) ?? defaultTabState;
@@ -138,6 +142,14 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   removeProject: (projectId) => {
     const tabs = new Map(get().tabs);
     tabs.delete(projectId);
-    set({ tabs });
+    const sandboxLoading = new Map(get().sandboxLoadingByProject);
+    sandboxLoading.delete(projectId);
+    set({ tabs, sandboxLoadingByProject: sandboxLoading });
+  },
+
+  setSandboxLoading: (projectId, loading) => {
+    const sandboxLoading = new Map(get().sandboxLoadingByProject);
+    sandboxLoading.set(projectId, loading);
+    set({ sandboxLoadingByProject: sandboxLoading });
   },
 }));

@@ -1,9 +1,9 @@
 import {
-    Body,
-    Controller,
-    Headers,
-    Post,
-    UnauthorizedException,
+  Body,
+  Controller,
+  Headers,
+  Post,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { projectService } from './project.service';
@@ -13,23 +13,22 @@ import { AuthWebhook } from 'src/common/decorator/auth-webhook.decorator';
 @Controller('projects/webhook')
 @AuthWebhook()
 export class ProjectWebhookController {
-    constructor(
-        private readonly projectService: projectService,
-        private readonly configService: ConfigService,
-    ) { }
+  constructor(
+    private readonly projectService: projectService,
+    private readonly configService: ConfigService,
+  ) {}
 
-    @Post('generated-name')
-    async generatedName(
-        @Headers('authorization') authorization: string,
-        @Body() body: GeneratedNameWebhookDto,
+  @Post('generated-name')
+  async generatedName(
+    @Headers('authorization') authorization: string,
+    @Body() body: GeneratedNameWebhookDto,
+  ) {
+    if (
+      authorization !== this.configService.get<string>('inngest.webhookSecret')
     ) {
-        if (
-            authorization !==
-            this.configService.get<string>('inngest.webhookSecret')
-        ) {
-            throw new UnauthorizedException();
-        }
-
-        return this.projectService.applyGeneratedName(body);
+      throw new UnauthorizedException();
     }
+
+    return this.projectService.applyGeneratedName(body);
+  }
 }

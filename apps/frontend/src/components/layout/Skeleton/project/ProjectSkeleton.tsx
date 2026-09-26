@@ -3,6 +3,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ChevronRightIcon } from "lucide-react"
 import { TreeItemWrapperSkeleton } from "@/components/project/file-explorer/TreeItemWrapperSkeleton"
+import { ChatComposerSkeleton } from "../ChatComposerSkeleton"
 
 function ProjectSkeleton() {
     return (
@@ -36,49 +37,57 @@ function ProjectSkeleton() {
 
             <div className="relative flex min-h-0 flex-1 overflow-hidden">
                 <div className="flex flex-1 overflow-hidden">
-                    {/* Conversation — fixed DEFAULT_CONVERSATION_SIDEBAR_WIDTH=400 */}
                     <div
-                        style={{ width: 400, minWidth: 200, maxWidth: 800 }}
-                        className="flex h-full shrink-0 flex-col border-r border-border bg-card"
+                        style={{ width: 500, minWidth: 200, maxWidth: 800 }}
+                        className="flex h-full shrink-0 flex-col border-r border-border bg-sidebar"
                     >
-                        <div className="flex h-8.75 shrink-0 items-center border-b border-border px-3">
+                        <div className="flex h-8.75 shrink-0 items-center justify-between border-b border-border px-3">
                             <Skeleton className="h-3 w-[92px] rounded-sm" />
+                            <div className="flex items-center gap-1">
+                                <Skeleton className="size-3.5 rounded-sm opacity-60" />
+                                <Skeleton className="size-3.5 rounded-sm opacity-60" />
+                            </div>
                         </div>
-                        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
-                            <Skeleton className="size-10 rounded-full border border-border" />
-                            <Skeleton className="h-3.5 w-[132px] rounded-sm" />
-                            <Skeleton className="h-3 w-[168px] rounded-sm opacity-70" />
-                            <Skeleton className="h-3 w-[148px] rounded-sm opacity-60" />
+                        <div className="flex-1 space-y-3 overflow-y-auto p-3">
+                            <div className="flex justify-end ">
+                                <Skeleton className="h-3 w-3/4 rounded-sm" />
+                            </div>
+                            <div className="flex justify-start flex-col gap-1.5 max-w-[75%]">
+                                <Skeleton className="h-3 w-full rounded-sm" />
+                                <Skeleton className="h-3 w-3/4 rounded-sm opacity-70" />
+                            </div>
+                        </div>
+                        <div className="shrink-0 border-t border-border p-3">
+                            <ChatComposerSkeleton />
                         </div>
                     </div>
 
-                    {/* Main — flex-1 */}
                     <div className="flex h-full min-w-0 flex-1 flex-col">
                         <nav className="flex h-8.75 shrink-0 items-center border-b border-border bg-card">
                             <div className="flex h-full items-center gap-2 border-r border-border bg-background px-3">
-                                <Skeleton className="h-3.5 w-[32px] rounded-sm" />
+                                <Skeleton className="h-3.5 w-8 rounded-sm" />
                             </div>
                             <div className="flex h-full items-center gap-2 border-r border-border px-3">
-                                <Skeleton className="h-3.5 w-[46px] rounded-sm opacity-60" />
+                                <Skeleton className="h-3.5 w-11.5 rounded-sm opacity-60" />
                             </div>
                             <div className="flex h-full flex-1 justify-end">
                                 <div className="flex h-full items-center gap-1.5 border-l border-border px-3">
                                     <Skeleton className="size-3.5 rounded-sm" />
-                                    <Skeleton className="h-3.5 w-[38px] rounded-sm opacity-70" />
+                                    <Skeleton className="h-3.5 w-9.5 rounded-sm opacity-70" />
                                 </div>
                             </div>
                         </nav>
 
                         <div className="relative flex flex-1 min-h-0 bg-card">
                             <div className="absolute inset-0 flex">
-                                {/* FileExplorer — fixed width 350 = 5% smaller editor */}
+
                                 <div
-                                    style={{ width: 350, minWidth: 200, maxWidth: 800 }}
+                                    style={{ width: 320, minWidth: 200, maxWidth: 800 }}
                                     className="flex h-full shrink-0 flex-col bg-sidebar"
                                 >
                                     <div className="flex h-5.5 w-full shrink-0 items-center gap-0.5 bg-accent px-0">
                                         <Skeleton className="ml-1 size-4 rounded-sm opacity-40" />
-                                        <Skeleton className="ml-1 h-3 w-[96px] rounded-sm opacity-60" />
+                                        <Skeleton className="ml-1 h-3 w-24 rounded-sm opacity-60" />
                                         <div className="ml-auto flex items-center gap-0.5 pr-1">
                                             <Skeleton className="size-5 rounded-sm opacity-30" />
                                             <Skeleton className="size-5 rounded-sm opacity-30" />
@@ -97,98 +106,20 @@ function ProjectSkeleton() {
                                     </div>
                                 </div>
 
-                                {/* EditorView — flex-1 => now ~5% smaller */}
                                 <div className="flex h-full min-w-0 flex-1 flex-col">
-                                    <div className="flex h-8.75 shrink-0 items-center border-b bg-sidebar">
-                                        <div className="flex h-8.75 items-center gap-2 border-y border-x border-border bg-accent px-2 pr-1.5 -mb-px">
-                                            <Skeleton className="size-4 rounded-sm" />
-                                            <Skeleton className="h-3 w-[72px] rounded-sm" />
-                                            <Skeleton className="ml-1 size-3.5 rounded-sm opacity-40" />
-                                        </div>
-                                        <div className="flex h-8.75 items-center gap-2 border-y border-transparent px-2 pr-1.5">
-                                            <Skeleton className="size-4 rounded-sm opacity-60" />
-                                            <Skeleton className="h-3 w-[64px] rounded-sm opacity-60" />
-                                        </div>
-                                    </div>
 
-                                    <div className="flex h-8.75 shrink-0 items-center justify-between border-b bg-sidebar pl-4 pr-2">
-                                        <div className="flex items-center gap-0.5">
-                                            <Skeleton className="h-3 w-[52px] rounded-sm" />
-                                            <Skeleton className="mx-1 size-3 rounded-sm opacity-30" />
-                                            <Skeleton className="size-4 rounded-sm" />
-                                            <Skeleton className="h-3 w-[78px] rounded-sm" />
-                                        </div>
-                                    </div>
 
                                     <div className="relative flex flex-1 min-h-0 bg-muted overflow-hidden">
                                         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
                                             <Image src="/logo.svg" alt="loveble Logo" width={50} height={50} loading="eager" className="opacity-25" />
                                         </div>
-                                        <div className="flex h-full w-full overflow-hidden bg-[var(--editor-bg)]">
-                                            <div className="hidden sm:flex w-[52px] shrink-0 flex-col items-end gap-[16px] border-r bg-[var(--editor-gutter-bg)] py-4 pr-3">
-                                                {Array.from({ length: 20 }).map((_, i) => {
-                                                    const isSingleDigit = i < 9
-                                                    const w = isSingleDigit ? 12 + (i % 2) * 2 : 18 + (i % 2) * 2
-                                                    return <Skeleton key={i} className="h-3 rounded-[3px]" style={{ width: `${w}px`, opacity: 0.9 - i * 0.032 }} />
-                                                })}
+                                        <div className="flex h-full w-full overflow-hidden bg-muted">
+                                            <div className="border-r bg-(--editor-gutter-bg)">
+
                                             </div>
                                             <div className="flex flex-1 flex-col overflow-hidden">
-                                                <div className="flex-1 px-4 py-4 sm:pl-5 pr-6">
-                                                    <div className="flex flex-col gap-[16px]">
-                                                        <div className="flex items-center gap-2">
-                                                            <Skeleton className="h-3 w-14 rounded-[3px]" />
-                                                            <Skeleton className="h-3 w-20 rounded-[3px] opacity-80" />
-                                                            <Skeleton className="h-3 w-7 rounded-[3px] opacity-50" />
-                                                            <Skeleton className="h-3 w-32 rounded-[3px]" />
-                                                            <Skeleton className="h-3 w-10 rounded-[3px] opacity-60" />
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <Skeleton className="h-3 w-14 rounded-[3px] opacity-70" />
-                                                            <Skeleton className="h-3 w-28 rounded-[3px]" />
-                                                            <Skeleton className="h-3 w-16 rounded-[3px] opacity-50" />
-                                                        </div>
-                                                        <div className="h-1" />
-                                                        <div className="flex items-center gap-2">
-                                                            <Skeleton className="h-3 w-12 rounded-[3px]" />
-                                                            <Skeleton className="h-3 w-24 rounded-[3px]" />
-                                                            <Skeleton className="h-3 w-3 rounded-[3px] opacity-40" />
-                                                            <Skeleton className="h-3 w-20 rounded-[3px] opacity-90" />
-                                                            <Skeleton className="h-3 w-2 rounded-[3px] opacity-30" />
-                                                            <Skeleton className="h-3 w-16 rounded-[3px] opacity-70" />
-                                                        </div>
-                                                        <div className="flex items-center gap-2 pl-6">
-                                                            <Skeleton className="h-3 w-16 rounded-[3px] opacity-60" />
-                                                            <Skeleton className="h-3 w-36 rounded-[3px]" />
-                                                            <Skeleton className="h-3 w-12 rounded-[3px] opacity-40" />
-                                                        </div>
-                                                        <div className="flex items-center gap-2 pl-6">
-                                                            <Skeleton className="h-3 w-20 rounded-[3px] opacity-80" />
-                                                            <Skeleton className="h-3 w-8 rounded-[3px] opacity-40" />
-                                                            <Skeleton className="h-3 w-24 rounded-[3px]" />
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <Skeleton className="h-3 w-3 rounded-[3px] opacity-40" />
-                                                        </div>
-                                                        <div className="h-1" />
-                                                        <div className="flex items-center gap-2">
-                                                            <Skeleton className="h-3 w-16 rounded-[3px]" />
-                                                            <Skeleton className="h-3 w-28 rounded-[3px]" />
-                                                            <Skeleton className="h-3 w-20 rounded-[3px] opacity-70" />
-                                                            <Skeleton className="h-3 w-3 rounded-[3px] opacity-40" />
-                                                        </div>
-                                                        <div className="flex items-center gap-2 pl-6">
-                                                            <Skeleton className="h-3 w-10 rounded-[3px] opacity-80" />
-                                                            <Skeleton className="h-3 w-32 rounded-[3px]" />
-                                                            <Skeleton className="h-3 w-12 rounded-[3px] opacity-50" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="pointer-events-none h-10 shrink-0 bg-gradient-to-t from-[var(--editor-bg)] to-transparent" />
-                                            </div>
-                                            <div className="hidden lg:flex w-16 shrink-0 flex-col gap-1.5 border-l bg-[var(--editor-bg)] px-2 py-4 opacity-40">
-                                                {Array.from({ length: 18 }).map((_, i) => (
-                                                    <Skeleton key={i} className="h-1 rounded-full" style={{ width: `${40 + (i % 4) * 12}%`, opacity: 0.7 - i * 0.03 }} />
-                                                ))}
+
+                                                <div className="pointer-events-none h-[36px] shrink-0 bg-(--editor-bg) border-b border-l border-border " />
                                             </div>
                                         </div>
                                     </div>

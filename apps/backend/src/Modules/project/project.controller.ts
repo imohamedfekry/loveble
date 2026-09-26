@@ -14,7 +14,6 @@ import { Auth } from 'src/common/decorator/auth-user.decorator';
 import { projectService } from './project.service';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import {
-  GeneratedNameWebhookDto,
   ProjectDto,
   ProjectQueryDto,
   UpdateProjectDto,
@@ -24,7 +23,15 @@ import { ParseSnowflakePipe } from 'src/common/Global/security/validator/isId.va
 @Controller('projects')
 @Auth()
 export class ProjectController {
-  constructor(private readonly projectService: projectService) { }
+  constructor(private readonly projectService: projectService) {}
+
+  @Get('project/:id/open')
+  getOpenProject(
+    @Param('id', ParseSnowflakePipe) projectId: bigint,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.projectService.openProject(projectId, req);
+  }
 
   @Get('project/:id')
   getProjectById(

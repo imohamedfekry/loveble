@@ -69,6 +69,23 @@ export class ProjectRepository extends BaseRepository {
 
     return result[0] ?? null;
   }
+  async findSandboxId(projectId: bigint): Promise<string | null> {
+    const result = await this.db
+      .select({ sandboxId: projects.sandboxId })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    return result[0]?.sandboxId ?? null;
+  }
+  async updateSandboxId(projectId: bigint, sandboxId: string | null): Promise<Project | null> {
+    const [project] = await this.db
+      .update(projects)
+      .set({ sandboxId })
+      .where(eq(projects.id, projectId))
+      .returning();
+    return project ?? null;
+  }
   async update(
     id: bigint,
     data: Partial<Omit<Project, 'id' | 'userId'>>,
