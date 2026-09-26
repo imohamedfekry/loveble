@@ -31,7 +31,7 @@ const envSchema = v.object({
     'log',
   ),
   // Resend
-  RESEND_API_KEY:v.pipe(v.string(), v.nonEmpty()),
+  RESEND_API_KEY: v.pipe(v.string(), v.nonEmpty()),
   // JWT
   JWT_SECRET_ACCESS: v.pipe(v.string(), v.nonEmpty()),
   JWT_TEMP: v.pipe(v.string(), v.nonEmpty()),
@@ -62,6 +62,8 @@ const envSchema = v.object({
   INNGEST_SECRET: v.optional(v.string()),
   INNGEST_SIGNING_KEY: v.optional(v.string()),
   INNGEST_WEBHOOK_SECRET: v.pipe(v.string(), v.nonEmpty()),
+  // E2B (sandbox)
+  E2B_API_KEY: v.pipe(v.string(), v.nonEmpty()),
 });
 
 export type Env = v.InferOutput<typeof envSchema>;

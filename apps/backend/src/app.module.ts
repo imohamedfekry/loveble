@@ -1,3 +1,4 @@
+import { SandboxModule } from './sandbox/sandbox.module';
 import { Module } from '@nestjs/common';
 import { UserModule } from './Modules/user/user.module';
 import { CoreModule } from './common/core/core.module';
@@ -26,6 +27,7 @@ import { AiModule } from './Modules/ai/ai.module';
     InngestModule,
     PersistenceModule,
     AiModule,
+    SandboxModule,
   ],
 })
 export class AppModule {}
