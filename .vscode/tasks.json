@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend",
+      "type": "shell",
+      "command": "pnpm dev:backend",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend",
+      "type": "shell",
+      "command": "pnpm dev:frontend",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev",
+      "dependsOn": [
+        "Backend",
+        "Frontend"
+      ],
+      "dependsOrder": "parallel"
+    }
+  ]
+}
