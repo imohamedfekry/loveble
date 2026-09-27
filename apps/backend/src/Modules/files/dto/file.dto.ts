@@ -1,12 +1,12 @@
 import * as v from 'valibot';
-import { createStandardDto } from '@mag123c/nestjs-stdschema';
 import { snowflakeId } from 'src/common/Global/security/validator/isId.validator';
+
 enum fileTypesEnum {
   file = 'file',
   folder = 'folder',
 }
 
-const createFileSchema = v.object({
+export const CreateFileSchema = v.object({
   type: v.pipe(
     v.enum(
       fileTypesEnum,
@@ -21,7 +21,7 @@ const createFileSchema = v.object({
   parentId: v.optional(snowflakeId),
 });
 
-const updateFileSchema = v.object({
+export const UpdateFileSchema = v.object({
   name: v.optional(
     v.pipe(
       v.string('Name must be a string'),
@@ -32,7 +32,7 @@ const updateFileSchema = v.object({
   parentId: v.optional(v.nullable(snowflakeId)),
 });
 
-export const FileStandard = v.object({
+export const FileStandardSchema = v.object({
   id: v.bigint(),
   projectId: v.bigint(),
   parentId: v.nullable(v.bigint()),
@@ -42,13 +42,13 @@ export const FileStandard = v.object({
   createdAt: v.date(),
   updatedAt: v.date(),
 });
-export const updateFileContentSchema = v.object({
+
+export const UpdateFileContentSchema = v.object({
   content: v.string('Content must be a string'),
 });
 
-export type FileStandard = v.InferOutput<typeof FileStandard>;
-export class UpdateFileDto extends createStandardDto(updateFileSchema) {}
-export class UpdateFileContentDto extends createStandardDto(
-  updateFileContentSchema,
-) {}
-export class CreateFileDto extends createStandardDto(createFileSchema) {}
+export const FileStandard = FileStandardSchema;
+export type FileStandard = v.InferOutput<typeof FileStandardSchema>;
+export type CreateFileDto = v.InferOutput<typeof CreateFileSchema>;
+export type UpdateFileDto = v.InferOutput<typeof UpdateFileSchema>;
+export type UpdateFileContentDto = v.InferOutput<typeof UpdateFileContentSchema>;

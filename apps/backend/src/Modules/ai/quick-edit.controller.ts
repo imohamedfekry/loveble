@@ -1,8 +1,9 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { Auth } from 'src/common/decorator/auth-user.decorator';
 import { AiService } from './ai.service';
-import { QuickEditRequestDto, QuickEditResponseDto } from './dto/quick-edit.dto';
 import { runCrawlPipeline } from 'src/common/scraping/crawl-pipeline';
+import type { QuickEditRequestDto, QuickEditResponseDto } from './dto/quick-edit.dto';
+import { QuickEditRequestSchema } from './dto/quick-edit.dto';
 
 @Controller('ai/quick-edit')
 @Auth()
@@ -10,7 +11,7 @@ export class QuickEditController {
   constructor(private readonly aiService: AiService) { }
 
   @Post()
-  async edit(@Body() body: QuickEditRequestDto): Promise<QuickEditResponseDto> {
+  async edit(@Body({ schema: QuickEditRequestSchema }) body: QuickEditRequestDto): Promise<QuickEditResponseDto> {
     const urls = body.instruction.match(/https?:\/\/[^\s"'<>]+/g) ?? [];
     let documentationContext = '';
 

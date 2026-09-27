@@ -12,7 +12,7 @@ type SearchOutput = {
   snippet: string;
 }[];
 
-export const searchTool = tool<SearchInput, SearchOutput>({
+export const searchTool = tool({
   description: 'Web search using SearXNG (no API key, self-hosted)',
   inputSchema: valibotSchema(
     v.object({

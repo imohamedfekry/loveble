@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as v from 'valibot';
 import { createTool } from '@inngest/agent-kit';
 import { cleanCrawledItems } from 'src/common/scraping/crawl-pipeline';
 import { crawl } from 'src/common/scraping/crawl.service';
@@ -7,8 +7,8 @@ import { normalize } from 'src/common/scraping/Normalize.helper';
 export const searchAgentTool = createTool({
   name: 'search',
   description: 'Web search using SearXNG (no API key, self-hosted)',
-  parameters: z.object({
-    query: z.string().describe('Search query'),
+  parameters: v.object({
+    query: v.pipe(v.string(), v.description('Search query')),
   }),
   handler: async ({ query }) => {
     const url = new URL('http://localhost:8181/search');
@@ -46,8 +46,12 @@ Use this tool whenever:
 - the user provides a URL
 - the user asks about website content
 - documentation pages need to be analyzed`,
-  parameters: z.object({
-    url: z.string().url().describe('Full URL to crawl'),
+  parameters: v.object({
+    url: v.pipe(
+      v.string(),
+      v.url('Invalid URL'),
+      v.description('Full URL to crawl'),
+    ),
   }),
   handler: async ({ url }) => {
     const raw = await crawl([url]);

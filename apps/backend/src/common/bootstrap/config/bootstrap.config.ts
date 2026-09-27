@@ -1,10 +1,9 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
-import { VersioningType } from '@nestjs/common';
+import { StandardSchemaValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { HttpExceptionFilter } from '../../filters/customHttpException.filter';
 import { CatchAllFilter } from '../../filters/catchAll.filter';
-import { StandardValidationPipe } from '@mag123c/nestjs-stdschema';
 
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
@@ -22,13 +21,13 @@ export class BootstrapConfig {
       : corsOrigins
         ? corsOrigins.split(',').map((o) => o.trim())
         : [
-            'http://localhost:3001',
-            'http://localhost:5500',
-            'http://localhost:3000',
-            'http://localhost:4200',
-            'http://localhost:3730',
-            'http://localhost:8288',
-          ];
+          'http://localhost:3001',
+          'http://localhost:5500',
+          'http://localhost:3000',
+          'http://localhost:4200',
+          'http://localhost:3730',
+          'http://localhost:8288',
+        ];
 
     await app.register(fastifyCors as unknown as RegisterPlugin, {
       origin: origins,
@@ -49,10 +48,10 @@ export class BootstrapConfig {
       process.env.COOKIE_SECRET ||
       (process.env.NODE_ENV === 'production'
         ? (() => {
-            throw new Error(
-              'Missing required env var COOKIE_SECRET in production',
-            );
-          })()
+          throw new Error(
+            'Missing required env var COOKIE_SECRET in production',
+          );
+        })()
         : 'dev-cookie-secret');
     await app.register(fastifyCookie as unknown as RegisterPlugin, {
       secret: cookieSecret,
@@ -71,7 +70,7 @@ export class BootstrapConfig {
   }
 
   private static configureValidationPipes(app: NestFastifyApplication) {
-    app.useGlobalPipes(new StandardValidationPipe());
+    app.useGlobalPipes(new StandardSchemaValidationPipe());
   }
 
   private static configureGlobalFilters(app: NestFastifyApplication) {

@@ -138,6 +138,54 @@ export const RESPONSE_MESSAGES = {
       message: 'Project updated successfully.',
     },
   },
+  CONVERSATION: {
+    FETCH_SUCCESS: {
+      code: 'CONVERSATION_FETCH_SUCCESS',
+      message: 'Conversation(s) retrieved successfully.',
+    },
+    CREATE: {
+      SUCCESS: {
+        code: 'CONVERSATION_CREATE_SUCCESS',
+        message: 'Conversation created successfully.',
+      },
+    },
+    UPDATE_SUCCESS: {
+      code: 'CONVERSATION_UPDATE_SUCCESS',
+      message: 'Conversation updated successfully.',
+    },
+    DELETE_SUCCESS: {
+      code: 'CONVERSATION_DELETE_SUCCESS',
+      message: 'Conversation deleted successfully.',
+    },
+    NOT_FOUND: {
+      code: 'CONVERSATION_NOT_FOUND',
+      message: 'Conversation not found.',
+    },
+  },
+  MESSAGE: {
+    FETCH_SUCCESS: {
+      code: 'MESSAGE_FETCH_SUCCESS',
+      message: 'Message(s) retrieved successfully.',
+    },
+    CREATE: {
+      SUCCESS: {
+        code: 'MESSAGE_CREATE_SUCCESS',
+        message: 'Message created successfully.',
+      },
+    },
+    UPDATE_SUCCESS: {
+      code: 'MESSAGE_UPDATE_SUCCESS',
+      message: 'Message updated successfully.',
+    },
+    DELETE_SUCCESS: {
+      code: 'MESSAGE_DELETE_SUCCESS',
+      message: 'Message deleted successfully.',
+    },
+    NOT_FOUND: {
+      code: 'MESSAGE_NOT_FOUND',
+      message: 'Message not found.',
+    },
+  },
   FILE: {
     FETCH_SUCCESS: {
       code: 'FILE_FETCH_SUCCESS',

@@ -4,6 +4,8 @@ import { UserRepository } from './user/user.repository';
 import { OAuthRepository } from './user';
 import { ProjectRepository } from './project/project.repository';
 import { FileRepository } from './project/file.repository';
+import { ConversationRepository } from './conversations/conversation.repository';
+import { MessageRepository } from './conversations/message.repository';
 
 @Global()
 @Module({
@@ -13,6 +15,8 @@ import { FileRepository } from './project/file.repository';
     OAuthRepository,
     ProjectRepository,
     FileRepository,
+    ConversationRepository,
+    MessageRepository,
   ],
   exports: [
     UserRepository,
@@ -20,6 +24,8 @@ import { FileRepository } from './project/file.repository';
     OAuthRepository,
     ProjectRepository,
     FileRepository,
+    ConversationRepository,
+    MessageRepository,
   ],
 })
 export class RepositoryModule {}

@@ -78,7 +78,10 @@ export class ProjectRepository extends BaseRepository {
 
     return result[0]?.sandboxId ?? null;
   }
-  async updateSandboxId(projectId: bigint, sandboxId: string | null): Promise<Project | null> {
+  async updateSandboxId(
+    projectId: bigint,
+    sandboxId: string | null,
+  ): Promise<Project | null> {
     const [project] = await this.db
       .update(projects)
       .set({ sandboxId })

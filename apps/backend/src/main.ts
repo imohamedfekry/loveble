@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 import './instrument';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { AppModule, ObserveInstrument } from './app.module';
 import { AppBootstrap } from './common/bootstrap';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { BigIntInterceptor } from './common/interceptors/BigInt.interceptors';
@@ -20,7 +20,9 @@ import * as Sentry from '@sentry/nestjs';
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter(), {
+    instrument: ObserveInstrument,
+  },
   );
 
   const fastify = app.getHttpAdapter().getInstance() as {
@@ -47,7 +49,6 @@ async function bootstrap() {
   // BigIntInterceptor: Converts all BigInt values to strings for JSON serialization
   // ResponseInterceptor: Wraps all responses in the standard ApiResponse format
   app.useGlobalInterceptors(new BigIntInterceptor(), new ResponseInterceptor());
-
   setNestApp(app);
 
   console.log('🧭 About to start listening on port', serverInfo.port);

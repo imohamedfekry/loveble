@@ -28,5 +28,8 @@
     "db:generate": "pnpm --filter @loveble/backend db:generate",
     "db:migrate": "pnpm --filter @loveble/backend db:migrate",
     "db:studio": "pnpm --filter @loveble/backend db:studio"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.5"
   }
 }

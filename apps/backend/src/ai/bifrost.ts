@@ -1,5 +1,5 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import type { LanguageModelV3 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 
 const bifrostProvider = createOpenAICompatible({
   name: 'bifrost',
@@ -7,6 +7,6 @@ const bifrostProvider = createOpenAICompatible({
   baseURL: `${process.env.BIFROST_BASE_URL}/v1`,
 });
 
-export function getModel(modelId: string): LanguageModelV3 {
+export function getModel(modelId: string): LanguageModelV4 {
   return bifrostProvider(modelId);
 }

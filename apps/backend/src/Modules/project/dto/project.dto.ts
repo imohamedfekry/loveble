@@ -1,5 +1,4 @@
 import * as v from 'valibot';
-import { createStandardDto } from '@mag123c/nestjs-stdschema';
 
 enum ImportStatus {
   importing = 'importing',
@@ -19,7 +18,7 @@ const nameField = v.pipe(
   v.maxLength(100, 'Name cannot exceed 100 characters'),
 );
 
-const projectSchema = v.pipe(
+export const ProjectSchema = v.pipe(
   v.object({
     prompt: v.optional(promptField),
     name: v.optional(nameField),
@@ -29,7 +28,8 @@ const projectSchema = v.pipe(
     'Either prompt or name is required',
   ),
 );
-const updateProjectSchema = v.object({
+
+export const UpdateProjectSchema = v.object({
   name: v.optional(
     v.pipe(
       v.string('Name must be a string'),
@@ -46,12 +46,14 @@ const updateProjectSchema = v.object({
     ),
   ),
 });
-const projectQuerySchema = v.object({
+
+export const ProjectQuerySchema = v.object({
   recent: v.optional(v.union([v.literal('true'), v.literal('false')])),
   page: v.optional(v.string()),
   limit: v.optional(v.string()),
 });
-const generatedNameWebhookSchema = v.object({
+
+export const GeneratedNameWebhookSchema = v.object({
   projectId: v.pipe(
     v.string('Project ID must be a string'),
     v.nonEmpty('Project ID is required'),
@@ -63,9 +65,9 @@ const generatedNameWebhookSchema = v.object({
   ),
 });
 
-export class GeneratedNameWebhookDto extends createStandardDto(
-  generatedNameWebhookSchema,
-) {}
-export class ProjectQueryDto extends createStandardDto(projectQuerySchema) {}
-export class ProjectDto extends createStandardDto(projectSchema) {}
-export class UpdateProjectDto extends createStandardDto(updateProjectSchema) {}
+export type ProjectDto = v.InferOutput<typeof ProjectSchema>;
+export type UpdateProjectDto = v.InferOutput<typeof UpdateProjectSchema>;
+export type ProjectQueryDto = v.InferOutput<typeof ProjectQuerySchema>;
+export type GeneratedNameWebhookDto = v.InferOutput<
+  typeof GeneratedNameWebhookSchema
+>;

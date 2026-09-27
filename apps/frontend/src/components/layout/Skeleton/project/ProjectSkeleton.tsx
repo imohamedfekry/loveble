@@ -42,7 +42,7 @@ function ProjectSkeleton() {
                         className="flex h-full shrink-0 flex-col border-r border-border bg-sidebar"
                     >
                         <div className="flex h-8.75 shrink-0 items-center justify-between border-b border-border px-3">
-                            <Skeleton className="h-3 w-[92px] rounded-sm" />
+                            <Skeleton className="h-3 w-23 rounded-sm" />
                             <div className="flex items-center gap-1">
                                 <Skeleton className="size-3.5 rounded-sm opacity-60" />
                                 <Skeleton className="size-3.5 rounded-sm opacity-60" />
@@ -119,7 +119,7 @@ function ProjectSkeleton() {
                                             </div>
                                             <div className="flex flex-1 flex-col overflow-hidden">
 
-                                                <div className="pointer-events-none h-[36px] shrink-0 bg-(--editor-bg) border-b border-l border-border " />
+                                                <div className="pointer-events-none h-9 shrink-0 bg-(--editor-bg) border-b border-l border-border " />
                                             </div>
                                         </div>
                                     </div>

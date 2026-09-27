@@ -1,5 +1,10 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { SandboxService } from './sandbox.service';
+import {
+  CreateSandboxSchema,
+  ExecuteSandboxSchema,
+  SandboxIdSchema,
+} from './dto/sandbox.dto';
 
 @Controller('sandbox')
 export class SandboxController {
@@ -11,25 +16,22 @@ export class SandboxController {
   }
 
   @Post('execute')
-  async execute(
-    @Body('sandboxId') sandboxId: string,
-    @Body('command') command: string,
-  ) {
-    return this.sandboxService.execute(sandboxId, command);
+  async execute(@Body({ schema: ExecuteSandboxSchema }) body: { sandboxId: string; command: string }) {
+    return this.sandboxService.execute(body.sandboxId, body.command);
   }
 
   @Post('pause')
-  async pause(@Body('sandboxId') sandboxId: string) {
-    return this.sandboxService.pause(sandboxId);
+  async pause(@Body({ schema: SandboxIdSchema }) body: { sandboxId: string }) {
+    return this.sandboxService.pause(body.sandboxId);
   }
 
   @Post('resume')
-  async resume(@Body('sandboxId') sandboxId: string) {
-    return this.sandboxService.resume(sandboxId);
+  async resume(@Body({ schema: SandboxIdSchema }) body: { sandboxId: string }) {
+    return this.sandboxService.resume(body.sandboxId);
   }
 
   @Post('destroy')
-  async destroy(@Body('sandboxId') sandboxId: string) {
-    return this.sandboxService.destroy(sandboxId);
+  async destroy(@Body({ schema: SandboxIdSchema }) body: { sandboxId: string }) {
+    return this.sandboxService.destroy(body.sandboxId);
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
-import {
+import type {
   GeneratedNameWebhookDto,
   ProjectDto,
   ProjectQueryDto,
@@ -14,8 +14,8 @@ import { PROJECT_EVENTS } from '../realtime/events/project.events';
 import { InngestService } from 'src/common/inngest/inngest.service';
 import { deriveDefaultName } from './project-name.util';
 import type { Project } from 'src/common/database/schema/projects/project.schema';
-import { ConfigService } from '@nestjs/config/dist/config.service';
 import { SandboxService } from 'src/Modules/sandbox/sandbox.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class projectService {

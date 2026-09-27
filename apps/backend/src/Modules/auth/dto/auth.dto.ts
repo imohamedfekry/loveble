@@ -1,13 +1,7 @@
 import * as v from 'valibot';
-import { createStandardDto } from '@mag123c/nestjs-stdschema';
 
-export type GithubCallbackType = v.InferOutput<typeof GithubCallbackSchema>;
-export type TempUserType = v.InferOutput<typeof TempUserSchema>;
-export type verfyOtpType = v.InferOutput<typeof verfyOtpSchema>;
-export type CreateUserType = v.InferOutput<typeof CreateUserSchema>;
-export type LoginType = v.InferOutput<typeof LoginSchema>;
 
-const TempUserSchema = v.object({
+ export const TempUserSchema = v.object({
   email: v.pipe(
     v.string('Email must be a string'),
     v.nonEmpty('Email is required'),
@@ -16,7 +10,7 @@ const TempUserSchema = v.object({
   ),
 });
 
-const verfyOtpSchema = v.object({
+ export const verfyOtpSchema = v.object({
   email: v.pipe(
     v.string('Email must be a string'),
     v.nonEmpty('Email is required'),
@@ -31,7 +25,7 @@ const verfyOtpSchema = v.object({
   ),
 });
 
-const CreateUserSchema = v.object({
+export const CreateUserSchema = v.object({
   name: v.pipe(
     v.string('Name must be a string'),
     v.nonEmpty('Name is required'),
@@ -54,7 +48,7 @@ const CreateUserSchema = v.object({
   ),
 });
 
-const LoginSchema = v.object({
+export const LoginSchema = v.object({
   email: v.pipe(
     v.string('Email must be a string'),
     v.nonEmpty('Email is required'),
@@ -76,7 +70,7 @@ const LoginSchema = v.object({
   ),
 });
 
-const GithubCallbackSchema = v.object({
+export const GithubCallbackSchema = v.object({
   code: v.pipe(
     v.string('Code must be a string'),
     v.nonEmpty('Code is required'),
@@ -90,8 +84,8 @@ const GithubCallbackSchema = v.object({
   ),
 });
 
-export class GithubCallbackDto extends createStandardDto(GithubCallbackSchema) {}
-export class TempUserDto extends createStandardDto(TempUserSchema) {}
-export class verfyOtpDto extends createStandardDto(verfyOtpSchema) {}
-export class CreateUserDto extends createStandardDto(CreateUserSchema) {}
-export class LoginDto extends createStandardDto(LoginSchema) {}
+export type GithubCallbackDto = v.InferOutput<typeof GithubCallbackSchema>;
+export type TempUserDto = v.InferOutput<typeof TempUserSchema>;
+export type verfyOtpDto = v.InferOutput<typeof verfyOtpSchema>;
+export type CreateUserDto = v.InferOutput<typeof CreateUserSchema>;
+export type LoginDto = v.InferOutput<typeof LoginSchema>;

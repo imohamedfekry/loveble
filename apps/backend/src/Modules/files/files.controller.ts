@@ -12,10 +12,15 @@ import {
 import { Auth } from 'src/common/decorator/auth-user.decorator';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import { FileService } from './files.service';
-import {
+import type {
   CreateFileDto,
   UpdateFileContentDto,
   UpdateFileDto,
+} from './dto/file.dto';
+import {
+  CreateFileSchema,
+  UpdateFileContentSchema,
+  UpdateFileSchema,
 } from './dto/file.dto';
 import { ParseSnowflakePipe } from 'src/common/Global/security/validator/isId.validator';
 
@@ -41,7 +46,7 @@ export class FileController {
   // create only save meta data no file upload now
   @Post(':projectId/files')
   createFile(
-    @Body() body: CreateFileDto,
+    @Body({ schema: CreateFileSchema }) body: CreateFileDto,
     @Req() req: AuthenticatedRequest,
     @Param('projectId', ParseSnowflakePipe) projectId: bigint,
   ) {
@@ -59,14 +64,14 @@ export class FileController {
   updateFileContent(
     @Param('projectId', ParseSnowflakePipe) projectId: bigint,
     @Param('fileId', ParseSnowflakePipe) fileId: bigint,
-    @Body() body: UpdateFileContentDto,
+    @Body({ schema: UpdateFileContentSchema }) body: UpdateFileContentDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.fileService.updateFileContent(projectId, fileId, req, body);
   }
   @Patch(':projectId/files/:fileId')
   updateFile(
-    @Body() body: UpdateFileDto,
+    @Body({ schema: UpdateFileSchema }) body: UpdateFileDto,
     @Req() req: AuthenticatedRequest,
     @Param('projectId', ParseSnowflakePipe) projectId: bigint,
     @Param('fileId', ParseSnowflakePipe) fileId: bigint,
