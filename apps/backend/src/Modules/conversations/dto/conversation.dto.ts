@@ -29,13 +29,7 @@ export const CreateMessageSchema = v.object({
     v.string('Content must be a string'),
     v.nonEmpty('Content is required'),
   ),
-  role: v.picklist(
-    ['user', 'assistant', 'system'],
-    (issue) => {
-      const allowed = ['user', 'assistant', 'system'];
-      return `role must be one of: ${allowed.join(', ')}`;
-    },
-  ),
+  role: v.picklist(['user', 'assistant', 'system'], 'Invalid role'),
 });
 
 export const UpdateMessageSchema = v.object({

@@ -12,7 +12,6 @@ import type {
 import { generateOtp } from 'src/common/Global/security/otp.helper';
 import { encrypt, hashHandler, verifyHash } from 'src/common/Global/security';
 import { success, fail } from 'src/common/utils/response.util';
-import { RESPONSE_MESSAGES } from 'src/common/utils/response-messages';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AccessTokenService } from 'src/common/Global/security/jwt/services/access-token.service';
 import { RefreshTokenService } from 'src/common/Global/security/jwt/services/refresh-token.service';
@@ -26,7 +25,7 @@ import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import { OauthTokenService } from 'src/common/Global/security/jwt/services/oauth-token.service';
 import { InngestService } from 'src/common/inngest/inngest.service';
-
+import {RESPONSE_MESSAGES} from "@loveble/utils";
 interface GitHubProfile {
   provider: string;
   providerId: string;

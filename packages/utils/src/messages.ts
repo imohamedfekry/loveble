@@ -136,17 +136,90 @@ export const RESPONSE_MESSAGES = {
     UPDATE_SUCCESS: {
       code: 'PROJECT_UPDATE_SUCCESS',
       message: 'Project updated successfully.',
-    }
+    },
+  },
+  CONVERSATION: {
+    FETCH_SUCCESS: {
+      code: 'CONVERSATION_FETCH_SUCCESS',
+      message: 'Conversation(s) retrieved successfully.',
+    },
+    CREATE: {
+      SUCCESS: {
+        code: 'CONVERSATION_CREATE_SUCCESS',
+        message: 'Conversation created successfully.',
+      },
+    },
+    UPDATE_SUCCESS: {
+      code: 'CONVERSATION_UPDATE_SUCCESS',
+      message: 'Conversation updated successfully.',
+    },
+    DELETE_SUCCESS: {
+      code: 'CONVERSATION_DELETE_SUCCESS',
+      message: 'Conversation deleted successfully.',
+    },
+    NOT_FOUND: {
+      code: 'CONVERSATION_NOT_FOUND',
+      message: 'Conversation not found.',
+    },
+  },
+  MESSAGE: {
+    FETCH_SUCCESS: {
+      code: 'MESSAGE_FETCH_SUCCESS',
+      message: 'Message(s) retrieved successfully.',
+    },
+    CREATE: {
+      SUCCESS: {
+        code: 'MESSAGE_CREATE_SUCCESS',
+        message: 'Message created successfully.',
+      },
+    },
+    UPDATE_SUCCESS: {
+      code: 'MESSAGE_UPDATE_SUCCESS',
+      message: 'Message updated successfully.',
+    },
+    DELETE_SUCCESS: {
+      code: 'MESSAGE_DELETE_SUCCESS',
+      message: 'Message deleted successfully.',
+    },
+    NOT_FOUND: {
+      code: 'MESSAGE_NOT_FOUND',
+      message: 'Message not found.',
+    },
   },
   FILE: {
+    FETCH_SUCCESS: {
+      code: 'FILE_FETCH_SUCCESS',
+      message: 'File retrieved successfully.',
+    },
     CREATED: {
       code: 'FILE_CREATED',
       message: 'File created successfully.',
     },
     DUPLICATE_NAME: {
       code: 'FILE_DUPLICATE_NAME',
-      message: 'A file with the same name already exists in this folder.',
-    }
-
-  }
+      message:
+        'This file or folder already exists at this location. Please choose a different name.',
+    },
+    UPDATED: {
+      code: 'FILE_UPDATED',
+      message: 'File updated successfully',
+    },
+    DLETED: {
+      code: 'FILE_DELETED_',
+      message: 'File deleted successfully',
+    },
+    NOT_FOUND: {
+      code: 'FILE_NOT_FOUND',
+      message: 'File not found.',
+    },
+    PARENT_MUST_BE_FOLDER: {
+      code: 'PARENT_MUST_BE_FOLDER',
+      message: 'The specified parent must be a folder.',
+    },
+    INVALID_PARENT: {
+      code: 'INVALID_PARENT',
+      message:
+        'A folder cannot be moved inside itself or one of its subfolders.',
+    },
+  },
 } as const;

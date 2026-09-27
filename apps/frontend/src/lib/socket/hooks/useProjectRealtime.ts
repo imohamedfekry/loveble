@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { socket } from "../socket";
 import { useFilesStore } from "@/store/file.store";
 import { useFilePresenceStore, type FileViewer } from "@/store/file-presence.store";
+import { useMessagesStore } from "@/store/messages.store";
 import type { ProjectFileType } from "@/lib/api/apis/files/types";
 const SUBSCRIBE_MAX_RETRIES = 5;
 const SUBSCRIBE_RETRY_BASE_MS = 700;
@@ -85,10 +86,16 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
           ? String((err as { message: unknown }).message)
           : "";
 
-      if (message === "Unauthorized") {
+      // Any failure (missing message included) → clear state and retry;
+      // retry is capped at SUBSCRIBE_MAX_RETRIES.
+      if (message === "Unauthorized" || !message) {
         subscribedProjectRef.current = null;
         scheduleRetry();
       }
+    };
+
+    const onException = (err: unknown) => {
+      console.error("[realtime] ws exception:", err);
     };
 
     if (socket.connected) {
@@ -100,6 +107,7 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
     socket.on("project:subscribed", onSubscribed);
     socket.on("sandbox:ready", onSandboxReady);
     socket.on("project:error", onProjectError);
+    socket.on("exception", onException);
 
     return () => {
       clearRetry();
@@ -108,6 +116,7 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       socket.off("project:subscribed", onSubscribed);
       socket.off("sandbox:ready", onSandboxReady);
       socket.off("project:error", onProjectError);
+      socket.off("exception", onException);
       unsubscribe();
     };
   }, [projectId]);
@@ -116,7 +125,6 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
     const onCreated = (payload: ProjectFileType) => {
       const file = payload;
       if (!file?.id || !file.projectId) return;
-
       useFilesStore.getState().addFile(file.projectId, file);
     };
 
@@ -128,7 +136,6 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
     const onDeleted = (payload: ProjectFileType) => {
       const fileId = payload.id;
       const projectId = payload.projectId;
-
       useFilesStore.getState().removeFile(projectId, fileId);
     };
 
@@ -179,6 +186,71 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       socket.off("file:presence-state", onPresenceState);
       socket.off("file:presence", onPresence);
       useFilePresenceStore.getState().clear();
+    };
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    const onMessageNew = (payload: any) => {
+      if (!payload?.conversationId) return;
+      useMessagesStore.getState().addMessage(
+        BigInt(payload.conversationId),
+        {
+          id: BigInt(payload.id),
+          conversationId: BigInt(payload.conversationId),
+          projectId: BigInt(payload.projectId),
+          content: payload.content,
+          role: payload.role,
+          status: payload.status,
+          updatedAt: payload.updatedAt,
+          createdAt: payload.createdAt,
+        },
+      );
+    };
+
+    const onMessageUpdated = (payload: any) => {
+      if (!payload?.conversationId) return;
+      useMessagesStore.getState().updateMessage(
+        BigInt(payload.conversationId),
+        {
+          id: BigInt(payload.id),
+          conversationId: BigInt(payload.conversationId),
+          projectId: BigInt(payload.projectId),
+          content: payload.content,
+          role: payload.role,
+          status: payload.status,
+          updatedAt: payload.updatedAt,
+          createdAt: payload.createdAt,
+        },
+      );
+    };
+
+    const onConversationCreated = (payload: any) => {
+      // Can be used to update conversation lists if needed
+      console.log("[realtime] conversation:created", payload);
+    };
+
+    const onConversationUpdated = (payload: any) => {
+      console.log("[realtime] conversation:updated", payload);
+    };
+
+    const onConversationDeleted = (payload: any) => {
+      console.log("[realtime] conversation:deleted", payload);
+    };
+
+    socket.on("message:new", onMessageNew);
+    socket.on("message:updated", onMessageUpdated);
+    socket.on("conversation:created", onConversationCreated);
+    socket.on("conversation:updated", onConversationUpdated);
+    socket.on("conversation:deleted", onConversationDeleted);
+
+    return () => {
+      socket.off("message:new", onMessageNew);
+      socket.off("message:updated", onMessageUpdated);
+      socket.off("conversation:created", onConversationCreated);
+      socket.off("conversation:updated", onConversationUpdated);
+      socket.off("conversation:deleted", onConversationDeleted);
     };
   }, [projectId]);
 };

@@ -48,7 +48,8 @@ export class RealtimeGateway
   ) {}
 
   handleConnection(socket: Socket) {
-    return this.connectionHandler.handleConnect(socket);
+    socket.data.authReady = this.connectionHandler.handleConnect(socket);
+    return socket.data.authReady;
   }
 
   async handleDisconnect(socket: Socket) {
@@ -86,6 +87,10 @@ export class RealtimeGateway
       socket.emit('project:error', { message: 'Invalid projectId' });
       return;
     }
+
+    // Wait for async token validation to finish before checking ownership,
+    // otherwise early subscribes (sent right after connect) race the auth.
+    await socket.data?.authReady;
 
     let project: Awaited<ReturnType<ProjectRepository['findById']>>;
     try {
@@ -148,6 +153,9 @@ export class RealtimeGateway
       });
       return;
     }
+
+    // Wait for async token validation before ownership check (same race as subscribe).
+    await socket.data?.authReady;
 
     let project: Awaited<ReturnType<ProjectRepository['findById']>> | null =
       null;

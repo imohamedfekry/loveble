@@ -15,6 +15,7 @@ export const messageStatusEnum = pgEnum('message_status_enum', [
     'completed',
     'canceled',
 ]);
+
 export const roleEnum = pgEnum('role_enum', ['user', 'assistant', 'system']);
 export const messages = pgTable(
     'messages',

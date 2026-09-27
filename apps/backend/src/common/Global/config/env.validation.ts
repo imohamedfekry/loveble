@@ -62,8 +62,8 @@ const envSchema = v.object({
   INNGEST_SECRET: v.optional(v.string()),
   INNGEST_SIGNING_KEY: v.optional(v.string()),
   INNGEST_WEBHOOK_SECRET: v.pipe(v.string(), v.nonEmpty()),
-  // E2B (sandbox)
-  E2B_API_KEY: v.pipe(v.string(), v.nonEmpty()),
+  // E2B (sandbox) — optional, needed only for sandbox operations
+  E2B_API_KEY: v.optional(v.string()),
 });
 
 export type Env = v.InferOutput<typeof envSchema>;

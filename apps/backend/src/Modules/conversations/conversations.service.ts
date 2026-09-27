@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
-import { RESPONSE_MESSAGES } from 'src/common/utils/response-messages';
+import {RESPONSE_MESSAGES} from "@loveble/utils";
 import { fail, success } from 'src/common/utils/response.util';
+import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
 import { ConversationRepository } from 'src/common/database/repositories/conversations/conversation.repository';
 import { MessageRepository } from 'src/common/database/repositories/conversations/message.repository';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
@@ -18,6 +19,7 @@ export class ConversationsService {
     private readonly conversationRepository: ConversationRepository,
     private readonly messageRepository: MessageRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly realtimeEmitService: RealtimeEmitService,
   ) {}
 
   private async assertProjectOwnership(
@@ -35,12 +37,9 @@ export class ConversationsService {
     conversationId: bigint,
     req: AuthenticatedRequest,
   ) {
-    const conversation =
-      await this.conversationRepository.findById(conversationId);
+    const conversation = await this.conversationRepository.findById(conversationId);
     if (!conversation) {
-      throw new NotFoundException(
-        fail(RESPONSE_MESSAGES.CONVERSATION.NOT_FOUND),
-      );
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.CONVERSATION.NOT_FOUND));
     }
     await this.assertProjectOwnership(conversation.projectId, req);
     return conversation;
@@ -53,6 +52,12 @@ export class ConversationsService {
       projectId,
       title: body.title,
     });
+
+    this.realtimeEmitService.toProject(
+      projectId,
+      'conversation:created',
+      conversation,
+    );
 
     return success(RESPONSE_MESSAGES.CONVERSATION.CREATE.SUCCESS, {
       conversation,
@@ -68,10 +73,10 @@ export class ConversationsService {
 
   async findByProject(projectId: bigint, req: AuthenticatedRequest) {
     await this.assertProjectOwnership(projectId, req);
-    const conversations =
+    const conversationList =
       await this.conversationRepository.findByProject(projectId);
     return success(RESPONSE_MESSAGES.CONVERSATION.FETCH_SUCCESS, {
-      conversations,
+      conversations: conversationList,
     });
   }
 
@@ -83,26 +88,38 @@ export class ConversationsService {
     await this.assertConversationOwnership(id, req);
     const conversation = await this.conversationRepository.update(id, body);
     if (!conversation) {
-      throw new NotFoundException(
-        fail(RESPONSE_MESSAGES.CONVERSATION.NOT_FOUND),
-      );
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.CONVERSATION.NOT_FOUND));
     }
+
+    this.realtimeEmitService.toProject(
+      conversation.projectId,
+      'conversation:updated',
+      conversation,
+    );
+
     return success(RESPONSE_MESSAGES.CONVERSATION.UPDATE_SUCCESS, {
       conversation,
     });
   }
 
   async delete(id: bigint, req: AuthenticatedRequest) {
-    await this.assertConversationOwnership(id, req);
+    const conversation = await this.assertConversationOwnership(id, req);
     await this.conversationRepository.delete(id);
+
+    this.realtimeEmitService.toProject(
+      conversation.projectId,
+      'conversation:deleted',
+      { conversationId: id },
+    );
+
     return success(RESPONSE_MESSAGES.CONVERSATION.DELETE_SUCCESS);
   }
 
   async getMessages(conversationId: bigint, req: AuthenticatedRequest) {
     await this.assertConversationOwnership(conversationId, req);
-    const messages =
+    const messageList =
       await this.messageRepository.findByConversation(conversationId);
-    return success(RESPONSE_MESSAGES.MESSAGE.FETCH_SUCCESS, { messages });
+    return success(RESPONSE_MESSAGES.MESSAGE.FETCH_SUCCESS, { messages: messageList });
   }
 
   async createMessage(
@@ -110,17 +127,21 @@ export class ConversationsService {
     body: CreateMessageDto,
     req: AuthenticatedRequest,
   ) {
-    const conversation = await this.assertConversationOwnership(
-      conversationId,
-      req,
-    );
+    const conversation = await this.assertConversationOwnership(conversationId, req);
 
     const message = await this.messageRepository.create({
       conversationId,
       projectId: conversation.projectId,
       content: body.content,
       role: body.role,
+      status: 'completed',
     });
+
+    this.realtimeEmitService.toProject(
+      conversation.projectId,
+      'message:new',
+      message,
+    );
 
     return success(RESPONSE_MESSAGES.MESSAGE.CREATE.SUCCESS, { message });
   }
@@ -140,6 +161,13 @@ export class ConversationsService {
     if (!updated) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.MESSAGE.NOT_FOUND));
     }
+
+    this.realtimeEmitService.toProject(
+      updated.projectId,
+      'message:updated',
+      updated,
+    );
+
     return success(RESPONSE_MESSAGES.MESSAGE.UPDATE_SUCCESS, {
       message: updated,
     });

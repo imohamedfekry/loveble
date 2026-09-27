@@ -1,9 +1,8 @@
-import '@inngest/otel/node';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import './instrument';
 import { NestFactory } from '@nestjs/core';
-import { AppModule, ObserveInstrument } from './app.module';
+import { AppModule } from './app.module';
 import { AppBootstrap } from './common/bootstrap';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { BigIntInterceptor } from './common/interceptors/BigInt.interceptors';
@@ -20,9 +19,7 @@ import * as Sentry from '@sentry/nestjs';
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(), {
-    instrument: ObserveInstrument,
-  },
+    new FastifyAdapter(),
   );
 
   const fastify = app.getHttpAdapter().getInstance() as {

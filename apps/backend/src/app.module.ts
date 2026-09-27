@@ -13,10 +13,6 @@ import { InngestModule } from './common/inngest/inngest.module';
 import { PersistenceModule } from './common/persistence/persistence.module';
 import { AiModule } from './Modules/ai/ai.module';
 import { ConversationsModule } from './Modules/conversations/conversations.module';
-import { createObserveModule } from '@nestjs/observe';
-
-export const { ObserveModule, ObserveInstrument } = createObserveModule();
-
 @Module({
   imports: [
     CoreModule,
@@ -33,12 +29,6 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AiModule,
     SandboxModule,
     ConversationsModule,
-    ObserveModule.forRoot({
-      // must add it to env env.validation to remove "!""
-      appKey: process.env.OBSERVE_APP_KEY!,
-      appSecret: process.env.OBSERVE_APP_SECRET!,
-      serviceId: 'backend',
-    }),
   ],
 })
 export class AppModule { }

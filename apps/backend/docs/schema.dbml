@@ -38,7 +38,8 @@ table messages {
   project_id bigint [not null]
   conversation_id bigint [not null]
   content text [not null]
-  message_status message_status_enum [not null, default: 'processing']
+  message_status message_status_enum
+  role role_enum [not null]
   updated_at timestamp [not null, default: `now()`]
   created_at timestamp [not null, default: `now()`]
 

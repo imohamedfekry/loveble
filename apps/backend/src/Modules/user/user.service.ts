@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { success } from 'src/common/utils/response.util';
-import { RESPONSE_MESSAGES } from 'src/common/utils/response-messages';
+import {RESPONSE_MESSAGES} from "@loveble/utils";
 import * as v from 'valibot';
 import { UserProfileSchema } from './dto/user.dto';
 import { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';

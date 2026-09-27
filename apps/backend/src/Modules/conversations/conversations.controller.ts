@@ -18,12 +18,6 @@ import type {
   UpdateConversationDto,
   UpdateMessageDto,
 } from './dto/conversation.dto';
-import {
-  CreateConversationSchema,
-  CreateMessageSchema,
-  UpdateConversationSchema,
-  UpdateMessageSchema,
-} from './dto/conversation.dto';
 
 @Controller('conversations')
 @Auth()
@@ -32,7 +26,7 @@ export class ConversationsController {
 
   @Post('create')
   create(
-    @Body({ schema: CreateConversationSchema }) body: CreateConversationDto,
+    @Body() body: CreateConversationDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.conversationsService.create(body, req);
@@ -57,7 +51,7 @@ export class ConversationsController {
   @Patch(':id')
   update(
     @Param('id', ParseSnowflakePipe) id: bigint,
-    @Body({ schema: UpdateConversationSchema }) body: UpdateConversationDto,
+    @Body() body: UpdateConversationDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.conversationsService.update(id, body, req);
@@ -82,7 +76,7 @@ export class ConversationsController {
   @Post(':conversationId/messages')
   createMessage(
     @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,
-    @Body({ schema: CreateMessageSchema }) body: CreateMessageDto,
+    @Body() body: CreateMessageDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.conversationsService.createMessage(conversationId, body, req);
@@ -91,7 +85,7 @@ export class ConversationsController {
   @Patch('messages/:messageId')
   updateMessage(
     @Param('messageId', ParseSnowflakePipe) messageId: bigint,
-    @Body({ schema: UpdateMessageSchema }) body: UpdateMessageDto,
+    @Body() body: UpdateMessageDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.conversationsService.updateMessage(messageId, body, req);
