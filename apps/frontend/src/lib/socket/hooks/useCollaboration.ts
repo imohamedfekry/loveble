@@ -7,6 +7,7 @@ import {
   receiveUpdates,
   sendableUpdates,
   getSyncedVersion,
+  type Update,
 } from "@codemirror/collab";
 import { socket } from "@/lib/socket/socket";
 import { useSocketStatus } from "@/lib/socket/socket-store";
@@ -83,6 +84,9 @@ export function useCollaboration({
   const pushGenRef = useRef(0);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sentUpdatesRef = useRef<readonly Update[]>([]);
+  const failuresRef = useRef(0);
+  const blockedUntilRef = useRef(0);
   const socketStatus = useSocketStatus();
   const localUserId = useUserStore((s) => s.user?.id);
   const [snapshot, setSnapshot] = useState<CollabSnapshot | null>(null);
@@ -110,6 +114,7 @@ export function useCollaboration({
 
     fileIdRef.current = fileId;
     projectIdRef.current = projectId;
+    sentUpdatesRef.current = [];
     setSnapshot(null);
     setPeers({});
 
@@ -321,6 +326,7 @@ export function useCollaboration({
     const view = viewRef.current;
     if (!view || !fileIdRef.current || pushingRef.current) return;
     if (socketStatus !== "connected") return;
+    if (Date.now() < blockedUntilRef.current) return;
 
     let updates: ReturnType<typeof sendableUpdates>;
     try {
@@ -344,6 +350,8 @@ export function useCollaboration({
       document: view.state.doc.toString(),
     };
 
+    sentUpdatesRef.current = updates;
+
     collabLog("sending update", {
       fileId: payload.fileId,
       version: payload.version,
@@ -351,10 +359,10 @@ export function useCollaboration({
     });
 
     const ackTimeout = setTimeout(() => {
-      if (pushGenRef.current === pushGen) {
+      if (pushGenRef.current === pushGen && pushingRef.current) {
         pushingRef.current = false;
       }
-    }, 2000);
+    }, 5000);
     ackTimeoutRef.current = ackTimeout;
 
     // Extend ack type to handle backend forceResync / missing fields
@@ -367,23 +375,49 @@ export function useCollaboration({
       missing?: CollabPayload["updates"];
     };
 
-    socket.emit(COLLAB_EVENTS.UPDATE, payload, (ack?: AckPayload) => {
+    socket.emit(COLLAB_EVENTS.UPDATE, payload, (rawAck?: AckPayload) => {
       if (pushGenRef.current !== pushGen) return;
       if (ackTimeoutRef.current) {
         clearTimeout(ackTimeoutRef.current);
         ackTimeoutRef.current = null;
       }
+
+      const ack = (rawAck as any)?.data ?? rawAck;
+
+      const serverDoc = ack?.document ?? ack?.doc;
+      const missing = ack?.updates ?? ack?.missing ?? [];
+      const madeProgress =
+        ack?.accepted === true ||
+        typeof serverDoc === "string" ||
+        missing.length > 0;
+
+      if (!madeProgress) {
+        console.error("[collab] update rejected without resync data", ack);
+        failuresRef.current += 1;
+        pushingRef.current = false;
+        if (failuresRef.current >= 5) {
+          failuresRef.current = 0;
+          blockedUntilRef.current = 0;
+          socket.emit(COLLAB_EVENTS.JOIN, {
+            fileId: fileIdRef.current,
+            projectId: projectIdRef.current,
+          });
+        } else {
+          blockedUntilRef.current = Date.now() + 300 * 2 ** failuresRef.current;
+        }
+        return;
+      }
+      failuresRef.current = 0;
+
       try {
         const currentView = viewRef.current;
         if (ack && currentView) {
           const synced = getSyncedVersion(currentView.state);
-          const serverDoc = (ack as AckPayload).document ?? (ack as AckPayload).doc;
           const hasForceResync =
             (ack as AckPayload).forceResync === true ||
             (typeof ack.error === "string" && ack.error.includes("Length mismatch")) ||
             (ack.accepted === false && typeof serverDoc === "string");
 
-          // Normalize missing updates (backend may send `missing` instead of `updates`)
           const ackUpdates = (ack.updates as CollabPayload["updates"]) ?? (ack as AckPayload).missing ?? [];
 
           const authorityReset =
@@ -404,12 +438,10 @@ export function useCollaboration({
           });
 
           if (authorityReset && typeof serverDoc === "string") {
-            // Full resync — discard local pending and reload from authority doc
             setSnapshot({
               version: ack.version,
               document: serverDoc,
             });
-            // Clear pushing state; next flush will be after remount
           } else if (ackUpdates.length > 0) {
             applyIncoming(currentView, {
               ...ack,
@@ -417,20 +449,11 @@ export function useCollaboration({
               updates: ackUpdates,
             });
           } else if (ack.accepted === true) {
-            // Accepted — still need to confirm local updates via empty receive to advance synced version
-            // CodeMirror collab tracks synced version via receiveUpdates; apply empty to bump version
             try {
-              const pending = sendableUpdates(currentView.state);
-              if (pending.length === 0) {
-                // No pending means our sent updates were already considered synced locally;
-                // force a no-op receive to align version if server version advanced
-                // (collab extension updates synced version on receiveUpdates)
-                applyIncoming(currentView, {
-                  fileId: ack.fileId,
-                  fromVersion: synced,
-                  version: ack.version,
-                  updates: [],
-                });
+              const sentUpdates = sentUpdatesRef.current;
+              if (sentUpdates.length > 0) {
+                currentView.dispatch(receiveUpdates(currentView.state, sentUpdates));
+                sentUpdatesRef.current = [];
               }
             } catch {}
           }

@@ -255,64 +255,71 @@ export class RealtimeGateway
       version: number;
     },
   ) {
-    // this.logger.debug(
-    //   `[handleCollabUpdate] socket=${socket.id} payload=${JSON.stringify(payload)}`,
-    // );
-
     const { fileId, updates, version } = payload ?? {};
+    try {
+      if (
+        !fileId ||
+        typeof fileId !== 'string' ||
+        !Array.isArray(updates) ||
+        typeof version !== 'number'
+      ) {
+        this.logger.warn(
+          `[handleCollabUpdate] Invalid payload from socket=${socket.id}`,
+        );
+        return {
+          accepted: false,
+          fileId: fileId ?? null,
+          version: 0,
+          error: 'Invalid payload',
+        };
+      }
 
-    if (
-      !fileId ||
-      typeof fileId !== 'string' ||
-      !Array.isArray(updates) ||
-      typeof version !== 'number'
-    ) {
-      this.logger.warn(
-        `[handleCollabUpdate] Invalid payload from socket=${socket.id}`,
+      if (!socket.rooms.has(`file:${fileId}`)) {
+        this.logger.warn(
+          `[handleCollabUpdate] socket=${socket.id} not in room file:${fileId}`,
+        );
+        return {
+          accepted: false,
+          fileId,
+          version: 0,
+          error: 'Not joined to this file',
+        };
+      }
+
+      const result = await this.documentStateService.pushUpdates(
+        fileId,
+        version,
+        updates,
+      );
+
+      if (result.accepted) {
+        socket.to(`file:${fileId}`).emit(COLLAB_EVENTS.UPDATE, {
+          fileId,
+          updates,
+          fromVersion: version,
+          version: result.version,
+        });
+      } else if ((result as any).forceResync) {
+        socket.emit(COLLAB_EVENTS.SYNC, {
+          fileId,
+          doc: (result as any).doc,
+          document: (result as any).doc,
+          version: result.version,
+        });
+      }
+
+      return { fileId, ...result };
+    } catch (err) {
+      this.logger.error(
+        `[handleCollabUpdate] EXCEPTION socket=${socket.id} file=${fileId}: ${err instanceof Error ? err.stack : err}`,
       );
       return {
         accepted: false,
         fileId: fileId ?? null,
         version: 0,
-        error: 'Invalid payload',
+        error: 'Internal error',
       };
     }
-
-    if (!socket.rooms.has(`file:${fileId}`)) {
-      this.logger.warn(
-        `[handleCollabUpdate] socket=${socket.id} not in room file:${fileId}`,
-      );
-      return {
-        accepted: false,
-        fileId,
-        version: 0,
-        error: 'Not joined to this file',
-      };
-    }
-
-    const result = await this.documentStateService.pushUpdates(
-      fileId,
-      version,
-      updates,
-    );
-
-    if (result.accepted) {
-      socket.to(`file:${fileId}`).emit(COLLAB_EVENTS.UPDATE, {
-        fileId,
-        updates,
-        version: result.version,
-      });
-    } else if ((result as any).forceResync) {
-      // ⬅️ ابعت resync كامل لنفس الكلاينت بس
-      socket.emit(COLLAB_EVENTS.SYNC, {
-        fileId,
-        doc: (result as any).doc,
-        document: (result as any).doc,
-        version: result.version,
-      });
-    }
-
-    return { fileId, ...result };
   }
 
   @SubscribeMessage(COLLAB_EVENTS.AWARENESS)

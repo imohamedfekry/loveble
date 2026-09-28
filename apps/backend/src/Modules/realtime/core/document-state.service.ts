@@ -235,7 +235,18 @@ export class DocumentStateService {
     doc?: string;
     document?: string;
   }> {
-    await this.ensureLoaded(fileId);
+    try {
+      await this.ensureLoaded(fileId);
+    } catch (err) {
+      this.logger.error(
+        `[pushUpdates] ensureLoaded failed file=${fileId}: ${err instanceof Error ? err.stack : err}`,
+      );
+      return {
+        accepted: false,
+        version: 0,
+        error: 'Failed to load document state',
+      };
+    }
     if (updates.length === 0) {
       const currentVersion = await this.currentVersion(fileId);
       if (currentVersion === expectedVersion) {
