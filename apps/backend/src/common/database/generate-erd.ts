@@ -10,7 +10,10 @@ import { projectsRelations } from './schema/projects/project.relations';
 import { filesRelations } from './schema/projects/file.relations';
 import { userRelations } from './schema/user/user.relations';
 import { messageStatusEnum } from './schema/conversations/message.schema';
-import { exportStatusEnum, importStatusEnum } from './schema/projects/project.schema';
+import {
+  exportStatusEnum,
+  importStatusEnum,
+} from './schema/projects/project.schema';
 import { fileTypeEnum } from './schema/projects/file.schema';
 
 const schema = {
@@ -30,5 +33,9 @@ const schema = {
   fileTypeEnum,
 };
 
-const dbml = pgGenerate({ schema, out: './docs/schema.dbml', relational: true });
+const dbml = pgGenerate({
+  schema,
+  out: './docs/schema.dbml',
+  relational: true,
+});
 console.log('DBML generated successfully at ./docs/schema.dbml');

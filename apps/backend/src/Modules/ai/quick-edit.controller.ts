@@ -2,16 +2,21 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { Auth } from 'src/common/decorator/auth-user.decorator';
 import { AiService } from './ai.service';
 import { runCrawlPipeline } from 'src/common/scraping/crawl-pipeline';
-import type { QuickEditRequestDto, QuickEditResponseDto } from './dto/quick-edit.dto';
+import type {
+  QuickEditRequestDto,
+  QuickEditResponseDto,
+} from './dto/quick-edit.dto';
 import { QuickEditRequestSchema } from './dto/quick-edit.dto';
 
 @Controller('ai/quick-edit')
 @Auth()
 export class QuickEditController {
-  constructor(private readonly aiService: AiService) { }
+  constructor(private readonly aiService: AiService) {}
 
   @Post()
-  async edit(@Body({ schema: QuickEditRequestSchema }) body: QuickEditRequestDto): Promise<QuickEditResponseDto> {
+  async edit(
+    @Body({ schema: QuickEditRequestSchema }) body: QuickEditRequestDto,
+  ): Promise<QuickEditResponseDto> {
     const urls = body.instruction.match(/https?:\/\/[^\s"'<>]+/g) ?? [];
     let documentationContext = '';
 
@@ -30,7 +35,7 @@ export class QuickEditController {
     }
 
     let prompt = [
-      'Edit the selected code based on the user\'s instruction.',
+      "Edit the selected code based on the user's instruction.",
       '',
       'Selected Code:',
       body.selectedCode,
@@ -47,7 +52,10 @@ export class QuickEditController {
     prompt += `\n\nReturn only the raw code with no markdown code fences (no \`\`\` at all), no language tags, no explanations. Just the plain code text, maintaining the same indentation level as original. If the instruction is unclear or can't be applied, return the original code unchanged.`;
     prompt += `\n\nReturn only the edited version of the selected code. Maintain the same indentation level as original. Not include any explanations or comments unless requested. If the instruction is unclear or can't be applied, return the original code unchanged.`;
 
-    const editedCode = await this.aiService.generateEdit(prompt, documentationContext);
+    const editedCode = await this.aiService.generateEdit(
+      prompt,
+      documentationContext,
+    );
     console.log('Edited Code:', editedCode);
     return { editedCode };
   }

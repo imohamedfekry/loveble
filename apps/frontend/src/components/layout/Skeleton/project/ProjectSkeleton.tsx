@@ -4,8 +4,15 @@ import Link from "next/link"
 import { ChevronRightIcon } from "lucide-react"
 import { TreeItemWrapperSkeleton } from "@/components/project/file-explorer/TreeItemWrapperSkeleton"
 import { ChatComposerSkeleton } from "../ChatComposerSkeleton"
+import { UserAvatarButton } from "@/components/user/user-avatar"
+import { useUserStore } from "@/store/user.store"
 
 function ProjectSkeleton() {
+    // Avatar URL lives in the user store — only skeleton while the user is
+    // still loading. Once loaded, UserAvatarButton renders the image (or its
+    // letter fallback) exactly like the real ProjectNavbar.
+    const userLoading = useUserStore((s) => s.isLoading);
+
     return (
         <div className="relative flex h-screen w-full flex-col overflow-hidden bg-background">
             <nav className="flex h-8 shrink-0 items-center justify-between gap-x-2 border-b border-border bg-card px-2">
@@ -31,7 +38,11 @@ function ProjectSkeleton() {
                     <Skeleton className="size-4 rounded-full opacity-60" />
                 </div>
                 <div className="flex items-center gap-2">
-                    <Skeleton className="size-8 rounded-full" />
+                    {userLoading ? (
+                        <Skeleton className="size-8 rounded-full" />
+                    ) : (
+                        <UserAvatarButton />
+                    )}
                 </div>
             </nav>
 

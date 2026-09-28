@@ -210,6 +210,8 @@ export type OpenProjectResult = {
   success: boolean;
   message: string;
   sandboxId?: string;
+  status?: "running" | "paused";
+  created?: boolean;
 };
 
 export async function openProject(projectId: string): Promise<OpenProjectResult> {
@@ -235,5 +237,7 @@ export async function openProject(projectId: string): Promise<OpenProjectResult>
     success: json.success ?? true,
     message: json.message ?? "",
     sandboxId: json.data?.sandboxId ?? json?.sandboxId,
+    status: json.data?.status ?? json?.status,
+    created: json.data?.created ?? json?.created,
   };
 }

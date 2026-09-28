@@ -91,9 +91,7 @@ User prompt:
 
     const result = await response.json();
 
-    log.log(
-      `✓ apply-name projectId=${projectId} name="${projectName}"`,
-    );
+    log.log(`✓ apply-name projectId=${projectId} name="${projectName}"`);
 
     return {
       success: true,

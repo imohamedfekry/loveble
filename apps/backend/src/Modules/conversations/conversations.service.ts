@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
-import {RESPONSE_MESSAGES} from "@loveble/utils";
+import { RESPONSE_MESSAGES } from '@loveble/utils';
 import { fail, success } from 'src/common/utils/response.util';
 import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
 import { ConversationRepository } from 'src/common/database/repositories/conversations/conversation.repository';
@@ -37,9 +37,12 @@ export class ConversationsService {
     conversationId: bigint,
     req: AuthenticatedRequest,
   ) {
-    const conversation = await this.conversationRepository.findById(conversationId);
+    const conversation =
+      await this.conversationRepository.findById(conversationId);
     if (!conversation) {
-      throw new NotFoundException(fail(RESPONSE_MESSAGES.CONVERSATION.NOT_FOUND));
+      throw new NotFoundException(
+        fail(RESPONSE_MESSAGES.CONVERSATION.NOT_FOUND),
+      );
     }
     await this.assertProjectOwnership(conversation.projectId, req);
     return conversation;
@@ -88,7 +91,9 @@ export class ConversationsService {
     await this.assertConversationOwnership(id, req);
     const conversation = await this.conversationRepository.update(id, body);
     if (!conversation) {
-      throw new NotFoundException(fail(RESPONSE_MESSAGES.CONVERSATION.NOT_FOUND));
+      throw new NotFoundException(
+        fail(RESPONSE_MESSAGES.CONVERSATION.NOT_FOUND),
+      );
     }
 
     this.realtimeEmitService.toProject(
@@ -119,7 +124,9 @@ export class ConversationsService {
     await this.assertConversationOwnership(conversationId, req);
     const messageList =
       await this.messageRepository.findByConversation(conversationId);
-    return success(RESPONSE_MESSAGES.MESSAGE.FETCH_SUCCESS, { messages: messageList });
+    return success(RESPONSE_MESSAGES.MESSAGE.FETCH_SUCCESS, {
+      messages: messageList,
+    });
   }
 
   async createMessage(
@@ -127,7 +134,10 @@ export class ConversationsService {
     body: CreateMessageDto,
     req: AuthenticatedRequest,
   ) {
-    const conversation = await this.assertConversationOwnership(conversationId, req);
+    const conversation = await this.assertConversationOwnership(
+      conversationId,
+      req,
+    );
 
     const message = await this.messageRepository.create({
       conversationId,

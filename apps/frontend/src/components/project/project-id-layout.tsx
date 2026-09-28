@@ -20,19 +20,10 @@ export const ProjectIdLayout = ({
   useLoadFiles(projectId);
   useProjectRealtime(projectId);
 
-  const { project, loading: projectLoading, sandboxLoading } = useLoadProject(projectId);
+  const { project, loading: projectLoading } = useLoadProject(projectId);
   const files = useFilesStore((s) => s.files[projectId]);
   const filesLoading = useFilesStore((s) => s.loadingProjects[projectId] ?? false);
   const isInitialFilesLoading = filesLoading && !files;
-  const isSandboxLoading = !!projectId && sandboxLoading;
-  const setSandboxLoading = useEditorStore((s) => s.setSandboxLoading);
-
-  // Sync sandboxLoading state to the store so EditorView can read it
-  useEffect(() => {
-    if (projectId) {
-      setSandboxLoading(projectId, isSandboxLoading);
-    }
-  }, [projectId, isSandboxLoading, setSandboxLoading]);
 
   useEffect(() => {
     const expected = project?.name ? `${project.name} | Loveble` : "Loveble";
@@ -74,8 +65,9 @@ export const ProjectIdLayout = ({
     };
   }, [projectId]);
 
-  // Unified: show full ProjectSkeleton until project + files + sandbox are ready
-  const isReady = !projectLoading && !isInitialFilesLoading && !isSandboxLoading;
+  // Show the full ProjectSkeleton only while project + files are loading.
+  // The sandbox ("Starting environment...") state renders inside the Code view.
+  const isReady = !projectLoading && !isInitialFilesLoading;
 
   return (
     <>

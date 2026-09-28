@@ -44,7 +44,11 @@ export const UpdateMessageSchema = v.object({
   ),
 });
 
-export type CreateConversationDto = v.InferOutput<typeof CreateConversationSchema>;
-export type UpdateConversationDto = v.InferOutput<typeof UpdateConversationSchema>;
+export type CreateConversationDto = v.InferOutput<
+  typeof CreateConversationSchema
+>;
+export type UpdateConversationDto = v.InferOutput<
+  typeof UpdateConversationSchema
+>;
 export type CreateMessageDto = v.InferOutput<typeof CreateMessageSchema>;
 export type UpdateMessageDto = v.InferOutput<typeof UpdateMessageSchema>;

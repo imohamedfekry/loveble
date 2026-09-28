@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { socket } from "../socket";
 import { useFilesStore } from "@/store/file.store";
+import { useEditorStore } from "@/store/use-editor-store";
 import { useFilePresenceStore, type FileViewer } from "@/store/file-presence.store";
 import { useMessagesStore } from "@/store/messages.store";
 import type { ProjectFileType } from "@/lib/api/apis/files/types";
@@ -73,9 +74,17 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
     };
 
     const onSandboxReady = (payload: { sandboxId?: string }) => {
-      if (payload?.sandboxId) {
-        console.log("[realtime] sandbox:ready", payload.sandboxId);
-      }
+      if (!payload?.sandboxId) return;
+
+      console.log(
+        `[realtime] sandbox:ready — project ${projectId} → ${payload.sandboxId}`,
+      );
+
+      useEditorStore.getState().setSandboxState(projectId, {
+        status: "ready",
+        sandboxId: payload.sandboxId,
+        error: undefined,
+      });
     };
 
     const onProjectError = (err: unknown) => {

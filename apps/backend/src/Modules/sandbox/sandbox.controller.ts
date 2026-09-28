@@ -1,10 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { SandboxService } from './sandbox.service';
-import {
-  CreateSandboxSchema,
-  ExecuteSandboxSchema,
-  SandboxIdSchema,
-} from './dto/sandbox.dto';
+import { ExecuteSandboxSchema, SandboxIdSchema } from './dto/sandbox.dto';
 
 @Controller('sandbox')
 export class SandboxController {
@@ -16,7 +12,13 @@ export class SandboxController {
   }
 
   @Post('execute')
-  async execute(@Body({ schema: ExecuteSandboxSchema }) body: { sandboxId: string; command: string }) {
+  async execute(
+    @Body({ schema: ExecuteSandboxSchema })
+    body: {
+      sandboxId: string;
+      command: string;
+    },
+  ) {
     return this.sandboxService.execute(body.sandboxId, body.command);
   }
 
@@ -31,7 +33,9 @@ export class SandboxController {
   }
 
   @Post('destroy')
-  async destroy(@Body({ schema: SandboxIdSchema }) body: { sandboxId: string }) {
+  async destroy(
+    @Body({ schema: SandboxIdSchema }) body: { sandboxId: string },
+  ) {
     return this.sandboxService.destroy(body.sandboxId);
   }
 }

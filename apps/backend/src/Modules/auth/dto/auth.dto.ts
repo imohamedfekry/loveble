@@ -1,7 +1,6 @@
 import * as v from 'valibot';
 
-
- export const TempUserSchema = v.object({
+export const TempUserSchema = v.object({
   email: v.pipe(
     v.string('Email must be a string'),
     v.nonEmpty('Email is required'),
@@ -10,7 +9,7 @@ import * as v from 'valibot';
   ),
 });
 
- export const verfyOtpSchema = v.object({
+export const verfyOtpSchema = v.object({
   email: v.pipe(
     v.string('Email must be a string'),
     v.nonEmpty('Email is required'),

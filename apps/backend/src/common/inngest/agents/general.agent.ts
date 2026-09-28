@@ -1,11 +1,8 @@
-import {
-  createAgent,
-  createNetwork,
-  openai,
-} from '@inngest/agent-kit';
+import { createAgent, createNetwork, openai } from '@inngest/agent-kit';
 import { crawlAgentTool, searchAgentTool } from './tools';
 
-export const DEFAULT_AGENT_MODEL = 'openrouter/inclusionai/ling-3.0-flash-fin:free';
+export const DEFAULT_AGENT_MODEL =
+  'openrouter/inclusionai/ling-3.0-flash-fin:free';
 
 type AgentKitModel = Parameters<typeof createAgent>[0]['model'];
 

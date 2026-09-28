@@ -25,7 +25,7 @@ import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import { OauthTokenService } from 'src/common/Global/security/jwt/services/oauth-token.service';
 import { InngestService } from 'src/common/inngest/inngest.service';
-import {RESPONSE_MESSAGES} from "@loveble/utils";
+import { RESPONSE_MESSAGES } from '@loveble/utils';
 interface GitHubProfile {
   provider: string;
   providerId: string;
@@ -48,7 +48,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly oauthTokenService: OauthTokenService,
     private readonly inngestService: InngestService,
-  ) { }
+  ) {}
 
   async requestOtp(body: TempUserDto) {
     const tempUser = await this.tempUserRepository.findByEmail(body.email);

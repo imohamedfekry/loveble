@@ -12,11 +12,20 @@ const defaultTabState: TabState = {
     previewTabId: null,
 };
 
+export type SandboxStatus = "idle" | "starting" | "ready" | "error";
+
+export interface SandboxState {
+    status: SandboxStatus;
+    sandboxId?: string;
+    error?: string;
+}
+
 interface EditorStore {
     tabs: Map<string, TabState>;
-    sandboxLoadingByProject: Map<string, boolean>;
+    sandboxByProject: Map<string, SandboxState>;
 
     getTabState: (projectId: string) => TabState;
+    getSandboxState: (projectId: string) => SandboxState;
 
     openFile: (
         projectId: string,
@@ -44,15 +53,24 @@ interface EditorStore {
         projectId: string,
     ) => void;
 
-    setSandboxLoading: (projectId: string, loading: boolean) => void;
+    setSandboxState: (
+        projectId: string,
+        patch: Partial<SandboxState>,
+    ) => void;
 }
+
+const defaultSandboxState: SandboxState = { status: "idle" };
 
 export const useEditorStore = create<EditorStore>()((set, get) => ({
   tabs: new Map(),
-  sandboxLoadingByProject: new Map(),
+  sandboxByProject: new Map(),
 
   getTabState: (projectId) => {
     return get().tabs.get(projectId) ?? defaultTabState;
+  },
+
+  getSandboxState: (projectId) => {
+    return get().sandboxByProject.get(projectId) ?? defaultSandboxState;
   },
 
   openFile: (projectId, fileId, { pinned }) => {
@@ -142,14 +160,15 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   removeProject: (projectId) => {
     const tabs = new Map(get().tabs);
     tabs.delete(projectId);
-    const sandboxLoading = new Map(get().sandboxLoadingByProject);
-    sandboxLoading.delete(projectId);
-    set({ tabs, sandboxLoadingByProject: sandboxLoading });
+    const sandboxByProject = new Map(get().sandboxByProject);
+    sandboxByProject.delete(projectId);
+    set({ tabs, sandboxByProject });
   },
 
-  setSandboxLoading: (projectId, loading) => {
-    const sandboxLoading = new Map(get().sandboxLoadingByProject);
-    sandboxLoading.set(projectId, loading);
-    set({ sandboxLoadingByProject: sandboxLoading });
+  setSandboxState: (projectId, patch) => {
+    const sandboxByProject = new Map(get().sandboxByProject);
+    const current = sandboxByProject.get(projectId) ?? defaultSandboxState;
+    sandboxByProject.set(projectId, { ...current, ...patch });
+    set({ sandboxByProject });
   },
 }));

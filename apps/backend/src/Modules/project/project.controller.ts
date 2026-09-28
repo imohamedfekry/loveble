@@ -51,7 +51,10 @@ export class ProjectController {
   }
 
   @Post('create')
-  createProject(@Body({ schema: ProjectSchema }) body: ProjectDto, @Req() req: AuthenticatedRequest) {
+  createProject(
+    @Body({ schema: ProjectSchema }) body: ProjectDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.projectService.create(body, req);
   }
 

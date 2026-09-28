@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import type {
   GeneratedNameWebhookDto,
@@ -7,7 +13,7 @@ import type {
   UpdateProjectDto,
 } from './dto/project.dto';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
-import {RESPONSE_MESSAGES} from "@loveble/utils";
+import { RESPONSE_MESSAGES } from '@loveble/utils';
 import { fail, success } from 'src/common/utils/response.util';
 import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
 import { PROJECT_EVENTS } from '../realtime/events/project.events';
@@ -20,6 +26,16 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class projectService {
   private readonly logger = new Logger(projectService.name);
+
+  /** Dedupe concurrent /open calls for the same project (single instance). */
+  private readonly openInflight = new Map<
+    string,
+    Promise<{
+      sandboxId: string;
+      status: 'running' | 'paused';
+      created: boolean;
+    }>
+  >();
 
   constructor(
     private readonly configService: ConfigService,
@@ -147,28 +163,73 @@ export class projectService {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
 
-    const existingSandboxId =
-      await this.projectRepository.findSandboxId(projectId);
+    const key = projectId.toString();
 
-    if (existingSandboxId) {
+    const run = async () => {
+      const existingSandboxId =
+        await this.projectRepository.findSandboxId(projectId);
+
+      if (existingSandboxId) {
+        this.logger.log(
+          `Open project ${key}: checking stored sandbox ${existingSandboxId}`,
+        );
+      } else {
+        this.logger.log(`Open project ${key}: no stored sandbox`);
+      }
+
+      const result = await this.sandboxService.ensure(existingSandboxId);
+
+      if (result.created) {
+        await this.projectRepository.updateSandboxId(
+          projectId,
+          result.sandboxId,
+        );
+
+        this.realtimeEmitService.toProject(
+          projectId,
+          PROJECT_EVENTS.SANDBOX_READY,
+          { sandboxId: result.sandboxId },
+        );
+      }
+
+      return result;
+    };
+
+    const inflight = this.openInflight.get(key) ?? run();
+    this.openInflight.set(key, inflight);
+
+    try {
+      const { sandboxId, status, created } = await inflight;
+
+      this.logger.log(
+        `Open project ${key}: sandbox ${sandboxId} ready ` +
+          `(${created ? 'created new' : 'reused existing'}, state: ${status})`,
+      );
+
       return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
-        sandboxId: existingSandboxId,
-      });
-    }
-
-    const { sandboxId } = await this.sandboxService.create();
-    await this.projectRepository.updateSandboxId(projectId, sandboxId);
-
-    this.realtimeEmitService.toProject(
-      projectId,
-      PROJECT_EVENTS.SANDBOX_READY,
-      {
         sandboxId,
-      },
-    );
+        status,
+        created,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Open project ${key}: sandbox ensure failed — ${String(err)}`,
+      );
 
-    return success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, {
-      sandboxId,
-    });
+      if (err instanceof HttpException) {
+        throw err;
+      }
+
+      throw new ServiceUnavailableException(
+        fail({
+          code: 'SANDBOX_UNAVAILABLE',
+          message: 'Failed to start the environment. Please retry.',
+        }),
+      );
+    } finally {
+      if (this.openInflight.get(key) === inflight) {
+        this.openInflight.delete(key);
+      }
+    }
   }
 }

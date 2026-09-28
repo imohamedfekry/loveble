@@ -12,14 +12,13 @@ export class AuthWebhookGuard implements CanActivate {
   constructor(private readonly configService: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context
-      .switchToHttp()
-      .getRequest<FastifyRequest>();
+    const request = context.switchToHttp().getRequest<FastifyRequest>();
 
     const token = request.headers.authorization;
 
-    const webhookSecret =
-      this.configService.get<string>('inngest.webhookSecret');
+    const webhookSecret = this.configService.get<string>(
+      'inngest.webhookSecret',
+    );
 
     if (!token || !webhookSecret || token !== webhookSecret) {
       throw new UnauthorizedException('Invalid webhook token');

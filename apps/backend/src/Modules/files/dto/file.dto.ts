@@ -51,4 +51,6 @@ export const FileStandard = FileStandardSchema;
 export type FileStandard = v.InferOutput<typeof FileStandardSchema>;
 export type CreateFileDto = v.InferOutput<typeof CreateFileSchema>;
 export type UpdateFileDto = v.InferOutput<typeof UpdateFileSchema>;
-export type UpdateFileContentDto = v.InferOutput<typeof UpdateFileContentSchema>;
+export type UpdateFileContentDto = v.InferOutput<
+  typeof UpdateFileContentSchema
+>;

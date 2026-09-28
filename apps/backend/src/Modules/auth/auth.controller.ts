@@ -20,12 +20,10 @@ import {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly AuthService: AuthService) { }
+  constructor(private readonly AuthService: AuthService) {}
 
   @Post('request-otp')
-  async requestOtp(
-    @Body({ schema: TempUserSchema }) body: TempUserDto,
-  ) {
+  async requestOtp(@Body({ schema: TempUserSchema }) body: TempUserDto) {
     return this.AuthService.requestOtp(body);
   }
 

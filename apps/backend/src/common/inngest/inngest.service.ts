@@ -37,7 +37,11 @@ export class InngestService {
     });
   }
 
-  sendEmail(data: { to: string; template: string; templateData: Record<string, unknown> }) {
+  sendEmail(data: {
+    to: string;
+    template: string;
+    templateData: Record<string, unknown>;
+  }) {
     return this.send(INNGEST_EVENTS.SEND_EMAIL, data);
   }
 }

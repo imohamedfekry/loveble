@@ -13,7 +13,7 @@ export const generateTextFunction = inngest.createFunction(
   },
   async ({ event }) => {
     const prompt = String(event.data?.prompt ?? '');
-    const modelId = (event.data?.model ?? DEFAULT_AGENT_MODEL);
+    const modelId = event.data?.model ?? DEFAULT_AGENT_MODEL;
 
     if (!prompt) {
       throw new Error('generate-text job requires a prompt');

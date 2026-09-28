@@ -31,4 +31,4 @@ import { ConversationsModule } from './Modules/conversations/conversations.modul
     ConversationsModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

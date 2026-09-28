@@ -21,15 +21,15 @@ export class BootstrapConfig {
       : corsOrigins
         ? corsOrigins.split(',').map((o) => o.trim())
         : [
-          'http://localhost:3001',
-          'http://localhost:5500',
-          'http://localhost:3000',
-          'http://localhost:4200',
-          'http://localhost:3730',
-          'http://localhost:8288',
-        ];
+            'http://localhost:3001',
+            'http://localhost:5500',
+            'http://localhost:3000',
+            'http://localhost:4200',
+            'http://localhost:3730',
+            'http://localhost:8288',
+          ];
 
-    await app.register(fastifyCors as unknown as RegisterPlugin, {
+    await app.register(fastifyCors, {
       origin: origins,
       methods: configService.get<string[]>('app.cors.methods') || [
         'GET',
@@ -48,12 +48,12 @@ export class BootstrapConfig {
       process.env.COOKIE_SECRET ||
       (process.env.NODE_ENV === 'production'
         ? (() => {
-          throw new Error(
-            'Missing required env var COOKIE_SECRET in production',
-          );
-        })()
+            throw new Error(
+              'Missing required env var COOKIE_SECRET in production',
+            );
+          })()
         : 'dev-cookie-secret');
-    await app.register(fastifyCookie as unknown as RegisterPlugin, {
+    await app.register(fastifyCookie, {
       secret: cookieSecret,
     });
 

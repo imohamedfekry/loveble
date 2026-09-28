@@ -11,4 +11,6 @@ export const QuickEditResponseSchema = v.object({
 });
 
 export type QuickEditRequestDto = v.InferOutput<typeof QuickEditRequestSchema>;
-export type QuickEditResponseDto = v.InferOutput<typeof QuickEditResponseSchema>;
+export type QuickEditResponseDto = v.InferOutput<
+  typeof QuickEditResponseSchema
+>;

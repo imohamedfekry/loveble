@@ -1,6 +1,11 @@
+"use client"
+
 import { Skeleton } from "@loveble/ui"
 import Image from "next/image"
 import { cn } from "@loveble/utils"
+import { AvatarImage } from "@/components/layout/sidebar/AvatarImage"
+import { useGithubAccount } from "@/components/user/hooks/useGithubAccount"
+import { useUserStore } from "@/store/user.store"
 
 export type SidebarActive =
     | "dashboard"
