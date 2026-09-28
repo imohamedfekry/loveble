@@ -27,6 +27,16 @@ function navItemClass(active: boolean) {
 }
 
 export function SidebarSkeleton({ active = "dashboard" }: { active?: SidebarActive }) {
+    // Avatar URL lives in the user store — only skeleton while the user is
+    // still loading. Once loaded, the real AvatarImage renders the photo
+    // (or the letter tile) exactly like AppSidebar.
+    const userLoading = useUserStore((s) => s.isLoading);
+    const user = useUserStore((s) => s.user);
+    const { github } = useGithubAccount();
+
+    const avatarUrl = github?.avatar_url;
+    const displayName = (github?.displayName || user?.username || "User").split(" ")[0];
+
     return (
         <aside
             style={{ width: 256 }}
@@ -147,7 +157,15 @@ export function SidebarSkeleton({ active = "dashboard" }: { active?: SidebarActi
             {/* Bottom — mt-auto px-2 pt-6 / relative h-8 — AppSidebar.tsx:371 */}
             <div className="mt-auto shrink-0 px-2 pt-6">
                 <div className="relative h-8">
-                    <Skeleton className="absolute bottom-1 left-1 h-6 w-6 rounded-full" />
+                    {userLoading ? (
+                        <Skeleton className="absolute bottom-1 left-1 h-6 w-6 rounded-full" />
+                    ) : (
+                        <AvatarImage
+                            src={avatarUrl}
+                            alt={displayName}
+                            className="absolute bottom-1 left-1 h-6 w-6 shrink-0 rounded-full object-cover text-xs ring-1 ring-border transition-[bottom] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none"
+                        />
+                    )}
                     <Skeleton className="absolute bottom-0 right-8 size-7 rounded-md" />
                     <Skeleton className="absolute bottom-0 right-0 size-7 rounded-md" />
                 </div>
