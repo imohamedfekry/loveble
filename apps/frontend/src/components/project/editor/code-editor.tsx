@@ -28,7 +28,7 @@ interface CollabConfig {
 
 export type LocalAwareness = {
   selection?: ReturnType<typeof serializeSelections>;
-  mouse?: { x: number; y: number } | null;
+  mouse?: { docPos: number } | null;
 };
 
 interface Props {
@@ -147,13 +147,18 @@ export const CodeEditor = ({
   }, [peers, collaboration]);
 
   const emitMouse = (event: MouseEvent<HTMLDivElement>) => {
-    const rect = wrapperRef.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0 || rect.height === 0) return;
+    const view = viewRef.current;
+    if (!view) return;
+
+    const pos = view.posAtCoords({
+      x: event.clientX,
+      y: event.clientY,
+    });
+    if (pos == null) return;
 
     onLocalAwarenessRef.current?.({
       mouse: {
-        x: (event.clientX - rect.left) / rect.width,
-        y: (event.clientY - rect.top) / rect.height,
+        docPos: pos,
       },
     });
   };
@@ -170,7 +175,7 @@ export const CodeEditor = ({
       }
     >
       <div ref={editorRef} className="size-full" />
-      {collaboration && <RemoteMice peers={peers} />}
+      {collaboration && <RemoteMice peers={peers} view={viewRef.current} />}
     </div>
   );
 };

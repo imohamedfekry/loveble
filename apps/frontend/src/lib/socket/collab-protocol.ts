@@ -75,8 +75,7 @@ export function normalizeSelections(
 }
 
 export type PresenceMouse = {
-  x: number;
-  y: number;
+  docPos: number;
 };
 
 export type RemotePeer = {

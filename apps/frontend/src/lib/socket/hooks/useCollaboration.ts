@@ -93,7 +93,7 @@ export function useCollaboration({
   const [peers, setPeers] = useState<Record<string, RemotePeer>>({});
   const pendingAwarenessRef = useRef<{
     selection?: RemotePeer["selection"];
-    mouse?: { x: number; y: number } | null;
+    mouse?: { docPos: number } | null;
   }>({});
   const awarenessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -491,7 +491,7 @@ export function useCollaboration({
 
   const sendAwareness = useCallback((awareness: {
     selection?: RemotePeer["selection"];
-    mouse?: { x: number; y: number } | null;
+    mouse?: { docPos: number } | null;
   }) => {
     if (!fileIdRef.current) return;
 
