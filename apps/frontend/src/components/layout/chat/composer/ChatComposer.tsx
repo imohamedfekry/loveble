@@ -16,6 +16,7 @@ import { ComposerAttachments } from "./ComposerAttachments";
 import { ComposerMenu } from "./ComposerMenu";
 import { ComposerModelMenu } from "./ComposerModelMenu";
 import { useChatComposer } from "./useChatComposer";
+import { VoiceWave } from "./voice-wave";
 import type {
   ComposerModel,
   ComposerVariant,
@@ -76,6 +77,7 @@ export function ChatComposer({
 
     listening,
     startDictation,
+    audioLevelRef,
 
     engaged,
     setEngaged,
@@ -126,26 +128,8 @@ export function ChatComposer({
 
   useEffect(() => {
     if (!listening) return;
-
-    const timer = window.setTimeout(() => {
-      onChange(
-        value
-          ? `${value.trimEnd()} Compare pistachio weekends to last summer`
-          : "Compare pistachio weekends to last summer"
-      );
-
-      startDictation();
-      inputRef.current?.focus();
-    }, 2200);
-
-    return () => window.clearTimeout(timer);
-  }, [
-    inputRef,
-    listening,
-    onChange,
-    startDictation,
-    value,
-  ]);
+    inputRef.current?.focus();
+  }, [inputRef, listening]);
 
   const handlePick = (row: {
     key: string;
@@ -425,20 +409,7 @@ className={cn(
               )}
             >
               {listening ? (
-                <span className="flex h-3.5 items-center gap-0.5">
-                  {[0, 1, 2].map((index) => (
-                    <span
-                      key={index}
-                      className="w-0.5 rounded-full bg-current"
-                      style={{
-                        height: "100%",
-                        animation: `eq-bounce 900ms ease-in-out ${
-                          index * 150
-                        }ms infinite`,
-                      }}
-                    />
-                  ))}
-                </span>
+                <VoiceWave levelRef={audioLevelRef} />
               ) : (
                 <Mic className="h-4 w-4" />
               )}

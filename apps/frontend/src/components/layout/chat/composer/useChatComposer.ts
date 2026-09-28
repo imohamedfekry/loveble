@@ -2,6 +2,7 @@
 
   import {
     useCallback,
+    useEffect,
     useLayoutEffect,
     useMemo,
     useRef,
@@ -16,6 +17,39 @@
     ComposerModel,
     ComposerRow,
   } from "./types";
+
+  type SpeechRecognitionType = {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onresult: ((event: SpeechRecognitionEvent) => void) | null;
+    onstart: (() => void) | null;
+    onend: (() => void) | null;
+    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+    start: () => void;
+    stop: () => void;
+    abort: () => void;
+  };
+
+  type SpeechRecognitionConstructor = new () => SpeechRecognitionType;
+
+  function getSpeechRecognition(): SpeechRecognitionConstructor | null {
+    if (typeof window === "undefined") return null;
+    return (
+      (window as unknown as { SpeechRecognition?: SpeechRecognitionConstructor })
+        .SpeechRecognition ??
+      (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionConstructor })
+        .webkitSpeechRecognition ??
+      null
+    );
+  }
+
+  function joinTranscript(...parts: string[]): string {
+    return parts
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(" ");
+  }
 
   function createAttachment(file: File): ComposerAttachment {
     return {
@@ -89,6 +123,14 @@
     const [listening, setListening] = useState(false);
     const [dismissed, setDismissed] = useState(false);
     const [engaged, setEngaged] = useState(false);
+
+    const recognitionRef = useRef<SpeechRecognitionType | null>(null);
+    const isListeningRef = useRef(false);
+    const baseRef = useRef("");
+    const sessionRef = useRef("");
+    const restartTimerRef = useRef<number | null>(null);
+    const valueRef = useRef(value);
+    valueRef.current = value;
 
     const token = dismissed ? null : parseToken(value);
 
@@ -209,6 +251,28 @@
       setModelOpen(false);
     }, []);
 
+    const rebaseSession = useCallback(() => {
+      const recognition = recognitionRef.current;
+      if (!isListeningRef.current || !recognition) return;
+      try {
+        recognition.abort();
+      } catch {
+        /* not started yet */
+      }
+    }, []);
+
+    const applyExternalChange = useCallback(
+      (next: string) => {
+        onChange(next);
+        if (isListeningRef.current) {
+          baseRef.current = next;
+          sessionRef.current = "";
+          rebaseSession();
+        }
+      },
+      [onChange, rebaseSession]
+    );
+
     const send = useCallback(() => {
       if (!canSend) return;
 
@@ -227,13 +291,13 @@
         return [];
       });
 
-      onChange("");
+      applyExternalChange("");
       closeMenus();
     }, [
+      applyExternalChange,
       attachments,
       canSend,
       closeMenus,
-      onChange,
       onSend,
       value,
     ]);
@@ -246,7 +310,7 @@
 
         if (source?.attach) {
 
-          onChange(
+          applyExternalChange(
             value.slice(0, token?.start ?? value.length)
           );
 
@@ -256,11 +320,11 @@
         }
 
         if (menu === "at") {
-          onChange(
+          applyExternalChange(
             `${token ? value.slice(0, token.start) : value}@${row.name} `
           );
         } else {
-          onChange(
+          applyExternalChange(
             `${token ? value.slice(0, token.start) : value}${row.name} `
           );
         }
@@ -271,9 +335,9 @@
         requestAnimationFrame(focusInput);
       },
       [
+        applyExternalChange,
         focusInput,
         menu,
-        onChange,
         token,
         value,
       ]
@@ -345,16 +409,228 @@
 
     const handleChange = useCallback(
       (nextValue: string) => {
-        onChange(nextValue);
+        applyExternalChange(nextValue);
         setDismissed(false);
         setPlusOpen(false);
       },
-      [onChange]
+      [applyExternalChange]
     );
 
-    const startDictation = useCallback(() => {
-      setListening((current) => !current);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+    const rafRef = useRef<number>(0);
+    const audioLevelRef = useRef(0);
+    const stopAudioAnalysis = useCallback(() => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+      analyserRef.current = null;
+      audioLevelRef.current = 0;
     }, []);
+
+    const startAudioAnalysis = useCallback(async () => {
+      if (streamRef.current || !isListeningRef.current) return;
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        if (!isListeningRef.current) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+
+        const audioContext = new AudioContext();
+        audioContextRef.current = audioContext;
+        void audioContext.resume();
+
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const tick = () => {
+          analyser.getByteFrequencyData(dataArray);
+          const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+          audioLevelRef.current = Math.min(1, avg / 128);
+          rafRef.current = requestAnimationFrame(tick);
+        };
+        tick();
+      } catch (err) {
+        console.warn("[composer] Microphone access denied:", err);
+      }
+    }, []);
+
+    const clearRestartTimer = useCallback(() => {
+      if (restartTimerRef.current !== null) {
+        window.clearTimeout(restartTimerRef.current);
+        restartTimerRef.current = null;
+      }
+    }, []);
+
+    const resetDictationRefs = useCallback(() => {
+      baseRef.current = "";
+      sessionRef.current = "";
+      clearRestartTimer();
+    }, [clearRestartTimer]);
+
+    const stopDictation = useCallback(() => {
+      isListeningRef.current = false;
+      const recognition = recognitionRef.current;
+      recognitionRef.current = null;
+      if (recognition) {
+        recognition.onresult = null;
+        recognition.onstart = null;
+        recognition.onend = null;
+        recognition.onerror = null;
+        try {
+          recognition.stop();
+        } catch {
+          /* already stopped */
+        }
+      }
+      stopAudioAnalysis();
+      resetDictationRefs();
+      setListening(false);
+    }, [resetDictationRefs, stopAudioAnalysis]);
+
+    const startDictation = useCallback(() => {
+      if (isListeningRef.current) {
+        stopDictation();
+        return;
+      }
+
+      const SpeechRecognition = getSpeechRecognition();
+      if (!SpeechRecognition) {
+        console.warn("[composer] Speech recognition not supported");
+        return;
+      }
+
+      baseRef.current = valueRef.current;
+      sessionRef.current = "";
+      clearRestartTimer();
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "ar-EG";
+
+      recognition.onstart = () => {
+        if (!isListeningRef.current || recognitionRef.current !== recognition) {
+          return;
+        }
+        startAudioAnalysis();
+      };
+
+      recognition.onresult = (event) => {
+        const finals: string[] = [];
+        const interims: string[] = [];
+
+        for (let i = 0; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finals.push(result[0].transcript);
+          } else {
+            interims.push(result[0].transcript);
+          }
+        }
+
+        sessionRef.current = joinTranscript(...finals);
+
+        const display = joinTranscript(
+          baseRef.current,
+          sessionRef.current,
+          ...interims
+        );
+        if (display) {
+          onChange(display);
+        }
+      };
+
+      recognition.onend = () => {
+        if (!isListeningRef.current || recognitionRef.current !== recognition) {
+          return;
+        }
+
+        baseRef.current = joinTranscript(baseRef.current, sessionRef.current);
+        sessionRef.current = "";
+
+        onChange(baseRef.current);
+
+        clearRestartTimer();
+        restartTimerRef.current = window.setTimeout(() => {
+          restartTimerRef.current = null;
+          if (!isListeningRef.current || recognitionRef.current !== recognition) {
+            return;
+          }
+          try {
+            recognition.start();
+          } catch {
+            /* already started */
+          }
+        }, 150);
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error === "no-speech" || event.error === "aborted") {
+          return;
+        }
+
+        console.error("[composer] Speech recognition error:", event.error);
+        isListeningRef.current = false;
+        recognitionRef.current = null;
+        stopAudioAnalysis();
+        resetDictationRefs();
+        setListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      isListeningRef.current = true;
+      setListening(true);
+      recognition.start();
+    }, [
+      clearRestartTimer,
+      onChange,
+      resetDictationRefs,
+      startAudioAnalysis,
+      stopAudioAnalysis,
+      stopDictation,
+    ]);
+
+    useEffect(() => {
+      return () => {
+        isListeningRef.current = false;
+        const recognition = recognitionRef.current;
+        recognitionRef.current = null;
+        if (recognition) {
+          recognition.onresult = null;
+          recognition.onstart = null;
+          recognition.onend = null;
+          recognition.onerror = null;
+          try {
+            recognition.abort();
+          } catch {
+            /* already stopped */
+          }
+        }
+        stopAudioAnalysis();
+        resetDictationRefs();
+      };
+    }, [resetDictationRefs, stopAudioAnalysis]);
 
     const openPlusMenu = useCallback(() => {
       setModelOpen(false);
@@ -451,6 +727,7 @@
 
       listening,
       startDictation,
+      audioLevelRef,
 
       engaged,
       setEngaged,

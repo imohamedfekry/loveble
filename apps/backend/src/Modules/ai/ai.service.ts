@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { generateText } from 'ai';
 import { getModel } from 'src/ai/providers';
 
-const MODEL = 'openrouter/inclusionai/ling-3.0-flash-fin:free';
+const MODEL = 'openrouter/inclusionai/ling-3.0-flash-sante:free';
 
 @Injectable()
 export class AiService {
