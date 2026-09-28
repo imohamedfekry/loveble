@@ -26,10 +26,10 @@ export const FileBreadcrumbs = ({
 
   if (!activeTabId) {
     return (
-      <div className="flex h-8.75 items-center justify-between border-b bg-sidebar pl-4 pr-2">
+      <div className="flex h-7 items-center justify-between border-b bg-sidebar pl-3 pr-2">
         <Breadcrumb>
           <BreadcrumbList className="gap-0.5">
-            <BreadcrumbItem className="text-sm">
+            <BreadcrumbItem className="text-xs">
               <BreadcrumbPage>&nbsp;</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
@@ -42,26 +42,26 @@ export const FileBreadcrumbs = ({
   const filePath = getFilePath(files, activeTabId);
 
   return (
-    <div className="flex h-8.75 items-center justify-between border-b bg-sidebar pl-4 pr-2">
-      <Breadcrumb>
+    <div className="flex h-7 items-center justify-between border-b bg-sidebar pl-3 pr-2">
+      <Breadcrumb className="min-w-0 flex-1">
         <BreadcrumbList className="gap-0.5">
           {filePath.map((item, index) => {
             const isLast = index === filePath.length - 1;
 
             return (
               <React.Fragment key={item.id}>
-                <BreadcrumbItem className="text-sm">
+                <BreadcrumbItem className="text-xs">
                   {isLast ? (
-                    <BreadcrumbPage className="flex items-center gap-1">
+                    <BreadcrumbPage className="flex items-center gap-1 truncate">
                       <FileIcon
                         fileName={item.name}
                         autoAssign
-                        className="size-4"
+                        className="size-3 shrink-0"
                       />
-                      {item.name}
+                      <span className="truncate">{item.name}</span>
                     </BreadcrumbPage>
                   ) : (
-                    <BreadcrumbLink href="#">
+                    <BreadcrumbLink href="#" className="truncate">
                       {item.name}
                     </BreadcrumbLink>
                   )}
