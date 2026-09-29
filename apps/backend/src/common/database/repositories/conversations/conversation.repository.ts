@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 
 import { BaseRepository } from '../base.repository';
 import { DRIZZLE_DB } from 'src/common/database/database.constants';
@@ -9,6 +9,7 @@ import {
   Conversation,
   NewConversation,
 } from '../../schema/conversations/conversation.schema';
+import { messages } from '../../schema/conversations/message.schema';
 
 @Injectable()
 export class ConversationRepository extends BaseRepository {
@@ -36,11 +37,20 @@ export class ConversationRepository extends BaseRepository {
   }
 
   async findByProject(projectId: bigint): Promise<Conversation[]> {
+    // Most recently active first: order by the last message in each
+    // conversation, falling back to creation time when it has no messages.
+    const lastActivityAt = sql`COALESCE(
+      (SELECT MAX(${messages.createdAt})
+       FROM ${messages}
+       WHERE ${messages.conversationId} = ${conversations.id}),
+      ${conversations.createdAt}
+    )`;
+
     return this.db
       .select()
       .from(conversations)
       .where(eq(conversations.projectId, projectId))
-      .orderBy(desc(conversations.updatedAt));
+      .orderBy(desc(lastActivityAt), desc(conversations.id));
   }
 
   async update(

@@ -6,6 +6,7 @@ import { useFilesStore } from "@/store/file.store";
 import { useEditorStore } from "@/store/use-editor-store";
 import { useFilePresenceStore, type FileViewer } from "@/store/file-presence.store";
 import { useMessagesStore } from "@/store/messages.store";
+import { useConversationsStore } from "@/store/conversations.store";
 import type { ProjectFileType } from "@/lib/api/apis/files/types";
 const SUBSCRIBE_MAX_RETRIES = 5;
 const SUBSCRIBE_RETRY_BASE_MS = 700;
@@ -216,6 +217,10 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
           createdAt: payload.createdAt,
         },
       );
+      // A new message makes its conversation the most recently active one.
+      useConversationsStore.getState().bumpConversation(
+        String(payload.conversationId),
+      );
     };
 
     const onMessageUpdated = (payload: any) => {
@@ -236,16 +241,24 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
     };
 
     const onConversationCreated = (payload: any) => {
-      // Can be used to update conversation lists if needed
-      console.log("[realtime] conversation:created", payload);
+      if (!payload?.id) return;
+      useConversationsStore.getState().addConversation({
+        id: String(payload.id),
+        title: payload.title ?? "New conversation",
+      });
     };
 
     const onConversationUpdated = (payload: any) => {
-      console.log("[realtime] conversation:updated", payload);
+      if (!payload?.id || typeof payload.title !== "string") return;
+      useConversationsStore
+        .getState()
+        .updateConversation(String(payload.id), payload.title);
     };
 
     const onConversationDeleted = (payload: any) => {
-      console.log("[realtime] conversation:deleted", payload);
+      const id = payload?.conversationId ?? payload?.id;
+      if (!id) return;
+      useConversationsStore.getState().removeConversation(String(id));
     };
 
     socket.on("message:new", onMessageNew);

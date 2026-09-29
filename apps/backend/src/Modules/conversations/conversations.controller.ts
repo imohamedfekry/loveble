@@ -18,6 +18,7 @@ import type {
   UpdateConversationDto,
   UpdateMessageDto,
 } from './dto/conversation.dto';
+import { UpdateConversationSchema } from './dto/conversation.dto';
 
 @Controller('conversations')
 @Auth()
@@ -51,7 +52,7 @@ export class ConversationsController {
   @Patch(':id')
   update(
     @Param('id', ParseSnowflakePipe) id: bigint,
-    @Body() body: UpdateConversationDto,
+    @Body({ schema: UpdateConversationSchema }) body: UpdateConversationDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.conversationsService.update(id, body, req);

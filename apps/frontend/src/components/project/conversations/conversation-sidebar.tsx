@@ -4,21 +4,33 @@ import { useState, useEffect, useCallback } from "react";
 import {
   PlusIcon,
   HistoryIcon,
+  TrashIcon,
 } from "lucide-react";
 import { useConversations } from "@/lib/hooks/conversations/useConversations";
 import { useMessages, sendMessageToConversation } from "@/lib/hooks/conversations/useConversations";
 import { useMessagesStore } from "@/store/messages.store";
+import {
+  useConversationsStore,
+  type ConversationItem,
+} from "@/store/conversations.store";
 import { MessageBubble } from "./messages/message-bubble";
 import { ChatComposer } from "@/components/layout/chat/composer/ChatComposer";
 import { Button } from "@loveble/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@loveble/ui/alert-dialog";
+import { Spinner } from "@loveble/ui/spinner";
+import { toast } from "sonner";
 import type { Message } from "@/store/messages.store";
 
 const EMPTY_MESSAGES: Message[] = [];
-
-interface ConversationItem {
-  id: string;
-  title: string;
-}
 
 export function ConversationSidebar({
   projectId,
@@ -26,13 +38,33 @@ export function ConversationSidebar({
   projectId: string;
 }) {
   const [activeConversationId, setActiveConversationId] = useState<bigint | null>(null);
-  const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [showConversationList, setShowConversationList] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
 
-  const { getByProject, createConversation } = useConversations(projectId);
+  const [isEditing, setIsEditing] = useState(false);
+  const [titleValue, setTitleValue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState<ConversationItem | null>(null);
+  const [deleteTitle, setDeleteTitle] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const conversations = useConversationsStore((s) => s.conversations);
+  const setConversations = useConversationsStore((s) => s.setConversations);
+  const addConversation = useConversationsStore((s) => s.addConversation);
+  const patchConversation = useConversationsStore((s) => s.updateConversation);
+  const removeConversation = useConversationsStore((s) => s.removeConversation);
+  const bumpConversation = useConversationsStore((s) => s.bumpConversation);
+
+  const { getByProject, createConversation, updateConversation, deleteConversation } =
+    useConversations(projectId);
   const getMessages = useMessages(activeConversationId).getMessages;
+
+  const activeConversation = activeConversationId
+    ? conversations.find((c) => BigInt(c.id) === activeConversationId)
+    : undefined;
 
   const allMessages = useMessagesStore((s) =>
     activeConversationId
@@ -41,10 +73,13 @@ export function ConversationSidebar({
   );
 
   // Load conversations for this project and auto-select the first one so the
-  // messages area and the composer are usable immediately.
+  // messages area and the composer are usable immediately. The server orders
+  // them by last activity (latest message first).
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;
+
+    setConversations([]);
 
     getByProject()
       .then((result) => {
@@ -65,7 +100,21 @@ export function ConversationSidebar({
     return () => {
       cancelled = true;
     };
-  }, [projectId, getByProject]);
+  }, [projectId, getByProject, setConversations]);
+
+  // If the active conversation disappears (deleted here or from another
+  // session), fall back to the most recently active remaining one.
+  useEffect(() => {
+    if (!activeConversationId) return;
+    const exists = conversations.some(
+      (c) => BigInt(c.id) === activeConversationId,
+    );
+    if (!exists) {
+      setActiveConversationId(
+        conversations[0] ? BigInt(conversations[0].id) : null,
+      );
+    }
+  }, [activeConversationId, conversations]);
 
   // Auto-load messages when active conversation changes
   useEffect(() => {
@@ -80,16 +129,73 @@ export function ConversationSidebar({
     const result = await createConversation("New conversation");
     const conv = result?.data?.conversation;
     if (conv?.id) {
-      setConversations((prev) => [{ id: String(conv.id), title: conv.title }, ...prev]);
+      addConversation({ id: String(conv.id), title: conv.title });
       setActiveConversationId(BigInt(conv.id));
       setShowConversationList(false);
     }
-  }, [createConversation]);
+  }, [addConversation, createConversation]);
 
   const handleSelectConversation = useCallback((id: string) => {
     setActiveConversationId(BigInt(id));
     setShowConversationList(false);
   }, []);
+
+  const handleDeleteConversation = useCallback(async () => {
+    if (!deleteTarget || deleteLoading) return;
+
+    setDeleteLoading(true);
+    try {
+      removeConversation(deleteTarget.id);
+      await deleteConversation(BigInt(deleteTarget.id));
+    } catch (error) {
+      console.error("[ConversationSidebar] delete failed:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete conversation",
+      );
+    } finally {
+      setDeleteLoading(false);
+      setDeleteOpen(false);
+    }
+  }, [deleteConversation, deleteLoading, deleteTarget, removeConversation]);
+
+  const startEditing = useCallback(() => {
+    if (!activeConversation) return;
+    setTitleValue(activeConversation.title);
+    setIsEditing(true);
+  }, [activeConversation]);
+
+  const cancelEditing = useCallback(() => {
+    setTitleValue("");
+    setIsEditing(false);
+  }, []);
+
+  const saveEditing = useCallback(async () => {
+    if (isSaving || !activeConversation) return;
+
+    const trimmed = titleValue.trim();
+
+    if (!trimmed || trimmed === activeConversation.title) {
+      cancelEditing();
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      await updateConversation(BigInt(activeConversation.id), {
+        title: trimmed,
+      });
+
+      patchConversation(activeConversation.id, trimmed);
+
+      setIsEditing(false);
+    } catch (error) {
+      console.error("[ConversationSidebar] rename failed:", error);
+      setIsEditing(false);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [activeConversation, cancelEditing, isSaving, patchConversation, titleValue, updateConversation]);
 
   // Always-available send: creates the conversation lazily on first message.
   // ChatComposer clears its own input right after onSend, so on failure we
@@ -106,10 +212,12 @@ export function ConversationSidebar({
           const conv = result?.data?.conversation;
           if (!conv?.id) return;
           convId = BigInt(conv.id);
-          setConversations((prev) => [{ id: String(conv.id), title: conv.title }, ...prev]);
+          addConversation({ id: String(conv.id), title: conv.title });
           setActiveConversationId(convId);
         }
         await sendMessageToConversation(convId, content, "user");
+        // The newest message makes this the most recently active conversation.
+        bumpConversation(String(convId));
       } catch (err) {
         console.error("[ConversationSidebar] send failed:", err);
         setInput(content);
@@ -117,15 +225,46 @@ export function ConversationSidebar({
         setSending(false);
       }
     },
-    [activeConversationId, createConversation, sending],
+    [activeConversationId, addConversation, bumpConversation, createConversation, sending],
   );
 
   return (
     <div className="flex flex-col h-full bg-sidebar">
       {/* Header */}
-      <div className="h-12 flex items-center justify-between border-b px-3">
-        <div className="text-sm font-medium">
-          {activeConversationId ? "Conversation" : "New conversation"}
+      <div className="h-12 flex items-center justify-between gap-2 border-b px-3">
+        <div className="min-w-0 flex-1">
+          {isEditing ? (
+            <input
+              autoFocus
+              value={titleValue}
+              onChange={(e) => setTitleValue(e.target.value)}
+              onBlur={saveEditing}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  saveEditing();
+                }
+
+                if (e.key === "Escape") {
+                  cancelEditing();
+                }
+              }}
+              className="h-7 w-full max-w-56 rounded-md border border-border bg-muted px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/30"
+            />
+          ) : (
+            <div
+              onDoubleClick={startEditing}
+              className="relative cursor-text truncate rounded px-1 py-0.5 text-sm font-medium"
+              title="Double click to rename"
+            >
+              {activeConversationId
+                ? activeConversation?.title || "Conversation"
+                : "New conversation"}
+
+              {isSaving && (
+                <div className="absolute inset-0 rounded bg-accent/20 backdrop-blur-[1px] animate-pulse" />
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <Button
@@ -149,13 +288,27 @@ export function ConversationSidebar({
       {showConversationList && (
         <div className="border-b max-h-48 overflow-y-auto">
           {conversations.map((conv) => (
-            <button
-              key={conv.id}
-              onClick={() => handleSelectConversation(conv.id)}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
-            >
-              <div className="truncate">{conv.title}</div>
-            </button>
+            <div key={conv.id} className="group relative">
+              <button
+                onClick={() => handleSelectConversation(conv.id)}
+                className="w-full truncate px-3 py-2 pr-8 text-left text-sm hover:bg-muted/50 transition-colors"
+              >
+                <span className="block truncate">{conv.title}</span>
+              </button>
+              <button
+                type="button"
+                aria-label="Delete conversation"
+                title="Delete conversation"
+                onClick={() => {
+                  setDeleteTarget(conv);
+                  setDeleteTitle(conv.title?.trim() || "conversation");
+                  setDeleteOpen(true);
+                }}
+                className="absolute right-1 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+              >
+                <TrashIcon className="size-3.5" />
+              </button>
+            </div>
           ))}
           {conversations.length === 0 && (
             <div className="px-3 py-2 text-xs text-muted-foreground">
@@ -189,6 +342,35 @@ export function ConversationSidebar({
           sending={sending}
         />
       </div>
+
+      {/* Delete Confirmation */}
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          if (!deleteLoading) setDeleteOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete &ldquo;{deleteTitle}&rdquo;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The conversation and its messages
+              will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDeleteConversation}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? <Spinner className="size-3.5" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
