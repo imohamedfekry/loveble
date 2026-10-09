@@ -1,7 +1,7 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import { Catch, ExceptionFilter, HttpException } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { ApiResponseHelper } from '../helpers/api-response.helper';
+import { error } from '../utils/response.util';
 import { SentryExceptionCaptured } from '@sentry/nestjs';
 
 @Catch()
@@ -15,9 +15,18 @@ export class CatchAllFilter implements ExceptionFilter {
 
     console.error('[CatchAllFilter] Unhandled exception:', exception);
 
+    // The failing route may have set `Content-Type: text/html` (e.g. docs UI).
+    // Sending an object with that header makes Fastify throw
+    // "Attempted to send payload of invalid type 'object'". Force JSON.
+    try {
+      res.header('content-type', 'application/json; charset=utf-8');
+    } catch {
+      /* ignore — reply may already be sent */
+    }
+
     if (process.env.NODE_ENV === 'development') {
       return res.code(500).send(
-        ApiResponseHelper.error(
+        error(
           {
             code: 'SERVER_ERROR',
             message:
@@ -33,7 +42,7 @@ export class CatchAllFilter implements ExceptionFilter {
     }
 
     return res.code(500).send(
-      ApiResponseHelper.error({
+      error({
         code: 'SERVER_ERROR',
         message: 'Internal Server Error',
       }),

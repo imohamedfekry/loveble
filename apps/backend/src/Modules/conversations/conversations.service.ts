@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, Inject } from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import { RESPONSE_MESSAGES } from '@loveble/utils';
 import { fail, success } from 'src/common/utils/response.util';
 import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
+import { InngestService } from 'src/common/inngest/inngest.service';
 import { ConversationRepository } from 'src/common/database/repositories/conversations/conversation.repository';
 import { MessageRepository } from 'src/common/database/repositories/conversations/message.repository';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
@@ -13,13 +14,18 @@ import type {
   UpdateMessageDto,
 } from './dto/conversation.dto';
 
+export const DEFAULT_CONVERSATION_TITLE = 'New conversation';
+
 @Injectable()
 export class ConversationsService {
+  private readonly logger = new Logger(ConversationsService.name);
+
   constructor(
     private readonly conversationRepository: ConversationRepository,
     private readonly messageRepository: MessageRepository,
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
+    @Inject('INNGEST') private readonly inngestService: InngestService,
   ) {}
 
   private async assertProjectOwnership(
@@ -153,7 +159,40 @@ export class ConversationsService {
       message,
     );
 
+    if (
+      body.role === 'user' &&
+      conversation.title === DEFAULT_CONVERSATION_TITLE
+    ) {
+      const count =
+        await this.messageRepository.countByConversation(conversationId);
+      if (count === 1) {
+        void this.inngestService
+          .nameConversation({
+            conversationId: conversationId.toString(),
+            text: body.content,
+          })
+          .catch((err) => this.logger.warn(`name-conversation failed: ${err}`));
+      }
+    }
+
     return success(RESPONSE_MESSAGES.MESSAGE.CREATE.SUCCESS, { message });
+  }
+
+  async applyGeneratedTitle(body: { conversationId: string; title: string }) {
+    const conversationId = BigInt(body.conversationId);
+    const conversation =
+      await this.conversationRepository.findById(conversationId);
+    if (!conversation) return null;
+    const updated = await this.conversationRepository.update(conversationId, {
+      title: body.title,
+    });
+    if (!updated) return null;
+    this.realtimeEmitService.toProject(
+      updated.projectId,
+      'conversation:updated',
+      updated,
+    );
+    return updated;
   }
 
   async updateMessage(

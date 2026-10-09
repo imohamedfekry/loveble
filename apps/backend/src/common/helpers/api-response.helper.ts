@@ -1,45 +1,15 @@
-import type { ApiResponse as ApiResponseType } from '../utils/types';
+import { fail, success, error } from '../utils/response.util';
 
+/**
+ * @deprecated Use `success / fail / error` from `src/common/utils/response.util`
+ * directly. This shim exists only for backward compat — its old
+ * `success(data, message)` arg order is the opposite of the canonical
+ * `success(msg, data)` and was a source of confusion.
+ */
 export const ApiResponseHelper = {
-  success<T>(data?: T, message = 'Success'): ApiResponseType<T> {
-    return {
-      success: true,
-      message,
-      data,
-    };
-  },
-
-  error(
-    msg: string | { message: string; code: string },
-    codeOrExtra?: string | any,
-  ): ApiResponseType {
-    const message = typeof msg === 'string' ? msg : msg.message;
-    const code =
-      typeof msg === 'object'
-        ? msg.code
-        : typeof codeOrExtra === 'string'
-          ? codeOrExtra
-          : undefined;
-
-    const response: ApiResponseType = {
-      success: false,
-      message,
-      code,
-    };
-
-    if (typeof codeOrExtra === 'object' && codeOrExtra !== null) {
-      Object.assign(response, codeOrExtra);
-    }
-
-    return response;
-  },
-
-  fail(
-    msg: string | { message: string; code: string },
-    extra?: any,
-  ): ApiResponseType {
-    return this.error(msg, extra);
-  },
+  success,
+  fail,
+  error,
 };
 
 export const ApiResponse = ApiResponseHelper;

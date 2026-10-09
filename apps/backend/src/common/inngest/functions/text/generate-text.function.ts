@@ -19,37 +19,13 @@ export const generateTextFunction = inngest.createFunction(
       throw new Error('generate-text job requires a prompt');
     }
 
-    const network = createGeneralAgent(modelId);
-    const run = await network.run(prompt);
+    const agent = createGeneralAgent(modelId);
+    const result = await agent.generate(prompt);
 
     return {
       success: true,
       model: modelId,
-      result: extractText(run),
+      result: result.text,
     };
   },
 );
-
-function extractText(run: unknown): string {
-  if (typeof run === 'string') return run;
-  const anyRun = run as {
-    output?: unknown;
-    text?: unknown;
-  };
-  const output = anyRun?.output ?? anyRun?.text ?? run;
-  if (typeof output === 'string') return output;
-  if (Array.isArray(output)) {
-    return output
-      .map((part: unknown) => {
-        if (typeof part === 'string') return part;
-        if (part && typeof part === 'object') {
-          const p = part as { text?: unknown; content?: unknown };
-          const text = p.text ?? p.content;
-          return typeof text === 'string' ? text : '';
-        }
-        return '';
-      })
-      .join('');
-  }
-  return JSON.stringify(output ?? run);
-}

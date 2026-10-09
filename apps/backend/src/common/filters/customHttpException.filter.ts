@@ -5,7 +5,7 @@ import {
   HttpException,
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { ApiResponseHelper } from '../helpers/api-response.helper';
+import { fail, error } from '../utils/response.util';
 
 interface ValidationErrorResponse {
   statusCode: number;
@@ -17,17 +17,28 @@ interface ValidationErrorResponse {
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
     const res = host.switchToHttp().getResponse<FastifyReply>();
+    // Same as CatchAllFilter: force JSON so error responses from raw
+    // HTML/JSON-string routes (docs, specs) don't trigger Fastify's
+    // "invalid payload type 'object'" error.
+    try {
+      res.header('content-type', 'application/json; charset=utf-8');
+    } catch {
+      /* ignore — reply may already be sent */
+    }
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse() as
-      ValidationErrorResponse | string;
+      (ValidationErrorResponse & { code?: string }) | string;
 
     // ─── Validation errors (from @mag123c/nestjs-stdschema / Valibot) ─────────
     if (
       typeof exceptionResponse === 'object' &&
-      Array.isArray(exceptionResponse.errors) &&
-      exceptionResponse.errors.length > 0
+      Array.isArray((exceptionResponse as ValidationErrorResponse).errors) &&
+      ((exceptionResponse as ValidationErrorResponse).errors as unknown[])
+        .length > 0
     ) {
-      const errors = exceptionResponse.errors.map((e) => {
+      const errors = (
+        (exceptionResponse as ValidationErrorResponse).errors ?? []
+      ).map((e) => {
         let message = e.message;
 
         // Custom handling for technical Valibot 1.x messages when a key is missing or invalid
@@ -51,7 +62,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       });
 
       return res.code(status).send(
-        ApiResponseHelper.fail(
+        fail(
           {
             code: 'VALIDATION_ERROR',
             message: 'Validation failed. Please check the errors below.',
@@ -62,28 +73,32 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // ─── Generic HttpException (4xx / 5xx) ────────────────────────────────────
+    // Services throw like `new NotFoundException(fail(RESPONSE_MESSAGES.X))`,
+    // so the specific `code` (e.g. PROJECT_NOT_FOUND) lives inside
+    // exceptionResponse. Preserve it instead of replacing it with a generic
+    // HTTP_xxx code.
+    const asObj =
+      typeof exceptionResponse === 'object'
+        ? (exceptionResponse as { code?: unknown; message?: unknown })
+        : null;
+    const embeddedCode =
+      asObj && typeof asObj.code === 'string' ? asObj.code : undefined;
+
     const message =
       typeof exceptionResponse === 'string'
         ? exceptionResponse
-        : (exceptionResponse.message ?? 'An error occurred');
+        : typeof asObj?.message === 'string'
+          ? asObj.message
+          : 'An error occurred';
 
+    const code = embeddedCode ?? this.resolveCode(status);
     const isClientError = status >= 400 && status < 500;
 
     if (isClientError) {
-      return res.code(status).send(
-        ApiResponseHelper.fail({
-          code: this.resolveCode(status),
-          message,
-        }),
-      );
+      return res.code(status).send(fail({ code, message }));
     }
 
-    return res.code(status).send(
-      ApiResponseHelper.error({
-        code: this.resolveCode(status),
-        message,
-      }),
-    );
+    return res.code(status).send(error({ code, message }));
   }
 
   private resolveCode(status: number): string {

@@ -7,6 +7,7 @@ export const INNGEST_EVENTS = {
   PROJECT_CREATE: 'project/create',
   FILE_PERSIST: 'file/persist',
   SEND_EMAIL: 'email/send',
+  CONVERSATION_NAME: 'conversation/name',
 } as const;
 
 export type InngestEventName =
@@ -43,5 +44,13 @@ export class InngestService {
     templateData: Record<string, unknown>;
   }) {
     return this.send(INNGEST_EVENTS.SEND_EMAIL, data);
+  }
+
+  nameConversation(data: {
+    conversationId: string;
+    text: string;
+    model?: string;
+  }) {
+    return this.send(INNGEST_EVENTS.CONVERSATION_NAME, data);
   }
 }

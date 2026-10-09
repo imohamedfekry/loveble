@@ -1,8 +1,18 @@
 import { ApiResponse } from './types';
 
-type Msg = { code: string; message: string };
+/**
+ * Canonical response helpers — single source of truth.
+ *
+ * Signature is ALWAYS (msg, data):
+ *   success(RESPONSE_MESSAGES.PROJECT.FETCH_SUCCESS, { files })
+ *   throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND))
+ *
+ * Do NOT use ApiResponseHelper (deprecated shim, opposite arg order).
+ */
 
-export function success<T>(msg: Msg, data?: T): ApiResponse<T> {
+export type ResponseMsg = { code: string; message: string };
+
+export function success<T>(msg: ResponseMsg, data?: T): ApiResponse<T> {
   return {
     success: true,
     code: msg.code,
@@ -12,7 +22,7 @@ export function success<T>(msg: Msg, data?: T): ApiResponse<T> {
 }
 
 export function fail<T = undefined>(
-  msg: Msg,
+  msg: ResponseMsg,
   extra?: Partial<ApiResponse<T>>,
 ): ApiResponse<T> {
   return {
@@ -24,7 +34,7 @@ export function fail<T = undefined>(
 }
 
 export function error(
-  msg: Msg,
+  msg: ResponseMsg,
   extra?: Partial<ApiResponse>,
 ): ApiResponse<undefined> {
   return {
@@ -33,4 +43,13 @@ export function error(
     message: msg.message,
     ...extra,
   };
+}
+
+export function isApiResponse(value: unknown): value is ApiResponse<any> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'success' in value &&
+    'message' in value
+  );
 }
