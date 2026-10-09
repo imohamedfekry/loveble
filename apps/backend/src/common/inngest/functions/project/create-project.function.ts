@@ -1,6 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { generateText } from 'ai';
-import { getModel } from 'src/ai/providers';
+import { generateProjectName } from 'src/mastra/naming';
 import { inngest } from '../../client';
 import { DEFAULT_AGENT_MODEL } from '../../agents/general.agent';
 
@@ -16,10 +15,9 @@ export const createProjectFunction = inngest.createFunction(
   async ({ event, step }) => {
     const projectId = String(event.data?.projectId ?? '');
     const prompt = String(event.data?.prompt ?? '');
-    const modelId = (event.data?.model ?? DEFAULT_AGENT_MODEL) as string;
 
     log.log(
-      `▶ project/create projectId=${projectId} model=${modelId} prompt="${prompt.slice(0, 120)}"`,
+      `▶ project/create projectId=${projectId} prompt="${prompt.slice(0, 120)}"`,
     );
 
     if (!projectId || !prompt) {
@@ -29,27 +27,8 @@ export const createProjectFunction = inngest.createFunction(
 
     const projectName = await step.run('generate-name', async () => {
       const startedAt = Date.now();
-      const model = getModel(modelId);
 
-      const { text } = await generateText({
-        model,
-        prompt: `
-Understand the user's intent and generate the most suitable short name for it.
-
-Requirements:
-- Maximum 50 characters.
-- Return only the project name.
-- No quotes.
-- No explanation.
-- No markdown.
-- Do not return an empty response.
-
-User prompt:
-"${prompt}"
-        `.trim(),
-      });
-
-      const finalName = text.trim();
+      const finalName = await generateProjectName(prompt);
 
       if (!finalName) {
         throw new Error('AI generated an empty project name');

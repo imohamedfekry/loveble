@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { asc, count, eq } from 'drizzle-orm';
 
 import { BaseRepository } from '../base.repository';
 import { DRIZZLE_DB } from 'src/common/database/database.constants';
@@ -46,6 +46,15 @@ export class MessageRepository extends BaseRepository {
       .from(messages)
       .where(eq(messages.projectId, projectId))
       .orderBy(asc(messages.createdAt));
+  }
+
+  async countByConversation(conversationId: bigint): Promise<number> {
+    const [row] = await this.db
+      .select({ count: count() })
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId));
+
+    return row?.count ?? 0;
   }
 
   async update(

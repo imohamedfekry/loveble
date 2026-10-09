@@ -133,7 +133,6 @@ export class RealtimeGateway
     await socket.leave(`project:${projectId}`);
     socket.emit('project:unsubscribed', { projectId });
   }
-
   @SubscribeMessage(COLLAB_EVENTS.JOIN)
   async handleCollabJoin(
     @ConnectedSocket() socket: Socket,
