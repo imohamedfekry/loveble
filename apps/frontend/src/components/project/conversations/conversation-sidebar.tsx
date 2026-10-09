@@ -7,7 +7,7 @@ import {
   TrashIcon,
 } from "lucide-react";
 import { useConversations } from "@/lib/hooks/conversations/useConversations";
-import { useMessages, sendMessageToConversation } from "@/lib/hooks/conversations/useConversations";
+import { useMessages, sendMessageToConversation, sendFirstMessage } from "@/lib/hooks/conversations/useConversations";
 import { useMessagesStore } from "@/store/messages.store";
 import {
   useConversationsStore,
@@ -58,7 +58,7 @@ export function ConversationSidebar({
   const removeConversation = useConversationsStore((s) => s.removeConversation);
   const bumpConversation = useConversationsStore((s) => s.bumpConversation);
 
-  const { getByProject, createConversation, updateConversation, deleteConversation } =
+  const { getByProject, updateConversation, deleteConversation } =
     useConversations(projectId);
   const getMessages = useMessages(activeConversationId).getMessages;
 
@@ -125,15 +125,10 @@ export function ConversationSidebar({
     }
   }, [activeConversationId, getMessages]);
 
-  const handleCreateConversation = useCallback(async () => {
-    const result = await createConversation("New conversation");
-    const conv = result?.data?.conversation;
-    if (conv?.id) {
-      addConversation({ id: String(conv.id), title: conv.title });
-      setActiveConversationId(BigInt(conv.id));
-      setShowConversationList(false);
-    }
-  }, [addConversation, createConversation]);
+  const handleCreateConversation = useCallback(() => {
+    setActiveConversationId(null);
+    setShowConversationList(false);
+  }, []);
 
   const handleSelectConversation = useCallback((id: string) => {
     setActiveConversationId(BigInt(id));
@@ -160,7 +155,7 @@ export function ConversationSidebar({
 
   const startEditing = useCallback(() => {
     if (!activeConversation) return;
-    setTitleValue(activeConversation.title);
+    setTitleValue(activeConversation.title ?? "");
     setIsEditing(true);
   }, [activeConversation]);
 
@@ -208,14 +203,15 @@ export function ConversationSidebar({
       try {
         let convId = activeConversationId;
         if (!convId) {
-          const result = await createConversation("New conversation");
-          const conv = result?.data?.conversation;
+          const result = await sendFirstMessage(projectId, content);
+          const conv = result?.conversation;
           if (!conv?.id) return;
           convId = BigInt(conv.id);
-          addConversation({ id: String(conv.id), title: conv.title });
+          addConversation({ id: String(conv.id), title: conv.title ?? null });
           setActiveConversationId(convId);
+        } else {
+          await sendMessageToConversation(convId, content);
         }
-        await sendMessageToConversation(convId, content, "user");
         // The newest message makes this the most recently active conversation.
         bumpConversation(String(convId));
       } catch (err) {
@@ -225,7 +221,7 @@ export function ConversationSidebar({
         setSending(false);
       }
     },
-    [activeConversationId, addConversation, bumpConversation, createConversation, sending],
+    [activeConversationId, addConversation, bumpConversation, projectId, sending],
   );
 
   return (
@@ -256,9 +252,7 @@ export function ConversationSidebar({
               className="relative cursor-text truncate rounded px-1 py-0.5 text-sm font-medium"
               title="Double click to rename"
             >
-              {activeConversationId
-                ? activeConversation?.title || "Conversation"
-                : "New conversation"}
+              {activeConversation?.title || "New conversation"}
 
               {isSaving && (
                 <div className="absolute inset-0 rounded bg-accent/20 backdrop-blur-[1px] animate-pulse" />
@@ -293,7 +287,7 @@ export function ConversationSidebar({
                 onClick={() => handleSelectConversation(conv.id)}
                 className="w-full truncate px-3 py-2 pr-8 text-left text-sm hover:bg-muted/50 transition-colors"
               >
-                <span className="block truncate">{conv.title}</span>
+                <span className="block truncate">{conv.title || "New conversation"}</span>
               </button>
               <button
                 type="button"

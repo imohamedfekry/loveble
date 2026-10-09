@@ -21,6 +21,7 @@ import { InngestService } from 'src/common/inngest/inngest.service';
 import { deriveDefaultName } from './project-name.util';
 import type { Project } from 'src/common/database/schema/projects/project.schema';
 import { SandboxService } from 'src/Modules/sandbox/sandbox.service';
+import { ConversationsService } from 'src/Modules/conversations/conversations.service';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -43,6 +44,7 @@ export class projectService {
     private readonly realtimeEmitService: RealtimeEmitService,
     private readonly inngestService: InngestService,
     private readonly sandboxService: SandboxService,
+    private readonly conversationsService: ConversationsService,
   ) {}
   async findAll(req: AuthenticatedRequest, query: ProjectQueryDto) {
     if (query.recent === 'true') {
@@ -86,6 +88,19 @@ export class projectService {
       PROJECT_EVENTS.CREATED,
       project,
     );
+
+    if (!explicitName && prompt) {
+      try {
+        await this.conversationsService.createWithInitialMessage(
+          project.id,
+          prompt,
+        );
+      } catch (err) {
+        this.logger.warn(
+          `initial conversation create failed for ${project.id}: ${String(err)}`,
+        );
+      }
+    }
 
     // Prompt-based creates get the final short name via Inngest; never blocks.
     // Explicit sidebar names are final as typed — no regeneration.

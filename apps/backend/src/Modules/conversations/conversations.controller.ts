@@ -13,24 +13,27 @@ import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth
 import { ParseSnowflakePipe } from 'src/common/Global/security/validator/isId.validator';
 import { ConversationsService } from './conversations.service';
 import type {
-  CreateConversationDto,
   CreateMessageDto,
   UpdateConversationDto,
   UpdateMessageDto,
 } from './dto/conversation.dto';
-import { UpdateConversationSchema } from './dto/conversation.dto';
+import {
+  CreateMessageSchema,
+  UpdateConversationSchema,
+} from './dto/conversation.dto';
 
 @Controller('conversations')
 @Auth()
 export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 
-  @Post('create')
-  create(
-    @Body() body: CreateConversationDto,
+  @Post('project/:projectId/messages')
+  createFirstMessage(
+    @Param('projectId', ParseSnowflakePipe) projectId: bigint,
+    @Body({ schema: CreateMessageSchema }) body: CreateMessageDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.conversationsService.create(body, req);
+    return this.conversationsService.createFirstMessage(projectId, body, req);
   }
 
   @Get('project/:projectId')
@@ -77,7 +80,7 @@ export class ConversationsController {
   @Post(':conversationId/messages')
   createMessage(
     @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,
-    @Body() body: CreateMessageDto,
+    @Body({ schema: CreateMessageSchema }) body: CreateMessageDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.conversationsService.createMessage(conversationId, body, req);

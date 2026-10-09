@@ -244,7 +244,7 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       if (!payload?.id) return;
       useConversationsStore.getState().addConversation({
         id: String(payload.id),
-        title: payload.title ?? "New conversation",
+        title: payload.title ?? null,
       });
     };
 
