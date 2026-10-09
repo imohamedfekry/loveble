@@ -55,9 +55,9 @@ export const nameConversationFunction = inngest.createFunction(
       );
     }
 
-    const result = await response.json();
+    const result: unknown = await response.json();
     log.log(
-      `✓ name-conversation conversationId=${conversationId} title="${title}"`,
+      `✓ name-conversation conversationId=${conversationId} title="${title}" result=${JSON.stringify(result)}`,
     );
     return { success: true, conversationId, title };
   },

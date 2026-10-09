@@ -2,14 +2,14 @@ import { create } from "zustand";
 
 export interface ConversationItem {
   id: string;
-  title: string;
+  title: string | null;
 }
 
 interface ConversationsStore {
   conversations: ConversationItem[];
   setConversations: (conversations: ConversationItem[]) => void;
   addConversation: (conversation: ConversationItem) => void;
-  updateConversation: (id: string, title: string) => void;
+  updateConversation: (id: string, title: string | null) => void;
   removeConversation: (id: string) => void;
   bumpConversation: (id: string) => void;
 }

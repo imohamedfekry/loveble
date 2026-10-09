@@ -28,21 +28,6 @@ function normalizeMessage(raw: any): Message {
 }
 
 export const useConversations = (projectId: string | null) => {
-  const createConversation = useCallback(
-    async (title: string) => {
-      const result = await apiRequest<{ conversation: any }>(
-        `${API_BASE}/create`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId, title }),
-        },
-      );
-      return result;
-    },
-    [projectId],
-  );
-
   const getByProject = useCallback(async () => {
     const result = await apiRequest<{ conversations: any[] }>(
       `${API_BASE}/project/${projectId}`,
@@ -76,7 +61,7 @@ export const useConversations = (projectId: string | null) => {
     await apiRequest(`${API_BASE}/${id}`, { method: "DELETE" });
   }, []);
 
-  return { createConversation, getByProject, getById, updateConversation, deleteConversation };
+  return { getByProject, getById, updateConversation, deleteConversation };
 };
 
 export const useMessages = (conversationId: bigint | string | null) => {
@@ -97,7 +82,7 @@ export const useMessages = (conversationId: bigint | string | null) => {
   }, [conversationId, setMessages]);
 
   const sendMessage = useCallback(
-    async (content: string, role: "user" | "assistant" | "system") => {
+    async (content: string) => {
       if (!conversationId) return;
       const cid = toId(conversationId);
       const result = await apiRequest<{ message: any }>(
@@ -106,7 +91,7 @@ export const useMessages = (conversationId: bigint | string | null) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           // JSON.stringify throws on BigInt — always send the id as a string.
-          body: JSON.stringify({ conversationId: String(cid), content, role }),
+          body: JSON.stringify({ conversationId: String(cid), content }),
         },
       );
       if (result?.data?.message) {
@@ -147,23 +132,16 @@ export const useMessages = (conversationId: bigint | string | null) => {
   return { getMessages, sendMessage, updateMessage, deleteMessage };
 };
 
-// Standalone sender bound to an explicit conversation id — used by the
-// sidebar to lazily create a conversation on the first message.
 export async function sendMessageToConversation(
   conversationId: bigint,
   content: string,
-  role: Message["role"],
 ): Promise<Message | null> {
   const result = await apiRequest<{ message: any }>(
     `${API_BASE}/${conversationId}/messages`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        conversationId: String(conversationId),
-        content,
-        role,
-      }),
+      body: JSON.stringify({ content }),
     },
   );
   const message = result?.data?.message;
@@ -171,4 +149,26 @@ export async function sendMessageToConversation(
   const normalized = normalizeMessage(message);
   useMessagesStore.getState().addMessage(conversationId, normalized);
   return normalized;
+}
+
+export async function sendFirstMessage(
+  projectId: string | null,
+  content: string,
+): Promise<{ conversation: any; message: Message } | null> {
+  const result = await apiRequest<{ conversation: any; message: any }>(
+    `${API_BASE}/project/${projectId}/messages`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    },
+  );
+  const conversation = result?.data?.conversation;
+  const message = result?.data?.message;
+  if (!conversation?.id || !message) return null;
+  const normalized = normalizeMessage(message);
+  useMessagesStore
+    .getState()
+    .addMessage(toId(conversation.id), normalized);
+  return { conversation, message: normalized };
 };

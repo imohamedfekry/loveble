@@ -50,6 +50,13 @@
       "when": 1790450447847,
       "tag": "0006_opposite_susan_delgado",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791555153354,
+      "tag": "0007_nostalgic_shockwave",
+      "breakpoints": true
     }
   ]
 }

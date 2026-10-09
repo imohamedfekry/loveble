@@ -17,7 +17,7 @@ export const conversations = pgTable(
     projectId: bigint('project_id', { mode: 'bigint' })
       .notNull()
       .references(() => projects.id, { onDelete: 'cascade' }),
-    title: varchar('title', { length: 255 }).notNull(),
+    title: varchar('title', { length: 255 }),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },

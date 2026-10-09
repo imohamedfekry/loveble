@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth-request.type';
 import { RESPONSE_MESSAGES } from '@loveble/utils';
 import { fail, success } from 'src/common/utils/response.util';
@@ -8,13 +8,10 @@ import { ConversationRepository } from 'src/common/database/repositories/convers
 import { MessageRepository } from 'src/common/database/repositories/conversations/message.repository';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
 import type {
-  CreateConversationDto,
   CreateMessageDto,
   UpdateConversationDto,
   UpdateMessageDto,
 } from './dto/conversation.dto';
-
-export const DEFAULT_CONVERSATION_TITLE = 'New conversation';
 
 @Injectable()
 export class ConversationsService {
@@ -25,7 +22,7 @@ export class ConversationsService {
     private readonly messageRepository: MessageRepository,
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
-    @Inject('INNGEST') private readonly inngestService: InngestService,
+    private readonly inngestService: InngestService,
   ) {}
 
   private async assertProjectOwnership(
@@ -54,12 +51,34 @@ export class ConversationsService {
     return conversation;
   }
 
-  async create(body: CreateConversationDto, req: AuthenticatedRequest) {
-    const projectId = BigInt(body.projectId);
+  async createFirstMessage(
+    projectId: bigint,
+    body: CreateMessageDto,
+    req: AuthenticatedRequest,
+  ) {
     await this.assertProjectOwnership(projectId, req);
+    const { conversation, message } = await this.createWithInitialMessage(
+      projectId,
+      body.content,
+    );
+    return success(RESPONSE_MESSAGES.MESSAGE.CREATE.SUCCESS, {
+      conversation,
+      message,
+    });
+  }
+
+  async createWithInitialMessage(projectId: bigint, content: string) {
     const conversation = await this.conversationRepository.create({
       projectId,
-      title: body.title,
+      title: null,
+    });
+
+    const message = await this.messageRepository.create({
+      conversationId: conversation.id,
+      projectId,
+      content,
+      role: 'user',
+      status: 'completed',
     });
 
     this.realtimeEmitService.toProject(
@@ -67,10 +86,16 @@ export class ConversationsService {
       'conversation:created',
       conversation,
     );
+    this.realtimeEmitService.toProject(projectId, 'message:new', message);
 
-    return success(RESPONSE_MESSAGES.CONVERSATION.CREATE.SUCCESS, {
-      conversation,
-    });
+    void this.inngestService
+      .nameConversation({
+        conversationId: conversation.id.toString(),
+        text: content,
+      })
+      .catch((err) => this.logger.warn(`name-conversation failed: ${err}`));
+
+    return { conversation, message };
   }
 
   async findById(id: bigint, req: AuthenticatedRequest) {
@@ -149,7 +174,7 @@ export class ConversationsService {
       conversationId,
       projectId: conversation.projectId,
       content: body.content,
-      role: body.role,
+      role: 'user',
       status: 'completed',
     });
 
@@ -159,10 +184,7 @@ export class ConversationsService {
       message,
     );
 
-    if (
-      body.role === 'user' &&
-      conversation.title === DEFAULT_CONVERSATION_TITLE
-    ) {
+    if (conversation.title === null) {
       const count =
         await this.messageRepository.countByConversation(conversationId);
       if (count === 1) {
