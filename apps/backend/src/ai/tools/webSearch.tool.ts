@@ -21,10 +21,11 @@ export const searchTool = tool({
   ),
 
   execute: async ({ query }): Promise<SearchOutput> => {
-    const url = new URL('http://localhost:8181/search');
+    const url = new URL('http://localhost:8080/search');
     url.searchParams.set('q', query);
     url.searchParams.set('format', 'json');
     url.searchParams.set('language', 'en');
+    url.searchParams.set('engines', 'bing');
 
     const res = await fetch(url.toString(), {
       headers: {

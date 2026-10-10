@@ -17,6 +17,7 @@ import { CollaborationService } from './collaboration.service';
 import type { AwarenessSelection } from './awareness.service';
 import { COLLAB_EVENTS } from '../events/files.events';
 import { DocumentStateService } from './document-state.service';
+import { serializeBigInt } from 'src/common/utils/bigint.util';
 
 @WebSocketGateway({
   namespace: '/realtime',
@@ -133,6 +134,59 @@ export class RealtimeGateway
     await socket.leave(`project:${projectId}`);
     socket.emit('project:unsubscribed', { projectId });
   }
+  @SubscribeMessage('conversation:stream')
+  async relayConversationStream(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    payload: {
+      projectId?: unknown;
+      conversationId?: unknown;
+      messageId?: unknown;
+      role?: unknown;
+      parts?: unknown;
+      status?: unknown;
+    },
+  ) {
+    const projectId = payload?.projectId;
+    if (!projectId || typeof projectId !== 'string') return;
+
+    // Wait for async token validation before ownership checks (same race as subscribe).
+    await socket.data?.authReady;
+
+    const userId = socket.data?.user?.id?.toString() ?? socket.data?.userId;
+    if (!userId) return;
+
+    if (!socket.rooms.has(`project:${projectId}`)) return;
+
+    let project: Awaited<ReturnType<ProjectRepository['findById']>>;
+    try {
+      project = await this.projectRepository.findById(projectId);
+    } catch {
+      return;
+    }
+    if (!project || project.userId.toString() !== userId) return;
+
+    const { conversationId, messageId, role, parts, status } = payload ?? {};
+    if (
+      typeof conversationId !== 'string' ||
+      typeof messageId !== 'string'
+    ) {
+      return;
+    }
+
+    socket.to(`project:${projectId}`).emit(
+      'conversation:stream',
+      serializeBigInt({
+        projectId,
+        conversationId,
+        messageId,
+        role: typeof role === 'string' ? role : 'assistant',
+        parts: Array.isArray(parts) ? parts : [],
+        status: typeof status === 'string' ? status : 'streaming',
+      }),
+    );
+  }
+
   @SubscribeMessage(COLLAB_EVENTS.JOIN)
   async handleCollabJoin(
     @ConnectedSocket() socket: Socket,

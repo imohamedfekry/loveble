@@ -151,6 +151,26 @@ export async function sendMessageToConversation(
   return normalized;
 }
 
+export async function sendAssistantMessageToConversation(
+  conversationId: bigint,
+  content: string,
+  parts?: unknown[],
+): Promise<Message | null> {
+  const result = await apiRequest<{ message: any }>(
+    `${API_BASE}/${conversationId}/messages/assistant`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, parts: parts ?? null }),
+    },
+  );
+  const message = result?.data?.message;
+  if (!message) return null;
+  const normalized = normalizeMessage(message);
+  useMessagesStore.getState().addMessage(conversationId, normalized);
+  return normalized;
+}
+
 export async function sendFirstMessage(
   projectId: string | null,
   content: string,

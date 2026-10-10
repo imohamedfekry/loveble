@@ -1,0 +1,275 @@
+/* ─────────────────────────────────────────────────────────
+ * BEAUTIFUL UI — compatibility layer
+ *
+ * Beautiful UI (https://www.beautifului.dev) primitives address
+ * their colors/shadows/radii through their own design tokens.
+ * Instead of importing their foundation theme, we map those token
+ * names onto Loveble's existing palette so every vendored primitive
+ * renders with our brand colors and surfaces.
+ *
+ * Their `--accent` (a blue) collides with our `--accent` (a hover
+ * tint), so it is remapped to `--bui-accent` (our `--primary`).
+ * Vendored components use `bui-accent` for that brand-blue role.
+ * ───────────────────────────────────────────────────────── */
+
+:root {
+  /* surfaces */
+  --page: var(--background);
+  --canvas: var(--background);
+  --surface: var(--card);
+  --inset: var(--muted);
+  --field: var(--muted);
+  --hover: var(--accent);
+  --hover-2: var(--secondary);
+
+  /* ink ramp */
+  --ink: var(--foreground);
+  --ink-2: var(--muted-foreground);
+  --ink-3: color-mix(in oklab, var(--muted-foreground) 62%, transparent);
+
+  /* borders */
+  --line: var(--border);
+  --line-strong: color-mix(in oklab, var(--border) 55%, var(--foreground) 22%);
+  --line-soft: var(--border);
+
+  /* brand accent (Beautiful UI's blue → our primary) */
+  --bui-accent: var(--primary);
+  --bui-accent-ink: var(--primary);
+  --bui-accent-tint: color-mix(in oklab, var(--primary) 12%, transparent);
+
+  /* semantic */
+  --green: #2f855a;
+  --green-tint: color-mix(in oklab, #2f855a 14%, transparent);
+  --orange: #fe7b02;
+  --orange-tint: color-mix(in oklab, #fe7b02 14%, transparent);
+  --red: var(--destructive);
+  --red-tint: color-mix(in oklab, var(--destructive) 14%, transparent);
+
+  /* shadows */
+  --shadow-hairline: 0 0 0 1px var(--line);
+  --shadow-btn: 0 0 0 1px var(--line), 0 1px 2px rgb(0 0 0 / 0.06);
+  --shadow-card:
+    0 0 0 1px var(--line), 0 1px 2px rgb(0 0 0 / 0.05),
+    0 2px 6px rgb(0 0 0 / 0.04);
+  --shadow-raised: 0 0 0 1px var(--line), 0 4px 12px rgb(0 0 0 / 0.08);
+  --shadow-overlay: 0 0 0 1px var(--line), 0 12px 32px rgb(0 0 0 / 0.16);
+  --shadow-inset-field: inset 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+.dark {
+  --ink-3: color-mix(in oklab, var(--muted-foreground) 62%, transparent);
+  --line-strong: color-mix(in oklab, var(--border) 55%, var(--foreground) 22%);
+  --shadow-card:
+    0 0 0 1px var(--line), 0 2px 8px rgb(0 0 0 / 0.3);
+  --shadow-raised:
+    0 0 0 1px var(--line), 0 4px 14px rgb(0 0 0 / 0.4);
+  --shadow-overlay:
+    0 0 0 1px var(--line), 0 12px 36px rgb(0 0 0 / 0.5);
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-inset: var(--inset);
+  --color-field: var(--field);
+  --color-hover: var(--hover);
+  --color-hover-2: var(--hover-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-bui-accent: var(--bui-accent);
+  --color-bui-accent-ink: var(--bui-accent-ink);
+  --color-bui-accent-tint: var(--bui-accent-tint);
+  --color-green: var(--green);
+  --color-green-tint: var(--green-tint);
+  --color-orange: var(--orange);
+  --color-orange-tint: var(--orange-tint);
+  --color-red: var(--red);
+  --color-red-tint: var(--red-tint);
+
+  --shadow-hairline: var(--shadow-hairline);
+  --shadow-btn: var(--shadow-btn);
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-inset-field: var(--shadow-inset-field);
+
+  --radius-chip: 6px;
+  --radius-control: 8px;
+  --radius-card: 10px;
+  --radius-window: 14px;
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-link: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── shared keyframes used by the primitives ── */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer-text {
+  from {
+    background-position: 150% center;
+  }
+  to {
+    background-position: -50% center;
+  }
+}
+
+@keyframes pixel-on {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  18%,
+  42% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 0.15;
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* ── StreamText primitive (caret + blurred leading edge) ── */
+
+.stream-tail {
+  filter: blur(1.6px);
+  -webkit-mask-image: linear-gradient(to right, oklch(0 0 0) 20%, oklch(0 0 0 / 0.2));
+  mask-image: linear-gradient(to right, oklch(0 0 0) 20%, oklch(0 0 0 / 0.2));
+}
+
+.stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 1.5px;
+  translate: 0 -0.5px;
+  border-radius: 1px;
+  background: var(--ink);
+  vertical-align: text-bottom;
+  animation: caret-blink 1s step-end infinite;
+}
+
+.stream-caret.is-streaming {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stream-caret {
+    animation: none;
+  }
+  .stream-tail {
+    filter: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+/* ── source avatars (StreamingText / ContextCards) ── */
+
+.source-avatar {
+  box-shadow: 0 0 0 1px oklch(0.21 0.034 263.436 / 0.1);
+}
+
+.dark .source-avatar {
+  box-shadow: 0 0 0 1px oklch(1 0 0 / 0.08);
+}
+
+.animated-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.animated-underline::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  content: "";
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 280ms var(--ease-link);
+}
+
+a:hover .animated-underline::after,
+a:focus-visible .animated-underline::after {
+  transform: scaleX(1);
+}
+
+/* ── primitive spacing system ── */
+
+.primitive-card-pad {
+  padding: 12px;
+}
+
+.primitive-card-bar {
+  padding: 10px 12px;
+}
+
+.primitive-card-footer {
+  padding: 10px;
+}
+
+.primitive-icon-button {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+}

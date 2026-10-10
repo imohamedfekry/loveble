@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { useLoadFiles } from "@/lib/hooks/file/useFiles";
 import { useProjectRealtime } from "@/lib/socket/hooks/useProjectRealtime";
@@ -67,7 +67,20 @@ export const ProjectIdLayout = ({
 
   // Show the full ProjectSkeleton only while project + files are loading.
   // The sandbox ("Starting environment...") state renders inside the Code view.
-  const isReady = !projectLoading && !isInitialFilesLoading;
+  //
+  // Latch readiness so that once the workspace has mounted for this projectId,
+  // a transient flip of `projectLoading`/`filesLoading` (cache miss, store
+  // reseed) never swaps the live children back out for the skeleton. The
+  // sidebar + chat hold local state (active conversation, in-flight stream),
+  // so unmounting them mid-stream makes the chat "disappear" and loses the
+  // turn before `onFinish` can persist it. Remounting across projects is still
+  // handled by `key={projectId}` at the route level.
+  const isReadyNow = !projectLoading && !isInitialFilesLoading;
+  const [hasBeenReady, setHasBeenReady] = useState(false);
+  useEffect(() => {
+    if (isReadyNow) setHasBeenReady(true);
+  }, [isReadyNow]);
+  const isReady = isReadyNow || hasBeenReady;
 
   return (
     <>

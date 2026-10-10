@@ -200,6 +200,34 @@ export class ConversationsService {
     return success(RESPONSE_MESSAGES.MESSAGE.CREATE.SUCCESS, { message });
   }
 
+  async createAssistantMessage(
+    conversationId: bigint,
+    body: CreateMessageDto,
+    req: AuthenticatedRequest,
+  ) {
+    const conversation = await this.assertConversationOwnership(
+      conversationId,
+      req,
+    );
+
+    const message = await this.messageRepository.create({
+      conversationId,
+      projectId: conversation.projectId,
+      content: body.content,
+      parts: body.parts ?? null,
+      role: 'assistant',
+      status: 'completed',
+    });
+
+    this.realtimeEmitService.toProject(
+      conversation.projectId,
+      'message:new',
+      message,
+    );
+
+    return success(RESPONSE_MESSAGES.MESSAGE.CREATE.SUCCESS, { message });
+  }
+
   async applyGeneratedTitle(body: { conversationId: string; title: string }) {
     const conversationId = BigInt(body.conversationId);
     const conversation =
