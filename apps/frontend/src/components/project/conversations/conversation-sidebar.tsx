@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   PlusIcon,
   HistoryIcon,
   TrashIcon,
 } from "lucide-react";
-import { useConversations } from "@/lib/hooks/conversations/useConversations";
-import { useMessages, sendMessageToConversation, sendFirstMessage } from "@/lib/hooks/conversations/useConversations";
+import { useConversations, useMessages } from "@/lib/hooks/conversations/useConversations";
 import { useMessagesStore } from "@/store/messages.store";
 import {
   useConversationsStore,
   type ConversationItem,
 } from "@/store/conversations.store";
-import { MessageBubble } from "./messages/message-bubble";
-import { ChatComposer } from "@/components/layout/chat/composer/ChatComposer";
+import { ChatPanel } from "./chat-panel";
 import { Button } from "@loveble/ui/button";
 import {
   AlertDialog,
@@ -28,7 +26,7 @@ import {
 } from "@loveble/ui/alert-dialog";
 import { Spinner } from "@loveble/ui/spinner";
 import { toast } from "sonner";
-import type { Message } from "@/store/messages.store";
+import type { ChatMessage, Message } from "@/store/messages.store";
 
 const EMPTY_MESSAGES: Message[] = [];
 
@@ -39,8 +37,6 @@ export function ConversationSidebar({
 }) {
   const [activeConversationId, setActiveConversationId] = useState<bigint | null>(null);
   const [showConversationList, setShowConversationList] = useState(false);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [titleValue, setTitleValue] = useState("");
@@ -57,6 +53,7 @@ export function ConversationSidebar({
   const patchConversation = useConversationsStore((s) => s.updateConversation);
   const removeConversation = useConversationsStore((s) => s.removeConversation);
   const bumpConversation = useConversationsStore((s) => s.bumpConversation);
+  const streamsByConversation = useMessagesStore((s) => s.streamsByConversation);
 
   const { getByProject, updateConversation, deleteConversation } =
     useConversations(projectId);
@@ -66,11 +63,32 @@ export function ConversationSidebar({
     ? conversations.find((c) => BigInt(c.id) === activeConversationId)
     : undefined;
 
-  const allMessages = useMessagesStore((s) =>
+  const streamingConversation = Array.from(streamsByConversation.entries())
+    .filter(
+      ([id, streams]) =>
+        BigInt(id) !== activeConversationId && streams.size > 0,
+    )
+    .map(([id]) => id)[0];
+
+  const streamingTarget = streamingConversation
+    ? conversations.find((c) => BigInt(c.id) === streamingConversation)
+    : undefined;
+
+  const storeMessages = useMessagesStore((s) =>
     activeConversationId
       ? s.messagesByConversation.get(activeConversationId) ?? EMPTY_MESSAGES
       : EMPTY_MESSAGES,
   );
+  const activeStreams = useMessagesStore((s) =>
+    activeConversationId ? s.streamsByConversation.get(activeConversationId) : undefined,
+  );
+  const allMessages = useMemo<ChatMessage[]>(() => {
+    if (activeConversationId === null || storeMessages === EMPTY_MESSAGES) {
+      return storeMessages;
+    }
+    if (!activeStreams || activeStreams.size === 0) return storeMessages;
+    return [...storeMessages, ...activeStreams.values()];
+  }, [activeConversationId, activeStreams, storeMessages]);
 
   // Load conversations for this project and auto-select the first one so the
   // messages area and the composer are usable immediately. The server orders
@@ -192,36 +210,19 @@ export function ConversationSidebar({
     }
   }, [activeConversation, cancelEditing, isSaving, patchConversation, titleValue, updateConversation]);
 
-  // Always-available send: creates the conversation lazily on first message.
-  // ChatComposer clears its own input right after onSend, so on failure we
-  // restore the text here.
-  const handleSend = useCallback(
-    async (payload: { text: string; files: File[] }) => {
-      const content = payload.text.trim();
-      if (!content || sending) return;
-      setSending(true);
-      try {
-        let convId = activeConversationId;
-        if (!convId) {
-          const result = await sendFirstMessage(projectId, content);
-          const conv = result?.conversation;
-          if (!conv?.id) return;
-          convId = BigInt(conv.id);
-          addConversation({ id: String(conv.id), title: conv.title ?? null });
-          setActiveConversationId(convId);
-        } else {
-          await sendMessageToConversation(convId, content);
-        }
-        // The newest message makes this the most recently active conversation.
-        bumpConversation(String(convId));
-      } catch (err) {
-        console.error("[ConversationSidebar] send failed:", err);
-        setInput(content);
-      } finally {
-        setSending(false);
-      }
+  const handleConversationCreated = useCallback(
+    (item: ConversationItem) => {
+      addConversation(item);
     },
-    [activeConversationId, addConversation, bumpConversation, projectId, sending],
+    [addConversation],
+  );
+
+  const handleActiveConversationChange = useCallback(
+    (id: bigint) => {
+      setActiveConversationId(id);
+      bumpConversation(String(id));
+    },
+    [bumpConversation],
   );
 
   return (
@@ -312,30 +313,34 @@ export function ConversationSidebar({
         </div>
       )}
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {allMessages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-xs text-muted-foreground">
-              No messages yet. Start a conversation!
-            </p>
-          </div>
-        ) : (
-          allMessages.map((message: Message) => (
-            <MessageBubble key={String(message.id)} message={message} />
-          ))
-        )}
-      </div>
-
-      {/* Message Composer */}
-      <div className="border-t p-3">
-        <ChatComposer
-          value={input}
-          onChange={setInput}
-          onSend={handleSend}
-          sending={sending}
+      {/* Chat panel */}
+      <div className="min-h-0 flex-1">
+        <ChatPanel
+          projectId={projectId}
+          conversationId={activeConversationId}
+          messages={allMessages}
+          onConversationCreated={handleConversationCreated}
+          onActiveConversationChange={handleActiveConversationChange}
         />
       </div>
+
+      {/* Live-reply banner for streams happening in another conversation */}
+      {streamingTarget && streamingConversation ? (
+        <div className="flex items-center justify-between gap-2 border-t bg-accent/40 px-3 py-2">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs text-muted-foreground">
+              AI replies in &ldquo;{streamingTarget.title || "New conversation"}&rdquo;
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleSelectConversation(String(streamingConversation))}
+          >
+            View
+          </Button>
+        </div>
+      ) : null}
 
       {/* Delete Confirmation */}
       <AlertDialog

@@ -324,7 +324,7 @@ className={cn(
                 "outline-none",
                 "placeholder:text-muted-foreground",
                 expanded
-                  ? "col-span-full col-start-1 row-start-1 whitespace-pre-wrap [overflow-wrap:anywhere]"
+                  ? "col-span-full col-start-1 row-start-1 [overflow-wrap:anywhere]"
                   : "col-start-2 row-start-1 whitespace-pre overflow-x-hidden"
               )}
             />

@@ -9,19 +9,40 @@ export interface Message {
   status: string;
   updatedAt: string;
   createdAt: string;
+  parts?: unknown[];
+}
+
+export interface StreamMessage {
+  messageId: string;
+  conversationId: bigint;
+  projectId: bigint;
+  role: "user" | "assistant" | "system";
+  parts: unknown[];
+  status: string;
+}
+
+export type ChatMessage = Message | StreamMessage;
+
+export function isStreamMessage(message: ChatMessage): message is StreamMessage {
+  return "messageId" in message;
 }
 
 interface MessagesStore {
   messagesByConversation: Map<bigint, Message[]>;
+  streamsByConversation: Map<bigint, Map<string, StreamMessage>>;
   addMessage: (conversationId: bigint, message: Message) => void;
   setMessages: (conversationId: bigint, messages: Message[]) => void;
   updateMessage: (conversationId: bigint, message: Message) => void;
   removeMessage: (conversationId: bigint, messageId: bigint) => void;
   getMessages: (conversationId: bigint) => Message[];
+  upsertStreamMessage: (conversationId: bigint, message: StreamMessage) => void;
+  pruneStreams: (conversationId: bigint) => void;
+  getConversationMessages: (conversationId: bigint) => ChatMessage[];
 }
 
 export const useMessagesStore = create<MessagesStore>((set, get) => ({
   messagesByConversation: new Map(),
+  streamsByConversation: new Map(),
 
   addMessage: (conversationId, message) =>
     set((state) => {
@@ -67,4 +88,28 @@ export const useMessagesStore = create<MessagesStore>((set, get) => ({
 
   getMessages: (conversationId) =>
     get().messagesByConversation.get(conversationId) ?? [],
+
+  upsertStreamMessage: (conversationId, message) =>
+    set((state) => {
+      const map = new Map(state.streamsByConversation);
+      const inner = new Map(map.get(conversationId) ?? []);
+      inner.set(message.messageId, message);
+      map.set(conversationId, inner);
+      return { streamsByConversation: map };
+    }),
+
+  pruneStreams: (conversationId) =>
+    set((state) => {
+      const map = new Map(state.streamsByConversation);
+      map.set(conversationId, new Map());
+      return { streamsByConversation: map };
+    }),
+
+  getConversationMessages: (conversationId) => {
+    const active =
+      get().messagesByConversation.get(conversationId) ?? [];
+    const streams = get().streamsByConversation.get(conversationId);
+    if (!streams || streams.size === 0) return active;
+    return [...active, ...streams.values()];
+  },
 }));

@@ -57,6 +57,13 @@
       "when": 1791555153354,
       "tag": "0007_nostalgic_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791571865805,
+      "tag": "0008_clumsy_odin",
+      "breakpoints": true
     }
   ]
 }

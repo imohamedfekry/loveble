@@ -86,6 +86,19 @@ export class ConversationsController {
     return this.conversationsService.createMessage(conversationId, body, req);
   }
 
+  @Post(':conversationId/messages/assistant')
+  createAssistantMessage(
+    @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,
+    @Body({ schema: CreateMessageSchema }) body: CreateMessageDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.conversationsService.createAssistantMessage(
+      conversationId,
+      body,
+      req,
+    );
+  }
+
   @Patch('messages/:messageId')
   updateMessage(
     @Param('messageId', ParseSnowflakePipe) messageId: bigint,

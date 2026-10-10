@@ -15,6 +15,7 @@ export const CreateMessageSchema = v.object({
     v.string('Content must be a string'),
     v.nonEmpty('Content is required'),
   ),
+  parts: v.optional(v.array(v.any())),
 });
 
 export const UpdateMessageSchema = v.object({

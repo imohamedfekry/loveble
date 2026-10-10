@@ -4,6 +4,7 @@ import {
   timestamp,
   index,
   text,
+  jsonb,
   pgEnum,
 } from 'drizzle-orm/pg-core';
 import { nextSnowflakeId } from 'src/common/utils/snowflake';
@@ -30,6 +31,7 @@ export const messages = pgTable(
       .notNull()
       .references(() => conversations.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
+    parts: jsonb('parts'),
     status: messageStatusEnum('message_status'),
     role: roleEnum('role').notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

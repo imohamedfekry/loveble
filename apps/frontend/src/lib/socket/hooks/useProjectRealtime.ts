@@ -215,12 +215,40 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
           status: payload.status,
           updatedAt: payload.updatedAt,
           createdAt: payload.createdAt,
+          parts: Array.isArray(payload.parts) ? payload.parts : undefined,
         },
       );
+      // The finalized row replaces any in-flight stream for this conversation.
+      // Only assistant finals prune: a user `message:new` echo (which the
+      // sender also receives, since `server.to()` includes the emitter) would
+      // otherwise wipe the assistant stream that is still being persisted.
+      if (payload.role !== "user") {
+        useMessagesStore.getState().pruneStreams(
+          BigInt(payload.conversationId),
+        );
+      }
       // A new message makes its conversation the most recently active one.
       useConversationsStore.getState().bumpConversation(
         String(payload.conversationId),
       );
+    };
+
+    const onConversationStream = (payload: any) => {
+      if (!payload?.conversationId || !payload?.messageId) return;
+      const conversationId = BigInt(payload.conversationId);
+      useMessagesStore.getState().upsertStreamMessage(conversationId, {
+        messageId: payload.messageId,
+        conversationId,
+        projectId: payload.projectId ? BigInt(payload.projectId) : BigInt(0),
+        role: payload.role === "user" ? "user" : "assistant",
+        parts: Array.isArray(payload.parts) ? payload.parts : [],
+        status: typeof payload.status === "string" ? payload.status : "streaming",
+      });
+      if (payload.status === "error") {
+        window.setTimeout(() => {
+          useMessagesStore.getState().pruneStreams(conversationId);
+        }, 8000);
+      }
     };
 
     const onMessageUpdated = (payload: any) => {
@@ -236,6 +264,7 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
           status: payload.status,
           updatedAt: payload.updatedAt,
           createdAt: payload.createdAt,
+          parts: Array.isArray(payload.parts) ? payload.parts : undefined,
         },
       );
     };
@@ -263,6 +292,7 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
 
     socket.on("message:new", onMessageNew);
     socket.on("message:updated", onMessageUpdated);
+    socket.on("conversation:stream", onConversationStream);
     socket.on("conversation:created", onConversationCreated);
     socket.on("conversation:updated", onConversationUpdated);
     socket.on("conversation:deleted", onConversationDeleted);
@@ -270,6 +300,7 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
     return () => {
       socket.off("message:new", onMessageNew);
       socket.off("message:updated", onMessageUpdated);
+      socket.off("conversation:stream", onConversationStream);
       socket.off("conversation:created", onConversationCreated);
       socket.off("conversation:updated", onConversationUpdated);
       socket.off("conversation:deleted", onConversationDeleted);
