@@ -1,5 +1,6 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { Auth } from 'src/common/decorator/auth-user.decorator';
+import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { handleChatStream } from '@mastra/ai-sdk';
 import { createUIMessageStreamResponse } from 'ai';
@@ -45,13 +46,21 @@ export class ChatController {
   ) {
     const startedAt = Date.now();
     try {
+      // The agent prompt is built entirely on the server from the single message
+      // being submitted. Any conversation history is NOT read from the client —
+      // it will be provided by server-side memory (threads) in a later step.
+      const message = {
+        id: randomUUID(),
+        role: 'user' as const,
+        parts: [{ type: 'text' as const, text: body.message }],
+      };
       const stream = await withTimeout(
         handleChatStream({
           mastra,
           agentId: 'general-agent',
           version: 'v7',
           params: {
-            messages: body.messages as any[],
+            messages: [message] as any[],
             trigger: body.trigger,
           },
           defaultOptions: { maxSteps: 8 },

@@ -89,20 +89,6 @@ function toolPartsFromParts(parts: UIMessage["parts"]): ToolPart[] {
   return result;
 }
 
-function toUiMessage(message: Message): UIMessage {
-  return {
-    id: `db-${message.id}`,
-    role: message.role,
-    parts: message.content
-      ? [{ type: "text", text: message.content, state: "done" }]
-      : [],
-  };
-}
-
-function isStoredMessage(message: ChatMessage): message is Message {
-  return !isStreamMessage(message);
-}
-
 function ThinkingDot() {
   return <span aria-hidden className="stream-caret is-streaming" />;
 }
@@ -281,7 +267,6 @@ export function ChatPanel({
   const sendingRef = useRef(false);
   const conversationIdRef = useRef(conversationId);
   const turnRef = useRef<{ convId: bigint } | null>(null);
-  const messagesRef = useRef(messages);
   const generationRef = useRef(0);
   const sendGenRef = useRef(-1);
   const lastRelayAtRef = useRef(0);
@@ -290,7 +275,6 @@ export function ChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   conversationIdRef.current = conversationId;
-  messagesRef.current = messages;
 
   const setSendingState = useCallback((value: boolean) => {
     sendingRef.current = value;
@@ -483,14 +467,10 @@ export function ChatPanel({
           turnRef.current = { convId };
           sendGenRef.current = generationRef.current;
 
-          setMessages(
-            messagesRef.current
-              .filter(isStoredMessage)
-              .map(toUiMessage),
-          );
+          setMessages([]);
           void sendMessage(
             { text: content },
-            { body: { conversationId: String(convId) } },
+            { body: { conversationId: String(convId), message: content } },
           );
         } catch (error) {
           console.error("[ChatPanel] failed to persist user message:", error);
