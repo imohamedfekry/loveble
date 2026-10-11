@@ -75,14 +75,16 @@ export function ComposerMenu({
 
       {rows.length === 0 && (
         <div className="flex h-9 items-center px-2 text-xs text-muted-foreground">
-          No matches
+          {menu === "files" ? "No files found" : "No matches"}
         </div>
       )}
 
       <div className="mt-1 border-t border-border px-2 pb-1 pt-1.5 text-[11px] text-muted-foreground">
-        {menu === "at"
-          ? "Type to search sources & files"
-          : "Type to search commands"}
+        {menu === "files"
+          ? "Type a path to browse files"
+          : menu === "at"
+            ? "Type to search sources & files"
+            : "Type to search commands"}
       </div>
     </div>
   );

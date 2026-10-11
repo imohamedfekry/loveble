@@ -1,6 +1,7 @@
 import { Body, Controller, Post, Req, Res } from '@nestjs/common';
 import { Auth, AuthUser } from 'src/common/decorator/auth-user.decorator';
 import type { User } from 'src/common/database/schema';
+import { MessageRepository } from 'src/common/database/repositories/conversations/message.repository';
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { handleChatStream } from '@mastra/ai-sdk';
@@ -42,6 +43,8 @@ function withTimeout<T>(
 @Controller('ai/chat')
 @Auth()
 export class ChatController {
+  constructor(private readonly messageRepository: MessageRepository) {}
+
   @Post()
   async chat(
     @Body({ schema: ChatRequestSchema }) body: ChatRequestDto,
@@ -70,7 +73,19 @@ export class ChatController {
 
       // Plan vs build decides which chat agent runs. Plan mode is intentionally
       // read-only; build mode gets the full workspace (edits + execution).
-      const mode: ChatMode = body.mode ?? 'build';
+      //
+      // A brand-new project starts out with exactly one message (the one the
+      // client persisted via /conversations/project/:projectId/messages before
+      // hitting this endpoint). Force the build agent for that first message —
+      // a fresh project always builds first, regardless of the selected mode.
+      // New conversations on projects with history keep the user's choice.
+      let mode: ChatMode = body.mode ?? 'build';
+      const projectMessageCount = await this.messageRepository.countByProject(
+        BigInt(body.projectId),
+      );
+      if (projectMessageCount <= 1) {
+        mode = 'build';
+      }
       const agentId = CHAT_AGENT_IDS[mode];
 
       // Per-request context flows into the agents' dynamic workspace/broker

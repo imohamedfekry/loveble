@@ -1,6 +1,8 @@
+import type { FileType } from "@/lib/api/apis/files/types";
+
 export type ComposerVariant = "Rounded" | "Pill";
 
-export type ComposerMenuType = "at" | "slash" | null;
+export type ComposerMenuType = "at" | "files" | "slash" | null;
 
 export type ComposerSource = {
   key: string;
@@ -28,6 +30,7 @@ export type ComposerRow = {
   key: string;
   name: string;
   desc: string;
+  fileType?: FileType;
 };
 
 export type ComposerAttachment = {

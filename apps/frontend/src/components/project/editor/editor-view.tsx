@@ -300,6 +300,8 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
             <CodeEditor
               key={`${activeFile.id}:${snapshot?.version ?? "offline"}`}
               fileName={activeFile.name}
+              fileId={activeFile.id}
+              projectId={projectId}
               initialValue={snapshot?.document ?? content.content}
               collaboration={collabConfig}
               peers={peers}

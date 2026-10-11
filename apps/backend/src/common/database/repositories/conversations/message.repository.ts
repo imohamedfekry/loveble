@@ -57,6 +57,15 @@ export class MessageRepository extends BaseRepository {
     return row?.count ?? 0;
   }
 
+  async countByProject(projectId: bigint): Promise<number> {
+    const [row] = await this.db
+      .select({ count: count() })
+      .from(messages)
+      .where(eq(messages.projectId, projectId));
+
+    return row?.count ?? 0;
+  }
+
   async update(
     id: bigint,
     data: Partial<Omit<Message, 'id' | 'projectId' | 'conversationId'>>,

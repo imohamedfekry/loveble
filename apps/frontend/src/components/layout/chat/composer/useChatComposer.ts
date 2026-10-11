@@ -11,12 +11,18 @@
   } from "react";
 
   import { COMMANDS, MODELS, SOURCES } from "./composer-data";
+  import { fileMention } from "@/lib/chat-context";
+  import { useChatContextStore } from "@/store/chat-context.store";
+  import { useFilesStore } from "@/store/file.store";
+  import type { ProjectFileType } from "@/lib/api/apis/files/types";
   import type {
     ComposerAttachment,
     ComposerMenuType,
     ComposerModel,
     ComposerRow,
   } from "./types";
+
+  const EMPTY_FILES: ProjectFileType[] = [];
 
   type SpeechRecognitionType = {
     continuous: boolean;
@@ -62,7 +68,7 @@
   }
 
   function parseToken(draft: string) {
-    const match = /(^|\s)([@/])([\w-]*)$/.exec(draft);
+    const match = /(^|\s)([@/])([\w./-]*)$/.exec(draft);
 
     if (!match) return null;
 
@@ -77,14 +83,53 @@
     };
   }
 
+  function resolveDirectory(
+    query: string,
+    byParent: Map<string | null, ProjectFileType[]>,
+  ): {
+    parentId: string | null;
+    parentPath: string;
+    filter: string | null;
+  } {
+    const segments = query
+      .split("/")
+      .filter((segment) => segment.length > 0);
+    let parentId: string | null = null;
+    const trail: string[] = [];
+    let filter: string | null = null;
+
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      const children: ProjectFileType[] =
+        byParent.get(parentId) ?? [];
+      const folder: ProjectFileType | undefined =
+        children.find(
+          (child) =>
+            child.type === "folder" && child.name === segment,
+        );
+      if (!folder) {
+        filter = segments.slice(i).join("/");
+        break;
+      }
+      trail.push(folder.name);
+      parentId = folder.id;
+    }
+
+    return { parentId, parentPath: trail.join("/"), filter };
+  }
+
   export function useChatComposer({
     value,
     onChange,
     onSend,
+    mentionCount = 0,
+    projectId,
   }: {
     value: string;
     onChange: (value: string) => void;
     onSend?: (payload: { text: string; files: File[] }) => void;
+    mentionCount?: number;
+    projectId?: string;
   }) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const controlsRef = useRef<HTMLDivElement>(null);
@@ -134,13 +179,89 @@
 
     const token = dismissed ? null : parseToken(value);
 
+    const projectFiles = useFilesStore((state) =>
+      projectId ? state.files[projectId] : undefined
+    ) ?? EMPTY_FILES;
+
+    const filesByParent = useMemo(() => {
+      const byId = new Map(
+        projectFiles.map((file) => [file.id, file]),
+      );
+      const byParent = new Map<string | null, ProjectFileType[]>();
+      for (const file of projectFiles) {
+        const children = byParent.get(file.parentId) ?? [];
+        children.push(file);
+        byParent.set(file.parentId, children);
+      }
+      const pathOf = (file: ProjectFileType): string => {
+        const segments: string[] = [];
+        let current: ProjectFileType | undefined = file;
+        while (current) {
+          segments.unshift(current.name);
+          current = current.parentId
+            ? byId.get(current.parentId)
+            : undefined;
+        }
+        return segments.join("/");
+      };
+      return { byParent, pathOf };
+    }, [projectFiles]);
+
     const menu: ComposerMenuType = plusOpen
       ? "at"
-      : token?.kind ?? null;
+      : token
+        ? token.kind === "at"
+          ? projectId
+            ? "files"
+            : "at"
+          : "slash"
+        : null;
 
     const query = plusOpen ? "" : token?.query ?? "";
 
+    const fileRows: ComposerRow[] = useMemo(() => {
+      if (menu !== "files") return [];
+
+      const { byParent, pathOf } = filesByParent;
+
+      // Treat the text after `@` as a directory path: resolve as deep as it
+      // matches folder names, then list the children of that folder. Any
+      // remaining segment becomes a name filter on the current folder.
+      const { parentId, filter } = resolveDirectory(
+        query,
+        byParent,
+      );
+
+      const candidates = [
+        ...(byParent.get(parentId) ?? []),
+      ];
+      const lowered = filter?.toLowerCase();
+      const visible = lowered
+        ? candidates.filter((child) =>
+            child.name.toLowerCase().includes(lowered)
+          )
+        : candidates;
+
+      visible.sort((a, b) => {
+        if (a.type !== b.type) {
+          return a.type === "folder" ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+      return visible.map((file) => ({
+        key: file.id,
+        name: file.name,
+        desc: pathOf(file),
+        fileType: file.type,
+      }));
+    }, [menu, filesByParent, query]);
+
     const rows: ComposerRow[] = useMemo(() => {
+      if (menu === "files") {
+        return fileRows;
+      }
+
       if (menu === "at") {
         return SOURCES
           .filter((source) =>
@@ -166,10 +287,12 @@
       }
 
       return [];
-    }, [menu, query]);
+    }, [menu, query, fileRows]);
 
     const canSend =
-      value.trim().length > 0 || attachments.length > 0;
+      value.trim().length > 0 ||
+      attachments.length > 0 ||
+      mentionCount > 0;
 
     const menuQueryKey = `${menu ?? ""}|${query ?? ""}|${rows.length}`;
     const [prevMenuQueryKey, setPrevMenuQueryKey] = useState(menuQueryKey);
@@ -304,6 +427,27 @@
 
     const pick = useCallback(
       (row: ComposerRow) => {
+        if (menu === "files") {
+          const file = projectFiles.find(
+            (item) => item.id === row.key
+          );
+
+          if (file) {
+            useChatContextStore.getState().add(fileMention(file));
+          }
+
+          applyExternalChange(
+            value.slice(0, token?.start ?? value.length)
+          );
+
+          setPlusOpen(false);
+          setDismissed(false);
+
+          requestAnimationFrame(focusInput);
+
+          return;
+        }
+
         const source = SOURCES.find(
           (item) => item.key === row.key
         );
@@ -338,6 +482,36 @@
         applyExternalChange,
         focusInput,
         menu,
+        projectFiles,
+        token,
+        value,
+      ]
+    );
+
+    const descend = useCallback(
+      (row: ComposerRow) => {
+        if (menu !== "files" || !token) return;
+
+        const { parentPath } = resolveDirectory(
+          query,
+          filesByParent.byParent,
+        );
+        const nextQuery = `${parentPath ? `${parentPath}/` : ""}${row.name}/`;
+
+        applyExternalChange(
+          `${value.slice(0, token.start)}@${nextQuery}`,
+        );
+        setPlusOpen(false);
+        setDismissed(false);
+
+        requestAnimationFrame(focusInput);
+      },
+      [
+        applyExternalChange,
+        filesByParent,
+        focusInput,
+        menu,
+        query,
         token,
         value,
       ]
@@ -375,14 +549,27 @@
             return;
           }
 
-          if (
-            (event.key === "Enter" && !event.shiftKey) ||
-            event.key === "Tab"
-          ) {
+          if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
 
             if (rows[active]) {
               pick(rows[active]);
+            }
+
+            return;
+          }
+
+          if (event.key === "Tab") {
+            event.preventDefault();
+
+            const row = rows[active];
+
+            if (row) {
+              if (menu === "files" && row.fileType === "folder") {
+                descend(row);
+              } else {
+                pick(row);
+              }
             }
 
             return;
@@ -404,7 +591,7 @@
           send();
         }
       },
-      [active, closeMenus, menu, pick, rows, send]
+      [active, closeMenus, descend, menu, pick, rows, send]
     );
 
     const handleChange = useCallback(

@@ -45,29 +45,53 @@ export class ProjectMutationsService {
     }
     const segments = normalized.split('/');
     let parentId: bigint | null = null;
-    let currentPath = '';
-    let resolver = await this.loadResolver(projectId);
     for (const segment of segments) {
-      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
-      const found = resolver.resolve(currentPath);
-      if (found) {
-        if (found.type !== 'folder') {
-          throw new BadRequestException(
-            `Path component exists and is not a folder: ${currentPath}`,
-          );
-        }
-        parentId = BigInt(found.id);
-        continue;
+      parentId = await this.ensureFolder(projectId, parentId, segment);
+    }
+  }
+
+  /**
+   * Find-or-create a folder `name` under `parentId`. Looked up by name from the
+   * DB (not a cached snapshot) and tolerant of a concurrent create that wins the
+   * unique `(projectId, parentId, name)` index, so a stale in-memory resolver can
+   * never turn into a duplicate-key failure mid-turn.
+   */
+  private async ensureFolder(
+    projectId: bigint,
+    parentId: bigint | null,
+    name: string,
+  ): Promise<bigint> {
+    const existing = await this.fileRepository.findFolderByName(
+      projectId,
+      parentId,
+      name,
+    );
+    if (existing) {
+      if (existing.type !== 'folder') {
+        throw new BadRequestException(
+          `Path component exists and is not a folder: ${name}`,
+        );
       }
+      return BigInt(existing.id);
+    }
+    try {
       const created = await this.fileRepository.createFile({
         projectId,
         parentId,
-        name: segment,
+        name,
         type: 'folder',
       });
       this.emitFileEvent(projectId, FILE_EVENTS.CREATED, created);
-      parentId = created.id;
-      resolver = await this.loadResolver(projectId);
+      return created.id;
+    } catch (err) {
+      // Unique index hit by a concurrent create — reuse the winner.
+      const winner = await this.fileRepository.findFolderByName(
+        projectId,
+        parentId,
+        name,
+      );
+      if (winner) return BigInt(winner.id);
+      throw err;
     }
   }
 
@@ -92,6 +116,70 @@ export class ProjectMutationsService {
     }
   }
 
+  /**
+   * Delete a node (file or folder) at `path`. Folders delete recursively —
+   * every descendant file row, folder row and document-state entry is removed,
+   * and `file:deleted` events are broadcast so the workspace UI stays in sync.
+   * The agent's `mastra_workspace_delete` tool targets folders like `src/`
+   * when it wants to scaffold a project from scratch, so this is the path the
+   * old "rmdir is not supported" error surfaced on.
+   */
+  async deletePath(projectId: bigint, path: string, recursive = true) {
+    const resolver = await this.loadResolver(projectId);
+    const node = resolver.resolve(path);
+    if (!node) {
+      // Deleting a missing path is a no-op for the tool boundary (mirrors the
+      // POSIX `rm -rf` contract) so the agent can clean up unguarded paths.
+      return;
+    }
+
+    const pending: { node: typeof node; depth: number }[] = [
+      { node, depth: 0 },
+    ];
+    const toDelete: { node: typeof node; depth: number }[] = [];
+
+    // Walk the full subtree so we unload all documents BEFORE the DB rows
+    // disappear (documentState is keyed by file id and has no project scope).
+    while (pending.length > 0) {
+      const current = pending.pop()!;
+      toDelete.push(current);
+      if (current.node.type !== 'folder') continue;
+      if (!recursive && current.depth > 0) {
+        throw new BadRequestException(`Directory not empty: ${path}`);
+      }
+      const children = resolver.childrenOf(current.node.id);
+      for (const child of children) {
+        pending.push({ node: child, depth: current.depth + 1 });
+      }
+    }
+
+    // Delete deepest first so parent folders are removed after their children.
+    toDelete.sort((a, b) => b.depth - a.depth);
+    for (const { node } of toDelete) {
+      let deleted: unknown = null;
+      try {
+        deleted = await this.fileRepository.deleteFile(
+          BigInt(node.id),
+          projectId,
+        );
+      } catch (err) {
+        this.logger.warn(
+          `deletePath failed node=${node.id} path=${path}: ${String(err)}`,
+        );
+      }
+      if (deleted) this.emitFileEvent(projectId, FILE_EVENTS.DELETED, deleted);
+      if (node.type === 'file') {
+        try {
+          await this.documentState.unload(node.id);
+        } catch (err) {
+          this.logger.warn(
+            `deletePath unload failed file=${node.id}: ${String(err)}`,
+          );
+        }
+      }
+    }
+  }
+
   private async loadResolver(projectId: bigint) {
     const files = await this.fileRepository.getAllFilesWithProjectId(projectId);
     return new ProjectPathResolver(projectId, files);
@@ -105,7 +193,7 @@ export class ProjectMutationsService {
     const segments = normalized.split('/');
     const fileName = segments.pop()!;
 
-    let resolver = await this.loadResolver(projectId);
+    const resolver = await this.loadResolver(projectId);
     const existing = resolver.resolve(normalized);
     if (existing) {
       if (existing.type === 'folder') {
@@ -117,28 +205,8 @@ export class ProjectMutationsService {
     }
 
     let parentId: bigint | null = null;
-    let currentPath = '';
     for (const segment of segments) {
-      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
-      const found = resolver.resolve(currentPath);
-      if (found) {
-        if (found.type !== 'folder') {
-          throw new BadRequestException(
-            `Path component exists and is not a folder: ${currentPath}`,
-          );
-        }
-        parentId = BigInt(found.id);
-        continue;
-      }
-      const created = await this.fileRepository.createFile({
-        projectId,
-        parentId,
-        name: segment,
-        type: 'folder',
-      });
-      this.emitFileEvent(projectId, FILE_EVENTS.CREATED, created);
-      parentId = created.id;
-      resolver = await this.loadResolver(projectId);
+      parentId = await this.ensureFolder(projectId, parentId, segment);
     }
 
     const createdFile = await this.fileRepository.createFile({

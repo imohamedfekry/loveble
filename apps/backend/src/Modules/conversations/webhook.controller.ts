@@ -17,6 +17,25 @@ export class ConversationsWebhookController {
     private readonly configService: ConfigService,
   ) {}
 
+  @Post('assistant-message')
+  async assistantMessage(
+    @Headers('authorization') authorization: string,
+    @Body()
+    body: {
+      conversationId: string;
+      content?: string;
+      parts?: unknown[];
+    },
+  ) {
+    if (
+      authorization !== this.configService.get<string>('inngest.webhookSecret')
+    ) {
+      throw new UnauthorizedException();
+    }
+
+    return this.conversationsService.persistAssistantMessageFromWebhook(body);
+  }
+
   @Post('generated-title')
   async generatedTitle(
     @Headers('authorization') authorization: string,

@@ -18,6 +18,8 @@ import { useModKeyLabel } from "@loveble/ui";
 import { getItemPadding } from "./constants";
 import { isValidDropTarget, useTreeDndContext } from "./tree-dnd";
 import { useFilesStore } from "@/store/file.store";
+import { useChatContextStore } from "@/store/chat-context.store";
+import { fileMention } from "@/lib/chat-context";
 
 const EMPTY_FILES: ProjectFileType[] = [];
 
@@ -130,6 +132,15 @@ export const TreeItemWrapper = ({
                         Rename
                         <ContextMenuShortcut>f2</ContextMenuShortcut>
                     </ContextMenuItem>
+                    <ContextMenuItem
+                        disabled={loading}
+                        onSelect={() => {
+                            useChatContextStore.getState().add(fileMention(item));
+                        }}
+                    >
+                        Add to Chat
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
                     <ContextMenuItem
                         disabled={loading}
                         variant="destructive"

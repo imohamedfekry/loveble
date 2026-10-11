@@ -1,5 +1,7 @@
 "use client";
 
+import { FileIcon, FolderIcon } from "@react-symbols/icons/utils";
+
 import { cn } from "@loveble/utils";
 
 import { ComposerIcon } from "./ComposerIcon";
@@ -20,6 +22,7 @@ export function ComposerMenuItem({
     key: string;
     name: string;
     desc: string;
+    fileType?: "file" | "folder";
   };
   source?: ComposerSource;
   active: boolean;
@@ -45,16 +48,26 @@ export function ComposerMenuItem({
         active && "bg-foreground/10 dark:bg-foreground/15"
       )}
     >
-      {source && (
-        <span className="flex h-5.5 w-5.5 shrink-0 items-center justify-center text-muted-foreground">
-          {source.brand ? (
-            BRANDS[source.brand]
+      {row.fileType ? (
+        <span className="flex h-5.5 w-5.5 shrink-0 items-center justify-center">
+          {row.fileType === "folder" ? (
+            <FolderIcon folderName={row.name} className="size-4 shrink-0" />
           ) : (
-            <ComposerIcon size={15}>
-              {GLYPHS[source.glyph ?? "clip"]}
-            </ComposerIcon>
+            <FileIcon fileName={row.name} autoAssign className="size-4 shrink-0" />
           )}
         </span>
+      ) : (
+        source && (
+          <span className="flex h-5.5 w-5.5 shrink-0 items-center justify-center text-muted-foreground">
+            {source.brand ? (
+              BRANDS[source.brand]
+            ) : (
+              <ComposerIcon size={15}>
+                {GLYPHS[source.glyph ?? "clip"]}
+              </ComposerIcon>
+            )}
+          </span>
+        )
       )}
 
       <span className="shrink-0 text-[12.5px] font-medium text-foreground">
