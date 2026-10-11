@@ -18,6 +18,7 @@ import {
   sendAssistantMessageToConversation,
   sendFirstMessage,
   sendMessageToConversation,
+  stopConversationGeneration,
 } from "@/lib/hooks/conversations/useConversations";
 import {
   useMessagesStore,
@@ -207,9 +208,22 @@ function AssistantReplyView({
   );
 }
 
+function SystemMessageView({ message }: { message: Message }) {
+  return (
+    <div className="flex justify-center py-1.5">
+      <span className="text-[11.5px] text-ink-2/80">
+        {message.content || "…"}
+      </span>
+    </div>
+  );
+}
+
 function StoredMessageView({ message }: { message: Message }) {
   if (message.role === "user") {
     return <UserMessage message={message} />;
+  }
+  if (message.role === "system") {
+    return <SystemMessageView message={message} />;
   }
   const parts: UIMessage["parts"] = Array.isArray(message.parts)
     ? (message.parts as UIMessage["parts"])
@@ -320,8 +334,8 @@ export function ChatPanel({
       if (!current) return;
       const convId = turnRef.current?.convId ?? null;
       try {
+        const content = textFromParts(message.parts).trim();
         if (!isAbort && convId) {
-          const content = textFromParts(message.parts).trim();
           if (content) {
             await sendAssistantMessageToConversation(
               convId,
@@ -331,6 +345,10 @@ export function ChatPanel({
           } else {
             relayStream(message.id, message.role, message.parts, "error", true);
           }
+        } else if (isAbort && convId) {
+          // User (or the watchdog) stopped the generation. Keep whatever was
+          // produced so far and mark the stop in a single atomic request.
+          await stopConversationGeneration(convId, content, message.parts);
         } else {
           relayStream(message.id, message.role, message.parts, "error", true);
         }
@@ -346,6 +364,17 @@ export function ChatPanel({
       }
     },
     onError: (error) => {
+      // An aborted fetch is expected whenever the user clicks "Stop" (or the
+      // watchdog aborts a stalled stream). The `onFinish(isAbort)` handler owns
+      // persistence for that case — don't double-handle it here.
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        (error as { name?: string }).name === "AbortError"
+      ) {
+        return;
+      }
       console.error("[ChatPanel] stream error:", error);
       const messages = chat.messages;
       const last = messages[messages.length - 1];
@@ -488,6 +517,10 @@ export function ChatPanel({
     ],
   );
 
+  const handleStop = useCallback(() => {
+    stop();
+  }, [stop]);
+
   return (
     <div className="flex h-full flex-col">
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
@@ -515,6 +548,7 @@ export function ChatPanel({
           value={input}
           onChange={setInput}
           onSend={handleSend}
+          onStop={handleStop}
           sending={sending}
         />
       </div>

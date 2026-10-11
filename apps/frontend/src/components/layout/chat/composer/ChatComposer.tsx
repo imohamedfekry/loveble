@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowUp,
   ChevronDown,
-  Loader2Icon,
   Mic,
   Plus,
+  Square,
   Upload,
 } from "lucide-react";
 
@@ -27,6 +27,7 @@ export function ChatComposer({
   value,
   onChange,
   onSend,
+  onStop,
   sending = false,
 }: {
   variant?: ComposerVariant;
@@ -36,6 +37,7 @@ export function ChatComposer({
     text: string;
     files: File[];
   }) => void;
+  onStop?: () => void;
   sending?: boolean;
 }) {
   const pill = variant === "Pill";
@@ -98,6 +100,8 @@ export function ChatComposer({
     onChange,
     onSend,
   });
+
+  const sendActive = canSend || sending;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
@@ -292,10 +296,10 @@ export function ChatComposer({
               "grid items-end gap-x-1.5 gap-y-1.5 p-2 overflow-hidden",
               "transition-[grid-template-columns] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
               expanded
-                ? canSend
+                ? sendActive
                   ? "grid-cols-[minmax(0,1fr)_auto_32px_32px]"
                   : "grid-cols-[minmax(0,1fr)_auto_32px_0px]"
-                : canSend
+                : sendActive
                   ? "grid-cols-[32px_minmax(0,1fr)_auto_32px_32px]"
                   : "grid-cols-[32px_minmax(0,1fr)_auto_32px_0px]"
             )}
@@ -418,23 +422,23 @@ className={cn(
             {/* SEND — مخفي تماماً لما مش active ويظهر بسلايد من اليمين للشمال */}
             <button
               type="button"
-              aria-label={sending ? "Sending" : "Send"}
-              aria-hidden={!canSend}
-              tabIndex={canSend && !sending ? 0 : -1}
-              onClick={sending ? undefined : send}
+              aria-label={sending ? "Stop generating" : "Send"}
+              aria-hidden={!sendActive}
+              tabIndex={sendActive ? 0 : -1}
+              onClick={sending ? onStop : send}
               className={cn(
                 "flex h-8 shrink-0 items-center justify-center overflow-hidden",
                 "transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
                 "active:scale-[0.96]",
                 pill ? "rounded-full" : "rounded-lg",
                 expanded ? "col-start-4 row-start-2" : "col-start-5 row-start-1",
-                canSend
+                sendActive
                   ? "w-8 translate-x-0 scale-100 bg-primary text-primary-foreground opacity-100 hover:bg-primary/90"
                   : "pointer-events-none w-0 translate-x-4 scale-90 bg-primary text-primary-foreground opacity-0"
               )}
             >
               {sending ? (
-                <Loader2Icon className="h-4 w-4 shrink-0 animate-spin" />
+                <Square className="h-3.5 w-3.5 shrink-0 fill-current" />
               ) : (
                 <ArrowUp className="h-4 w-4 shrink-0" />
               )}

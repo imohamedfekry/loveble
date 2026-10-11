@@ -4,14 +4,18 @@ import { RESPONSE_MESSAGES } from '@loveble/utils';
 import { fail, success } from 'src/common/utils/response.util';
 import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
 import { InngestService } from 'src/common/inngest/inngest.service';
+import { mirrorStoppedTurnToMemory } from 'src/common/inngest/agents/memory';
 import { ConversationRepository } from 'src/common/database/repositories/conversations/conversation.repository';
 import { MessageRepository } from 'src/common/database/repositories/conversations/message.repository';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
 import type {
   CreateMessageDto,
+  StopMessageDto,
   UpdateConversationDto,
   UpdateMessageDto,
 } from './dto/conversation.dto';
+
+const STOP_MESSAGE = 'Generation stopped';
 
 @Injectable()
 export class ConversationsService {
@@ -226,6 +230,80 @@ export class ConversationsService {
     );
 
     return success(RESPONSE_MESSAGES.MESSAGE.CREATE.SUCCESS, { message });
+  }
+
+  async stopGeneration(
+    conversationId: bigint,
+    body: StopMessageDto,
+    req: AuthenticatedRequest,
+  ) {
+    const conversation = await this.assertConversationOwnership(
+      conversationId,
+      req,
+    );
+
+    // Keep whatever the model produced before the stop. This includes turns
+    // that only ran tools (e.g. a web search) with no text yet — those still
+    // have `parts`, so they must be persisted too, not just text content.
+    const content = body.content?.trim() ?? '';
+    const parts = body.parts ?? [];
+    const hasPartial = content.length > 0 || parts.length > 0;
+
+    const partial = hasPartial
+      ? await this.messageRepository.create({
+          conversationId,
+          projectId: conversation.projectId,
+          content,
+          parts: parts.length > 0 ? parts : null,
+          role: 'assistant',
+          status: 'completed',
+        })
+      : null;
+
+    if (partial) {
+      this.realtimeEmitService.toProject(
+        conversation.projectId,
+        'message:new',
+        partial,
+      );
+
+      // Mirror the stopped turn (partial text + any tool calls) into the
+      // thread's Mastra memory so the next turn sees what was produced.
+      try {
+        await mirrorStoppedTurnToMemory({
+          threadId: conversationId.toString(),
+          resourceId: String(req.user.id),
+          messageId: partial.id.toString(),
+          parts,
+          marker: STOP_MESSAGE,
+          threadTitle: conversation.title ?? undefined,
+        });
+      } catch (error) {
+        this.logger.warn(
+          `failed to mirror stopped turn to memory: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
+    const system = await this.messageRepository.create({
+      conversationId,
+      projectId: conversation.projectId,
+      content: STOP_MESSAGE,
+      role: 'system',
+      status: 'completed',
+    });
+
+    this.realtimeEmitService.toProject(
+      conversation.projectId,
+      'message:new',
+      system,
+    );
+
+    return success(RESPONSE_MESSAGES.MESSAGE.CREATE.SUCCESS, {
+      messages: partial ? [partial, system] : [system],
+    });
   }
 
   async applyGeneratedTitle(body: { conversationId: string; title: string }) {

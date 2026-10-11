@@ -1,5 +1,6 @@
 import { Agent } from '@mastra/core/agent';
 import { getModel } from 'src/ai/providers';
+import { generalAgentMemory } from './memory';
 import { crawlAgentTool, searchAgentTool } from './tools';
 
 export const DEFAULT_AGENT_MODEL = 'ollama/gemma4:31b-cloud';
@@ -13,6 +14,7 @@ Use the available tools when they improve the answer (web search for fresh facts
 Do not call tools more than a few times — gather what you need, then ALWAYS respond with a final text answer. Never end on tool calls alone.
 Be concise and accurate.`,
     model: getModel(modelId),
+    memory: generalAgentMemory,
     tools: { 'web-search': searchAgentTool, 'web-crawl': crawlAgentTool },
   });
 }
