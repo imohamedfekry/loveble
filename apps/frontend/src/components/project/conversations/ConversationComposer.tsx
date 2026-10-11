@@ -9,6 +9,7 @@ export function ConversationComposer({
     value,
     onChange,
     onSend,
+    onStop,
     sending,
     className,
 }: {
@@ -17,6 +18,7 @@ export function ConversationComposer({
     value: string;
     onChange: (value: string) => void;
     onSend?: (payload: { text: string; files: File[] }) => void;
+    onStop?: () => void;
     sending?: boolean;
     className?: string;
 }) {
@@ -27,6 +29,7 @@ export function ConversationComposer({
                 value={value}
                 onChange={onChange}
                 onSend={onSend}
+                onStop={onStop}
                 sending={sending}
             />
         </div>

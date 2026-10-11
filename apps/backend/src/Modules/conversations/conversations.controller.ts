@@ -14,11 +14,13 @@ import { ParseSnowflakePipe } from 'src/common/Global/security/validator/isId.va
 import { ConversationsService } from './conversations.service';
 import type {
   CreateMessageDto,
+  StopMessageDto,
   UpdateConversationDto,
   UpdateMessageDto,
 } from './dto/conversation.dto';
 import {
   CreateMessageSchema,
+  StopMessageSchema,
   UpdateConversationSchema,
 } from './dto/conversation.dto';
 
@@ -97,6 +99,15 @@ export class ConversationsController {
       body,
       req,
     );
+  }
+
+  @Post(':conversationId/messages/stop')
+  stopGeneration(
+    @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,
+    @Body({ schema: StopMessageSchema }) body: StopMessageDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.conversationsService.stopGeneration(conversationId, body, req);
   }
 
   @Patch('messages/:messageId')

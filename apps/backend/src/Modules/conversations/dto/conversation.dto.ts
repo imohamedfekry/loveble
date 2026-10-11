@@ -18,6 +18,13 @@ export const CreateMessageSchema = v.object({
   parts: v.optional(v.array(v.any())),
 });
 
+// Sent when generation is stopped: the (optional) partial assistant text plus
+// the system marker are persisted together in a single request.
+export const StopMessageSchema = v.object({
+  content: v.optional(v.string('Content must be a string')),
+  parts: v.optional(v.array(v.any())),
+});
+
 export const UpdateMessageSchema = v.object({
   status: v.optional(
     v.picklist(['processing', 'completed', 'canceled'], 'Invalid status'),
@@ -34,4 +41,5 @@ export type UpdateConversationDto = v.InferOutput<
   typeof UpdateConversationSchema
 >;
 export type CreateMessageDto = v.InferOutput<typeof CreateMessageSchema>;
+export type StopMessageDto = v.InferOutput<typeof StopMessageSchema>;
 export type UpdateMessageDto = v.InferOutput<typeof UpdateMessageSchema>;

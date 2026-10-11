@@ -1,5 +1,6 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
-import { Auth } from 'src/common/decorator/auth-user.decorator';
+import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Auth, AuthUser } from 'src/common/decorator/auth-user.decorator';
+import type { User } from 'src/common/database/schema';
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { handleChatStream } from '@mastra/ai-sdk';
@@ -42,13 +43,23 @@ export class ChatController {
   @Post()
   async chat(
     @Body({ schema: ChatRequestSchema }) body: ChatRequestDto,
+    @AuthUser() user: User,
+    @Req() request: import('fastify').FastifyRequest,
     @Res({ passthrough: true }) reply: import('fastify').FastifyReply,
   ) {
     const startedAt = Date.now();
+    const abortController = new AbortController();
     try {
-      // The agent prompt is built entirely on the server from the single message
-      // being submitted. Any conversation history is NOT read from the client —
-      // it will be provided by server-side memory (threads) in a later step.
+      // Stop the generation when the client disconnects (e.g. the user clicked
+      // "Stop" and aborted the fetch). Without this the model would keep
+      // generating until the request finishes, wasting compute.
+      request.raw.once('aborted', () => abortController.abort());
+      reply.raw.once('close', () => {
+        if (!reply.raw.writableFinished) abortController.abort();
+      });
+      // The agent prompt is built entirely on the server. The current message
+      // is the only thing taken from the client; prior turns come from Mastra
+      // memory, scoped to this conversation (thread) so threads never share.
       const message = {
         id: randomUUID(),
         role: 'user' as const,
@@ -62,8 +73,13 @@ export class ChatController {
           params: {
             messages: [message] as any[],
             trigger: body.trigger,
+            abortSignal: abortController.signal,
+            memory: {
+              thread: body.conversationId,
+              resource: String(user.id),
+            },
           },
-          defaultOptions: { maxSteps: 8 },
+          defaultOptions: { maxSteps: 25 },
           sendReasoning: true,
           sendSources: true,
           onError: (error) => {

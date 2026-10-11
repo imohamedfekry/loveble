@@ -7,7 +7,10 @@ export const ChatRequestSchema = v.object({
     v.minLength(1, 'message must not be empty'),
   ),
   mode: v.optional(v.picklist(['plan', 'build']), 'build'),
-  conversationId: v.optional(v.pipe(v.string(), v.regex(/^\d{16,19}$/))),
+  conversationId: v.pipe(
+    v.string('conversationId must be a string'),
+    v.regex(/^\d{16,19}$/, 'conversationId must be a valid id'),
+  ),
   trigger: v.optional(v.picklist(['submit-message', 'regenerate-message'])),
 });
 

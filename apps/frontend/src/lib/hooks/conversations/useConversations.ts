@@ -171,6 +171,26 @@ export async function sendAssistantMessageToConversation(
   return normalized;
 }
 
+export async function stopConversationGeneration(
+  conversationId: bigint,
+  content?: string,
+  parts?: unknown[],
+): Promise<void> {
+  const result = await apiRequest<{ messages: any[] }>(
+    `${API_BASE}/${conversationId}/messages/stop`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: content ?? null, parts: parts ?? null }),
+    },
+  );
+  const messages = result?.data?.messages ?? [];
+  const store = useMessagesStore.getState();
+  for (const raw of messages) {
+    store.addMessage(conversationId, normalizeMessage(raw));
+  }
+}
+
 export async function sendFirstMessage(
   projectId: string | null,
   content: string,
