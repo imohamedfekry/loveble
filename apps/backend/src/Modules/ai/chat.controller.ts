@@ -5,7 +5,9 @@ import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { handleChatStream } from '@mastra/ai-sdk';
 import { createUIMessageStreamResponse } from 'ai';
+import { RequestContext } from '@mastra/core/request-context';
 import { mastra } from 'src/mastra';
+import { CHAT_AGENT_IDS, type ChatMode } from 'src/mastra/agents/chat-agents';
 import { ChatRequestSchema } from './dto/chat.dto';
 import type { ChatRequestDto } from './dto/chat.dto';
 
@@ -65,15 +67,36 @@ export class ChatController {
         role: 'user' as const,
         parts: [{ type: 'text' as const, text: body.message }],
       };
+
+      // Plan vs build decides which chat agent runs. Plan mode is intentionally
+      // read-only; build mode gets the full workspace (edits + execution).
+      const mode: ChatMode = body.mode ?? 'build';
+      const agentId = CHAT_AGENT_IDS[mode];
+
+      // Per-request context flows into the agents' dynamic workspace/broker
+      // resolvers so each tool call targets the right project + sandbox.
+      const requestContext = new RequestContext<{
+        projectId: string;
+        conversationId: string;
+        userId: string;
+        mode: ChatMode;
+      }>([
+        ['projectId', body.projectId],
+        ['conversationId', body.conversationId],
+        ['userId', String(user.id)],
+        ['mode', mode],
+      ]);
+
       const stream = await withTimeout(
         handleChatStream({
           mastra,
-          agentId: 'general-agent',
+          agentId,
           version: 'v7',
           params: {
             messages: [message] as any[],
             trigger: body.trigger,
             abortSignal: abortController.signal,
+            requestContext,
             memory: {
               thread: body.conversationId,
               resource: String(user.id),

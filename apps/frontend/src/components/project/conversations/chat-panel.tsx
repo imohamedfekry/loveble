@@ -277,6 +277,7 @@ export function ChatPanel({
   onActiveConversationChange: (id: bigint) => void;
 }) {
   const [input, setInput] = useState("");
+  const [mode, setMode] = useState<"plan" | "build">("build");
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
   const conversationIdRef = useRef(conversationId);
@@ -499,7 +500,14 @@ export function ChatPanel({
           setMessages([]);
           void sendMessage(
             { text: content },
-            { body: { conversationId: String(convId), message: content } },
+            {
+              body: {
+                conversationId: String(convId),
+                message: content,
+                projectId,
+                mode,
+              },
+            },
           );
         } catch (error) {
           console.error("[ChatPanel] failed to persist user message:", error);
@@ -511,6 +519,7 @@ export function ChatPanel({
       onActiveConversationChange,
       onConversationCreated,
       projectId,
+      mode,
       sendMessage,
       setMessages,
       setSendingState,
@@ -543,6 +552,32 @@ export function ChatPanel({
         )}
       </div>
       <div className="shrink-0 px-3 pb-3 pt-1">
+        <div className="mb-1.5 flex items-center justify-end pr-1">
+          <div
+            role="tablist"
+            aria-label="Agent mode"
+            className="inline-flex items-center gap-0.5 rounded-full border border-line bg-surface p-0.5 text-xs"
+          >
+            {(["plan", "build"] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={mode === item}
+                disabled={sending}
+                onClick={() => setMode(item)}
+                className={
+                  "rounded-full px-2.5 py-1 font-medium capitalize transition-colors disabled:opacity-50 " +
+                  (mode === item
+                    ? "bg-primary text-primary-foreground"
+                    : "text-ink-2 hover:text-ink")
+                }
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
         <ChatComposer
           variant="Rounded"
           value={input}

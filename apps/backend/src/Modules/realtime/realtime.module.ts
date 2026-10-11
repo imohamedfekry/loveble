@@ -27,6 +27,7 @@ import { StorageModule } from '../storage/storage.module';
     RealtimeEmitService,
     CollaborationService,
     AwarenessService,
+    DocumentStateService,
   ],
 })
 export class RealtimeModule {}
