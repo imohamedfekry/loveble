@@ -11,6 +11,10 @@ export const ChatRequestSchema = v.object({
     v.string('conversationId must be a string'),
     v.regex(/^\d{16,19}$/, 'conversationId must be a valid id'),
   ),
+  projectId: v.pipe(
+    v.string('projectId must be a string'),
+    v.regex(/^\d{16,19}$/, 'projectId must be a valid id'),
+  ),
   trigger: v.optional(v.picklist(['submit-message', 'regenerate-message'])),
 });
 
