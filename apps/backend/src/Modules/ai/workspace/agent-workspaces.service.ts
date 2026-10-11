@@ -1,5 +1,6 @@
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
-import { Workspace } from '@mastra/core/workspace';
+import { FileExistsError, Workspace } from '@mastra/core/workspace';
+import type { WorkspaceToolsConfig } from '@mastra/core/workspace';
 import type { RequestContext } from '@mastra/core/request-context';
 
 import { FileRepository } from 'src/common/database/repositories/project/file.repository';
@@ -11,6 +12,50 @@ import { ProjectFilesystem, type ProjectMutations } from './project-filesystem';
 import { ProjectMutationsService } from './project-mutations.service';
 
 type WorkspaceMode = 'plan' | 'build';
+
+/** Minimal filesystem surface the write hook needs (avoids importing the full type). */
+type HookFilesystem = {
+  exists(path: string): Promise<boolean>;
+  writeFile(path: string, content: string): Promise<void>;
+};
+
+/**
+ * `write_file` normally reports `Wrote N bytes to <path>`. The chat UI reads the
+ * tool output to decide whether a row is a "Create file" or an "Update file", so we
+ * run the write here instead and hand back a human-readable line.
+ * Running under Mastra's per-path write lock, so this stays serialized.
+ */
+const BUILD_MODE_TOOLS: WorkspaceToolsConfig = {
+  hooks: {
+    beforeToolCall: async ({ workspaceToolName, input, context }) => {
+      if (workspaceToolName !== 'mastra_workspace_write_file') return undefined;
+
+      const args = input as {
+        path?: unknown;
+        content?: unknown;
+        overwrite?: unknown;
+      } | null;
+      const path = typeof args?.path === 'string' ? args.path : '';
+      const content = typeof args?.content === 'string' ? args.content : '';
+      if (!path) return undefined;
+
+      const fs = (
+        context as { workspace?: { filesystem?: HookFilesystem } } | undefined
+      )?.workspace?.filesystem;
+      if (!fs) return undefined;
+
+      const existed = await fs.exists(path);
+      if (existed && args?.overwrite === false) throw new FileExistsError(path);
+      await fs.writeFile(path, content);
+
+      const bytes = Buffer.byteLength(content, 'utf-8');
+      return {
+        proceed: false as const,
+        output: `${existed ? 'Updated' : 'Created'} ${path} (${bytes} bytes)`,
+      };
+    },
+  },
+};
 
 @Injectable()
 export class AgentWorkspacesService implements OnModuleInit {
@@ -70,6 +115,7 @@ export class AgentWorkspacesService implements OnModuleInit {
       id: `project-${projectId}-${mode}`,
       name: 'Project Workspace',
       filesystem,
+      tools: mode === 'build' ? BUILD_MODE_TOOLS : undefined,
     });
 
     this.perRequest.set(cacheKey, workspace);
@@ -85,6 +131,8 @@ export class AgentWorkspacesService implements OnModuleInit {
         this.projectMutations.writeFile(projectId, path, content),
       mkdir: (path) => this.projectMutations.mkdir(projectId, path),
       deleteFile: (path) => this.projectMutations.deleteFile(projectId, path),
+      deletePath: (path, recursive) =>
+        this.projectMutations.deletePath(projectId, path, recursive),
     };
   }
 }

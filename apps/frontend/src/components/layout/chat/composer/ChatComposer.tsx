@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowUp,
   ChevronDown,
+  FilePlusCornerIcon,
   Mic,
   Plus,
   Square,
@@ -13,6 +14,7 @@ import {
 import { cn } from "@loveble/utils";
 
 import { ComposerAttachments } from "./ComposerAttachments";
+import { ComposerMentions } from "./ComposerMentions";
 import { ComposerMenu } from "./ComposerMenu";
 import { ComposerModelMenu } from "./ComposerModelMenu";
 import { useChatComposer } from "./useChatComposer";
@@ -21,6 +23,8 @@ import type {
   ComposerModel,
   ComposerVariant,
 } from "./types";
+import type { ChatContextItem } from "@/store/chat-context.store";
+import { useFileDragStore } from "@/store/file-drag.store";
 
 export function ChatComposer({
   variant = "Rounded",
@@ -29,6 +33,10 @@ export function ChatComposer({
   onSend,
   onStop,
   sending = false,
+  projectId,
+  mentions = [],
+  onRemoveMention,
+  onOpenMention,
 }: {
   variant?: ComposerVariant;
   value: string;
@@ -39,6 +47,10 @@ export function ChatComposer({
   }) => void;
   onStop?: () => void;
   sending?: boolean;
+  projectId?: string;
+  mentions?: ChatContextItem[];
+  onRemoveMention?: (id: string) => void;
+  onOpenMention?: (mention: ChatContextItem) => void;
 }) {
   const pill = variant === "Pill";
 
@@ -99,6 +111,8 @@ export function ChatComposer({
     value,
     onChange,
     onSend,
+    mentionCount: mentions.length,
+    projectId,
   });
 
   const sendActive = canSend || sending;
@@ -156,6 +170,29 @@ export function ChatComposer({
   const [isDragging, setIsDragging] = useState(false);
   const dragDepth = useRef(0);
 
+  const dragItem = useFileDragStore((s) => s.item);
+  const overChat = useFileDragStore((s) => s.overChat);
+  const mentionDropActive = Boolean(dragItem) && overChat;
+
+  useEffect(() => {
+    if (!dragItem) return;
+
+    const onPointerMove = (event: PointerEvent) => {
+      const el = composerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const inside =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+      useFileDragStore.getState().setOverChat(inside);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    return () => window.removeEventListener("pointermove", onPointerMove);
+  }, [dragItem]);
+
   const handleDragEnter = (event: React.DragEvent) => {
     if (!event.dataTransfer.types.includes("Files")) return;
 
@@ -202,6 +239,7 @@ export function ChatComposer({
   return (
     <div
       ref={composerRef}
+      data-chat-dropzone
     >
       <div className="relative">
         <ComposerMenu
@@ -244,14 +282,21 @@ export function ChatComposer({
             "p-1.5",
             "transition-[border-color,border-radius] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
             // "focus-within:border-ring",
-            isDragging && "border-primary/60 ring-2 ring-primary/30",
+            (isDragging || mentionDropActive) && "border-primary/60 ring-2 ring-primary/30",
             pill
-              ? attachments.length > 0 || expanded
+              ? attachments.length > 0 || mentions.length > 0 || expanded
                 ? "rounded-3xl"
                 : "rounded-full"
               : "rounded-3xl"
           )}
         >
+          <ComposerMentions
+            mentions={mentions}
+            variant={variant}
+            onRemove={(id) => onRemoveMention?.(id)}
+            onOpen={onOpenMention}
+          />
+
           <ComposerAttachments
             attachments={attachments}
             variant={variant}
@@ -263,6 +308,15 @@ export function ChatComposer({
               <Upload className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-foreground">
                 Drop files here
+              </span>
+            </div>
+          )}
+
+          {mentionDropActive && (
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 rounded-[inherit] bg-background/80 backdrop-blur-[1px]">
+              <FilePlusCornerIcon className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">
+                Add to chat
               </span>
             </div>
           )}

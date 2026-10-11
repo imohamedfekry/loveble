@@ -8,6 +8,7 @@ export const INNGEST_EVENTS = {
   FILE_PERSIST: 'file/persist',
   SEND_EMAIL: 'email/send',
   CONVERSATION_NAME: 'conversation/name',
+  CONVERSATION_BUILD: 'conversation/build',
 } as const;
 
 export type InngestEventName =
@@ -52,5 +53,15 @@ export class InngestService {
     model?: string;
   }) {
     return this.send(INNGEST_EVENTS.CONVERSATION_NAME, data);
+  }
+
+  /** Force the build agent on the very first message of a brand-new project. */
+  runFirstBuild(data: {
+    projectId: string;
+    conversationId: string;
+    userId: string;
+    content: string;
+  }) {
+    return this.send(INNGEST_EVENTS.CONVERSATION_BUILD, data);
   }
 }

@@ -8,6 +8,7 @@ import { mirrorStoppedTurnToMemory } from 'src/common/inngest/agents/memory';
 import { ConversationRepository } from 'src/common/database/repositories/conversations/conversation.repository';
 import { MessageRepository } from 'src/common/database/repositories/conversations/message.repository';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
+import { abortActiveBuild } from 'src/common/inngest/functions/conversation/build-abort.registry';
 import type {
   CreateMessageDto,
   StopMessageDto,
@@ -242,6 +243,15 @@ export class ConversationsService {
       req,
     );
 
+    // Abort any in-flight server-side build (dashboard "create project from a
+    // prompt" runs the build agent in Inngest with no /ai/chat request to
+    // cancel, so the UI's only hook to stop it is stopGeneration).
+    if (abortActiveBuild(conversationId.toString())) {
+      this.logger.log(
+        `aborted in-flight build for conversation ${conversationId}`,
+      );
+    }
+
     // Keep whatever the model produced before the stop. This includes turns
     // that only ran tools (e.g. a web search) with no text yet — those still
     // have `parts`, so they must be persisted too, not just text content.
@@ -321,6 +331,44 @@ export class ConversationsService {
       updated,
     );
     return updated;
+  }
+
+  /**
+   * Persist a server-generated (Inngest build) assistant message. This is the
+   * webhook counterpart of `createAssistantMessage`; the Inngest build runs
+   * with no `req`, so ownership was already enforced when the conversation's
+   * first user message was created.
+   */
+  async persistAssistantMessageFromWebhook(body: {
+    conversationId: string;
+    content?: string;
+    parts?: unknown[];
+  }) {
+    const conversationId = BigInt(body.conversationId);
+    const conversation =
+      await this.conversationRepository.findById(conversationId);
+    if (!conversation) return null;
+
+    const content = (body.content ?? '').trim();
+    const parts = Array.isArray(body.parts) ? body.parts : undefined;
+    if (!content && !parts) return null;
+
+    const message = await this.messageRepository.create({
+      conversationId,
+      projectId: conversation.projectId,
+      content,
+      parts: parts && parts.length > 0 ? parts : undefined,
+      role: 'assistant',
+      status: 'completed',
+    });
+
+    this.realtimeEmitService.toProject(
+      conversation.projectId,
+      'message:new',
+      message,
+    );
+
+    return message;
   }
 
   async updateMessage(

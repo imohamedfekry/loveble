@@ -24,6 +24,8 @@ export type ProjectMutations = {
   writeFile(path: string, content: string): Promise<void>;
   mkdir(path: string): Promise<void>;
   deleteFile(path: string): Promise<void>;
+  /** Delete a file or folder (recursively) — the tree the delete tool needs. */
+  deletePath(path: string, recursive?: boolean): Promise<void>;
 };
 
 const TEXT_EXTENSIONS = new Set([
@@ -239,9 +241,12 @@ export class ProjectFilesystem implements WorkspaceFilesystem {
     await this.writeFile(path, prefix + contentText);
   }
 
-  async deleteFile(path: string): Promise<void> {
+  async deleteFile(
+    path: string,
+    options?: { recursive?: boolean },
+  ): Promise<void> {
     if (this.readOnly) throw new WorkspaceReadOnlyError('delete_file');
-    await this.mutations().deleteFile(path);
+    await this.mutations().deletePath(path, options?.recursive ?? false);
     await this.refreshResolver();
   }
 
@@ -263,7 +268,9 @@ export class ProjectFilesystem implements WorkspaceFilesystem {
     await this.refreshResolver();
   }
 
-  rmdir(): Promise<void> {
-    throw new WorkspaceReadOnlyError('rmdir is not supported; use delete_file');
+  async rmdir(path: string, options?: { recursive?: boolean }): Promise<void> {
+    if (this.readOnly) throw new WorkspaceReadOnlyError('rmdir');
+    await this.mutations().deletePath(path, options?.recursive ?? false);
+    await this.refreshResolver();
   }
 }

@@ -28,6 +28,9 @@ import {
     createTreeCollisionDetection,
 } from "./tree-dnd";
 import { useFilesStore } from "@/store/file.store";
+import { useChatContextStore } from "@/store/chat-context.store";
+import { useFileDragStore } from "@/store/file-drag.store";
+import { fileMention } from "@/lib/chat-context";
 import { toast } from "sonner";
 
 const EMPTY_FILES: ProjectFileType[] = [];
@@ -96,11 +99,27 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(String(event.active.id));
+        const dragged = event.active.data.current?.item as
+            | ProjectFileType
+            | undefined;
+        if (dragged) {
+            useFileDragStore.getState().start(dragged);
+        }
     };
 
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveId(null);
+
+        const chatTarget = useFileDragStore.getState().overChat;
+        const draggedItem = useFileDragStore.getState().item;
+        useFileDragStore.getState().end();
+
+        if (chatTarget && draggedItem) {
+            useChatContextStore.getState().add(fileMention(draggedItem));
+            return;
+        }
+
         if (!over) return;
 
         const sourceId = String(active.id);
@@ -133,6 +152,7 @@ export const FileExplorer = ({ projectId }: { projectId: string }) => {
 
     const handleDragCancel = () => {
         setActiveId(null);
+        useFileDragStore.getState().end();
     };
 
     return (

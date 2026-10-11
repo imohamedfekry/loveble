@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Streamdown } from "streamdown";
@@ -27,6 +27,10 @@ import {
   type Message,
   type StreamMessage,
 } from "@/store/messages.store";
+import { useChatContextStore } from "@/store/chat-context.store";
+import { useFilesStore } from "@/store/file.store";
+import { fileIdByPath, formatMentions } from "@/lib/chat-context";
+import { useEditor } from "@/lib/hooks/use-editor";
 import type { ConversationItem } from "@/store/conversations.store";
 import { UserMessage } from "./messages/user-message";
 
@@ -182,9 +186,11 @@ function ReasoningBlock({ text, loading }: { text: string; loading: boolean }) {
 function AssistantReplyView({
   parts,
   loading,
+  projectId,
 }: {
   parts: UIMessage["parts"];
   loading: boolean;
+  projectId: string;
 }) {
   const tools = toolPartsFromParts(parts);
   const reasoning = reasoningFromParts(parts);
@@ -194,7 +200,9 @@ function AssistantReplyView({
 
   return (
     <AssistantShell>
-      {tools.length > 0 && <ToolCalls parts={tools} className="mb-2.5" />}
+      {tools.length > 0 && (
+        <ToolCalls parts={tools} projectId={projectId} className="mb-2.5" />
+      )}
       {reasoning && <ReasoningBlock text={reasoning} loading={reasoningStreaming} />}
       {showThinking ? (
         <span className="inline-flex items-center gap-1 py-1 text-ink-2">
@@ -218,9 +226,17 @@ function SystemMessageView({ message }: { message: Message }) {
   );
 }
 
-function StoredMessageView({ message }: { message: Message }) {
+function StoredMessageView({
+  message,
+  projectId,
+  onOpenPath,
+}: {
+  message: Message;
+  projectId: string;
+  onOpenPath?: (path: string) => void;
+}) {
   if (message.role === "user") {
-    return <UserMessage message={message} />;
+    return <UserMessage message={message} onOpenPath={onOpenPath} />;
   }
   if (message.role === "system") {
     return <SystemMessageView message={message} />;
@@ -237,14 +253,21 @@ function StoredMessageView({ message }: { message: Message }) {
       </AssistantShell>
     );
   }
-  return <AssistantReplyView parts={parts} loading={false} />;
+  return <AssistantReplyView parts={parts} loading={false} projectId={projectId} />;
 }
 
-function StreamMessageView({ message }: { message: StreamMessage }) {
+function StreamMessageView({
+  message,
+  projectId,
+}: {
+  message: StreamMessage;
+  projectId: string;
+}) {
   return (
     <AssistantReplyView
       parts={message.parts as UIMessage["parts"]}
       loading={message.status === "streaming"}
+      projectId={projectId}
     />
   );
 }
@@ -288,6 +311,37 @@ export function ChatPanel({
   const lastProgressAtRef = useRef(Date.now());
   const lastProgressKeyRef = useRef("");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const allMentions = useChatContextStore((s) => s.items);
+  const mentions = useMemo(
+    () => allMentions.filter((item) => item.projectId === projectId),
+    [allMentions, projectId],
+  );
+  const removeMention = useCallback((id: string) => {
+    useChatContextStore.getState().remove(id);
+  }, []);
+
+  const { openFile } = useEditor(projectId);
+
+  const handleOpenMention = useCallback(
+    (mention: (typeof mentions)[number]) => {
+      if (mention.kind === "folder") return;
+      openFile(mention.fileId, { pinned: true });
+    },
+    [openFile],
+  );
+
+  const handleOpenPath = useCallback(
+    (path: string) => {
+      const files =
+        useFilesStore.getState().files[projectId] ?? [];
+      const fileId = fileIdByPath(files, path);
+      if (fileId) {
+        openFile(fileId, { pinned: true });
+      }
+    },
+    [openFile, projectId],
+  );
 
   conversationIdRef.current = conversationId;
 
@@ -395,6 +449,16 @@ export function ChatPanel({
 
   const busy = status === "submitted" || status === "streaming";
 
+  // A stream can be active on this conversation without any local useChat
+  // request — the dashboard "create project from a prompt" flow runs the build
+  // server-side in Inngest and relays it over realtime. That build is not
+  // stoppable via useChat.stop(), so we surface the stop button and call the
+  // backend endpoint, which aborts the in-flight build.
+  const hasRemoteStream = messages.some(
+    (message) => isStreamMessage(message) && message.status === "streaming",
+  );
+  const displaySending = sending || hasRemoteStream;
+
   useEffect(() => {
     conversationIdRef.current = conversationId;
     if (!sendingRef.current) {
@@ -410,7 +474,7 @@ export function ChatPanel({
     const currentStreaming = busy;
     const last = liveMessages[liveMessages.length - 1];
     const turn = turnRef.current;
-    if (!turn || turn.convId !== conversationId) return;
+    if (!turn || turn.convId !== conversationIdRef.current) return;
     if (!last || last.role !== "assistant") return;
     if (!currentStreaming) return;
 
@@ -468,8 +532,11 @@ export function ChatPanel({
 
   const handleSend = useCallback(
     (payload: { text: string; files?: File[] }) => {
-      const content = payload.text.trim();
-      if (!content || sendingRef.current) return;
+      const typed = payload.text.trim();
+      const contextItems = useChatContextStore
+        .getState()
+        .items.filter((item) => item.projectId === projectId);
+      if ((!typed && contextItems.length === 0) || sendingRef.current) return;
 
       setSendingState(true);
       sendGenRef.current = generationRef.current;
@@ -478,6 +545,12 @@ export function ChatPanel({
 
       void (async () => {
         try {
+          const content = `${typed}${formatMentions(contextItems)}`.trim();
+          if (!content) {
+            setSendingState(false);
+            return;
+          }
+
           let convId = conversationIdRef.current;
           if (!convId) {
             const result = await sendFirstMessage(projectId, content);
@@ -492,6 +565,10 @@ export function ChatPanel({
             onActiveConversationChange(convId);
           } else {
             await sendMessageToConversation(convId, content);
+          }
+
+          if (contextItems.length > 0) {
+            useChatContextStore.getState().clearProject(projectId);
           }
 
           turnRef.current = { convId };
@@ -527,23 +604,62 @@ export function ChatPanel({
   );
 
   const handleStop = useCallback(() => {
-    stop();
-  }, [stop]);
+    // Local useChat stream → abort the fetch (backend aborts the model on
+    // disconnect, onFinish(isAbort) persists the partial).
+    if (busy) {
+      stop();
+      return;
+    }
+    // Server-side build (dashboard first message): no fetch to abort, so ask
+    // the backend to cancel the in-flight build and record the stop. Pass the
+    // latest streamed parts (if any) so the model's partial output is kept.
+    const convId = conversationIdRef.current;
+    if (!convId) return;
+    void (async () => {
+      const stream = useMessagesStore
+        .getState()
+        .streamsByConversation.get(convId);
+      const lastStreamMessage = stream && stream.size > 0
+        ? [...stream.values()].at(-1)
+        : undefined;
+      const parts = lastStreamMessage?.parts ?? [];
+      const content = textFromParts(
+        (parts as UIMessage["parts"]).filter(
+          (part) => part.type === "text",
+        ),
+      );
+      try {
+        await stopConversationGeneration(convId, content, parts);
+      } catch (error) {
+        console.error("[ChatPanel] failed to stop remote build:", error);
+      } finally {
+        useMessagesStore.getState().pruneStreams(convId);
+        turnRef.current = null;
+        setSendingState(false);
+      }
+    })();
+  }, [busy, setSendingState, stop]);
 
   return (
     <div className="flex h-full flex-col">
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <div
+        ref={scrollRef}
+        className="flex-1 space-y-3 overflow-y-auto px-4 py-4 [scrollbar-gutter:stable]"
+      >
         {messages.length > 0 ? (
           messages.map((message) =>
             isStreamMessage(message) ? (
               <StreamMessageView
                 key={message.messageId}
                 message={message}
+                projectId={projectId}
               />
             ) : (
               <StoredMessageView
                 key={String(message.id)}
                 message={message}
+                projectId={projectId}
+                onOpenPath={handleOpenPath}
               />
             ),
           )
@@ -564,7 +680,7 @@ export function ChatPanel({
                 type="button"
                 role="tab"
                 aria-selected={mode === item}
-                disabled={sending}
+                disabled={displaySending}
                 onClick={() => setMode(item)}
                 className={
                   "rounded-full px-2.5 py-1 font-medium capitalize transition-colors disabled:opacity-50 " +
@@ -584,7 +700,11 @@ export function ChatPanel({
           onChange={setInput}
           onSend={handleSend}
           onStop={handleStop}
-          sending={sending}
+          sending={displaySending}
+          projectId={projectId}
+          mentions={mentions}
+          onRemoveMention={removeMention}
+          onOpenMention={handleOpenMention}
         />
       </div>
     </div>

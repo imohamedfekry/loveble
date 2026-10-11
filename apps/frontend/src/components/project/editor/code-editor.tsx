@@ -33,6 +33,8 @@ export type LocalAwareness = {
 
 interface Props {
   fileName: string;
+  fileId?: string;
+  projectId?: string;
   initialValue?: string;
   onChange?: (value: string) => void;
   collaboration?: CollabConfig;
@@ -43,6 +45,8 @@ interface Props {
 
 export const CodeEditor = ({
   fileName,
+  fileId,
+  projectId,
   initialValue = "",
   onChange,
   collaboration,
@@ -94,7 +98,9 @@ export const CodeEditor = ({
       indentationMarkers(),
       ...(isTypeScript ? unusedDetection() : []),
       quickEdit(fileName),
-      selectionTooltip(),
+      ...(projectId && fileId
+        ? [selectionTooltip({ projectId, fileId })]
+        : []),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           onChangeRef.current?.(update.state.doc.toString());
@@ -138,7 +144,7 @@ export const CodeEditor = ({
     // Recreate when the collab snapshot version or file language changes.
     // initialValue is captured at construction; parent remounts via `key`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [languageExtension, lintExtension, autocompleteExtension, collaboration?.clientID, collaboration?.startVersion]);
+  }, [languageExtension, lintExtension, autocompleteExtension, collaboration?.clientID, collaboration?.startVersion, projectId, fileId]);
 
   useEffect(() => {
     const view = viewRef.current;

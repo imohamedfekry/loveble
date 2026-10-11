@@ -91,10 +91,29 @@ export class projectService {
 
     if (!explicitName && prompt) {
       try {
-        await this.conversationsService.createWithInitialMessage(
-          project.id,
-          prompt,
+        const { conversation } =
+          await this.conversationsService.createWithInitialMessage(
+            project.id,
+            prompt,
+          );
+        this.logger.log(
+          `created initial conversation ${conversation.id} for project ${project.id}`,
         );
+
+        // The dashboard prompt flow never calls /ai/chat, so the build agent
+        // would never run here. Kick it off server-side instead.
+        void this.inngestService
+          .runFirstBuild({
+            projectId: project.id.toString(),
+            conversationId: conversation.id.toString(),
+            userId: req.user.id.toString(),
+            content: prompt,
+          })
+          .catch((err) => {
+            this.logger.warn(
+              `conversation/build enqueue failed for ${project.id}: ${err}`,
+            );
+          });
       } catch (err) {
         this.logger.warn(
           `initial conversation create failed for ${project.id}: ${String(err)}`,

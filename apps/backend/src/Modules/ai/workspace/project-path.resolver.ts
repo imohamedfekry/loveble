@@ -91,6 +91,11 @@ export class ProjectPathResolver {
     return this.childrenByParent.get(parentKey) ?? [];
   }
 
+  /** Children of a node by its id (used during recursive deletes). */
+  childrenOf(parentId: string): ProjectNode[] {
+    return this.childrenByParent.get(parentId) ?? [];
+  }
+
   isRoot(path: string): boolean {
     return ProjectPathResolver.normalize(path) === '';
   }
