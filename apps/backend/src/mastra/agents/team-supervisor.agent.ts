@@ -2,6 +2,7 @@ import { Agent } from '@mastra/core/agent';
 import { DEFAULT_AGENT_MODEL, getModel } from 'src/ai/providers';
 import { generalAgentMemory } from 'src/common/inngest/agents/memory';
 import { runTeamWorkflowTool } from '../tools/run-team-workflow.tool';
+import { askUserTool } from '../tools/ask-user.tool';
 import { builderAgent } from './builder.agent';
 import { designAgent } from './team/design.agent';
 import { reviewAgent } from './team/review.agent';
@@ -45,6 +46,7 @@ Pick the smallest action that satisfies the request:
 3. Call run-team-workflow — when the task spans more than one area: a new page or feature, a redesign plus code, or anything where design, code, and verification must happen together.
 
 Rules:
+- If a key choice is genuinely ambiguous (e.g. which of several directions, or a preference that changes the work), call ask-user with a short question and concrete options, then STOP and wait for the user's reply before doing anything else.
 - When you call run-team-workflow, pass the COMPLETE task in "request": the goal, the constraints, and anything the team must know. The team never sees this conversation, so a vague request produces vague work.
 - Do not call run-team-workflow twice for the same task, and do not call it for a single small edit.
 - After a run finishes, summarize what the team changed: what the design specialist did, what the builder did, and which review findings were blocking.
@@ -58,6 +60,7 @@ Rules:
   },
   tools: {
     'run-team-workflow': runTeamWorkflowTool,
+    'ask-user': askUserTool,
   },
   defaultOptions: {
     delegation: {

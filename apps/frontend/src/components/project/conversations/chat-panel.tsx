@@ -190,10 +190,12 @@ function AssistantReplyView({
   parts,
   loading,
   projectId,
+  onQuickReply,
 }: {
   parts: UIMessage["parts"];
   loading: boolean;
   projectId: string;
+  onQuickReply?: (text: string) => void;
 }) {
   const tools = toolPartsFromParts(parts);
   const reasoning = reasoningFromParts(parts);
@@ -204,7 +206,12 @@ function AssistantReplyView({
   return (
     <AssistantShell>
       {tools.length > 0 && (
-        <ToolCalls parts={tools} projectId={projectId} className="mb-2.5" />
+        <ToolCalls
+          parts={tools}
+          projectId={projectId}
+          className="mb-2.5"
+          onQuickReply={onQuickReply}
+        />
       )}
       {reasoning && <ReasoningBlock text={reasoning} loading={reasoningStreaming} />}
       {showThinking ? (
@@ -232,10 +239,12 @@ function StoredMessageView({
   message,
   projectId,
   onOpenPath,
+  onQuickReply,
 }: {
   message: Message;
   projectId: string;
   onOpenPath?: (path: string) => void;
+  onQuickReply?: (text: string) => void;
 }) {
   if (message.role === "user") {
     return <UserMessage message={message} onOpenPath={onOpenPath} />;
@@ -255,21 +264,24 @@ function StoredMessageView({
       </AssistantShell>
     );
   }
-  return <AssistantReplyView parts={parts} loading={false} projectId={projectId} />;
+  return <AssistantReplyView parts={parts} loading={false} projectId={projectId} onQuickReply={onQuickReply} />;
 }
 
 function StreamMessageView({
   message,
   projectId,
+  onQuickReply,
 }: {
   message: StreamMessage;
   projectId: string;
+  onQuickReply?: (text: string) => void;
 }) {
   return (
     <AssistantReplyView
       parts={message.parts as UIMessage["parts"]}
       loading={message.status === "streaming"}
       projectId={projectId}
+      onQuickReply={onQuickReply}
     />
   );
 }
@@ -664,6 +676,16 @@ export function ChatPanel({
     })();
   }, [busy, setSendingState, stop]);
 
+  // Answering an `ask-user` card behaves like sending a message: the chosen
+  // option (or typed answer) becomes the next user turn.
+  const handleQuickReply = useCallback(
+    (text: string) => {
+      if (sendingRef.current) return;
+      handleSend({ text });
+    },
+    [handleSend],
+  );
+
   return (
     <div className="flex h-full flex-col">
       <div
@@ -678,6 +700,7 @@ export function ChatPanel({
                   key={message.messageId}
                   message={message}
                   projectId={projectId}
+                  onQuickReply={handleQuickReply}
                 />
               ) : (
                 <StoredMessageView
@@ -685,6 +708,7 @@ export function ChatPanel({
                   message={message}
                   projectId={projectId}
                   onOpenPath={handleOpenPath}
+                  onQuickReply={handleQuickReply}
                 />
               ),
             )}
