@@ -543,6 +543,29 @@ function teamField(source: unknown, key: string): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
+/** One tool a team specialist called: name plus the path/query it touched. */
+type TeamTool = { name: string; target?: string };
+
+function teamTools(source: unknown, key: string): TeamTool[] {
+  if (!source || typeof source !== "object") return [];
+  const value = (source as Record<string, unknown>)[key];
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (entry): entry is TeamTool =>
+      !!entry &&
+      typeof entry === "object" &&
+      typeof (entry as { name?: unknown }).name === "string",
+  );
+}
+
+/** Friendly label for a team tool, reusing the timeline's labels. */
+function teamToolLabel(name: string): string {
+  const base = name.startsWith(WORKSPACE_PREFIX)
+    ? name.slice(WORKSPACE_PREFIX.length)
+    : name;
+  return TOOL_LABELS[base] ?? prettify(base);
+}
+
 /**
  * The `run-team-workflow` tool rendered exactly like the tool timeline: a
  * "Team run" header that expands into nested agent rows (Brief / Design /
@@ -558,13 +581,29 @@ function TeamRunReport({ part }: { part: ToolPart }) {
   const failed = part.state === "output-error" || !!part.errorText;
 
   const items = [
-    { key: "brief", label: "Brief", text: teamField(part.input, "request") },
-    { key: "design", label: "Design", text: teamField(part.output, "design") },
-    { key: "review", label: "Review", text: teamField(part.output, "review") },
+    {
+      key: "brief",
+      label: "Brief",
+      text: teamField(part.input, "request"),
+      tools: [] as TeamTool[],
+    },
+    {
+      key: "design",
+      label: "Design",
+      text: teamField(part.output, "design"),
+      tools: teamTools(part.output, "designTools"),
+    },
+    {
+      key: "review",
+      label: "Review",
+      text: teamField(part.output, "review"),
+      tools: teamTools(part.output, "reviewTools"),
+    },
     {
       key: "builder",
       label: "Builder",
       text: teamField(part.output, "summary"),
+      tools: teamTools(part.output, "builderTools"),
     },
   ];
 
@@ -628,7 +667,8 @@ function TeamRunReport({ part }: { part: ToolPart }) {
             <div className="flex flex-col gap-0.5 py-1">
               {items.map((item, index) => {
                 const isOpen = !!expanded[item.key];
-                const state: AgentState = item.text
+                const expandable = Boolean(item.text) || item.tools.length > 0;
+                const state: AgentState = item.text || item.tools.length > 0
                   ? "done"
                   : failed
                     ? "error"
@@ -641,7 +681,7 @@ function TeamRunReport({ part }: { part: ToolPart }) {
                     <button
                       type="button"
                       aria-expanded={isOpen}
-                      disabled={!item.text}
+                      disabled={!expandable}
                       onClick={() => toggle(item.key)}
                       className="group/row relative flex min-h-7 w-full items-center gap-2 rounded-[6px] px-1.5 py-0.5 text-left transition-colors duration-150 hover:bg-hover disabled:cursor-default disabled:hover:bg-transparent"
                       style={{
@@ -653,18 +693,49 @@ function TeamRunReport({ part }: { part: ToolPart }) {
                       <span className="min-w-0 shrink-0 truncate text-[12.5px] font-medium text-ink">
                         {item.label}
                       </span>
-                      {item.text ? (
+                      {item.tools.length > 0 ? (
+                        <span className="min-w-0 truncate text-[11.5px] text-ink-3">
+                          {item.tools.length} {item.tools.length === 1 ? "tool" : "tools"}
+                        </span>
+                      ) : null}
+                      {expandable ? (
                         <span className="ml-auto shrink-0 opacity-70">
                           <Chevron open={isOpen} size={11} />
                         </span>
                       ) : null}
                     </button>
 
-                    {isOpen && item.text ? (
+                    {isOpen && expandable ? (
                       <div className="mb-0.5 ml-6 border-l border-line pl-3">
-                        <p className="whitespace-pre-wrap text-[11.5px] leading-[1.6] text-ink-2">
-                          {item.text}
-                        </p>
+                        {item.text ? (
+                          <p className="whitespace-pre-wrap text-[11.5px] leading-[1.6] text-ink-2">
+                            {item.text}
+                          </p>
+                        ) : null}
+
+                        {item.tools.length > 0 ? (
+                          <div className="mt-1 flex flex-col gap-0.5">
+                            {item.tools.map((tool, toolIndex) => (
+                              <div
+                                key={`${tool.name}-${toolIndex}`}
+                                className="flex min-w-0 items-center gap-1.5 text-[11px]"
+                              >
+                                <span className="size-1 shrink-0 rounded-full bg-ink-3" />
+                                <span className="shrink-0 font-medium text-ink-2">
+                                  {teamToolLabel(tool.name)}
+                                </span>
+                                {tool.target ? (
+                                  <span
+                                    className="min-w-0 truncate font-mono text-ink-3"
+                                    title={tool.target}
+                                  >
+                                    {tool.target}
+                                  </span>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>

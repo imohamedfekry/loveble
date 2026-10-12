@@ -15,12 +15,15 @@ type TeamRunStatus = "start" | "done" | "error";
 type PhaseState = "idle" | "running" | "done" | "error";
 type TrackedPhase = Exclude<TeamRunPhase, "done">;
 
+type TeamTool = { name: string; target?: string };
+
 type TeamRunEvent = {
   runId: string;
   projectId?: string;
   phase: TeamRunPhase;
   status: TeamRunStatus;
   detail?: string;
+  tools?: TeamTool[];
   files?: string[];
 };
 
@@ -29,6 +32,8 @@ type RunState = {
   phases: Record<TrackedPhase, PhaseState>;
   /** Per-agent summaries: what each specialist reported doing / commenting on. */
   details: Partial<Record<TrackedPhase, string>>;
+  /** Per-agent tool calls: what each specialist actually ran. */
+  tools: Partial<Record<TrackedPhase, TeamTool[]>>;
   outcome: "running" | "done" | "error";
   detail?: string;
 };
@@ -57,6 +62,7 @@ const IDLE: RunState = {
     builder: "idle",
   },
   details: {},
+  tools: {},
   outcome: "running",
   detail: undefined,
 };
@@ -80,6 +86,10 @@ function reduce(prev: RunState, event: TeamRunEvent): RunState {
     details: event.detail
       ? { ...base.details, [event.phase]: event.detail }
       : base.details,
+    tools:
+      event.tools && event.tools.length > 0
+        ? { ...base.tools, [event.phase]: event.tools }
+        : base.tools,
   };
 }
 
@@ -115,7 +125,9 @@ export function TeamRunMonitor({ projectId }: { projectId: string }) {
         ? "Team run finished"
         : "Team running";
 
-  const reported = PHASES.filter((phase) => Boolean(run.details[phase]));
+  const reported = PHASES.filter(
+    (phase) => Boolean(run.details[phase]) || (run.tools[phase]?.length ?? 0) > 0,
+  );
 
   return (
     <div className="mb-2 rounded-xl border border-line bg-surface px-3 py-2">
@@ -169,6 +181,7 @@ export function TeamRunMonitor({ projectId }: { projectId: string }) {
               label={LABELS[phase]}
               state={run.phases[phase]}
               text={run.details[phase] ?? ""}
+              tools={run.tools[phase] ?? []}
             />
           ))}
         </div>
@@ -177,14 +190,27 @@ export function TeamRunMonitor({ projectId }: { projectId: string }) {
   );
 }
 
+/** Friendly label for a tool name (strips the workspace prefix, spaces words). */
+function toolLabel(name: string): string {
+  const base = name.startsWith("mastra_workspace_")
+    ? name.slice("mastra_workspace_".length)
+    : name;
+  return base
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
 function AgentReport({
   label,
   state,
   text,
+  tools,
 }: {
   label: string;
   state: PhaseState;
   text: string;
+  tools: TeamTool[];
 }) {
   const [open, setOpen] = useState(true);
 
@@ -202,15 +228,47 @@ function AgentReport({
         >
           <PhaseGlyph state={state} />
           {label}
+          {tools.length > 0 ? (
+            <span className="text-ink-3 no-underline">
+              · {tools.length} {tools.length === 1 ? "tool" : "tools"}
+            </span>
+          ) : null}
         </span>
         <ChevronDownIcon
           className={`size-3 text-ink-3 transition-transform ${open ? "" : "-rotate-90"}`}
         />
       </button>
       {open ? (
-        <p className="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-ink-2">
-          {text}
-        </p>
+        <>
+          {text ? (
+            <p className="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-ink-2">
+              {text}
+            </p>
+          ) : null}
+          {tools.length > 0 ? (
+            <div className="mt-1.5 flex flex-col gap-0.5">
+              {tools.map((tool, index) => (
+                <div
+                  key={`${tool.name}-${index}`}
+                  className="flex min-w-0 items-center gap-1.5 text-[10.5px]"
+                >
+                  <span className="size-1 shrink-0 rounded-full bg-ink-3" />
+                  <span className="shrink-0 font-medium text-ink-2">
+                    {toolLabel(tool.name)}
+                  </span>
+                  {tool.target ? (
+                    <span
+                      className="min-w-0 truncate font-mono text-ink-3"
+                      title={tool.target}
+                    >
+                      {tool.target}
+                    </span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
