@@ -212,3 +212,31 @@ export async function sendFirstMessage(
     .addMessage(toId(conversation.id), normalized);
   return { conversation, message: normalized };
 };
+
+// The agent's thread-scoped working memory for a conversation. Read it, edit
+// it, or clear it — memory is keyed by (thread = conversation, resource = user).
+export async function getConversationMemory(conversationId: bigint | string) {
+  return apiRequest<{ workingMemory: string }>(
+    `${API_BASE}/${toId(conversationId)}/memory`,
+  );
+}
+
+export async function updateConversationMemory(
+  conversationId: bigint | string,
+  workingMemory: string,
+) {
+  return apiRequest<{ workingMemory: string }>(
+    `${API_BASE}/${toId(conversationId)}/memory`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workingMemory }),
+    },
+  );
+}
+
+export async function clearConversationMemory(conversationId: bigint | string) {
+  return apiRequest(`${API_BASE}/${toId(conversationId)}/memory`, {
+    method: "DELETE",
+  });
+}
