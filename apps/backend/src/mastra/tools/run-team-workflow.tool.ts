@@ -4,6 +4,12 @@ import { z } from 'zod';
 import { teamRunEvents } from '../team/team-events';
 import type { TeamRunOutput } from '../workflows/team-run.workflow';
 
+/** One tool call a specialist made in the run, echoed back to the supervisor. */
+const toolCallSchema = z.object({
+  name: z.string(),
+  target: z.string().optional(),
+});
+
 /**
  * Lets the supervisor hand a well-scoped task to the whole team in one call.
  * The tool drives the `team-run` workflow (design ∥ review, then builder) and
@@ -32,6 +38,9 @@ not a vague instruction, because the team does not see this conversation.`,
     design: z.string(),
     review: z.string(),
     runId: z.string(),
+    designTools: z.array(toolCallSchema),
+    reviewTools: z.array(toolCallSchema),
+    builderTools: z.array(toolCallSchema),
   }),
   execute: async ({ request }, context) => {
     const mastra = context?.mastra;
@@ -88,6 +97,9 @@ not a vague instruction, because the team does not see this conversation.`,
       design: output.design.summary,
       review: output.review.summary,
       runId: run.runId,
+      designTools: output.design.tools,
+      reviewTools: output.review.tools,
+      builderTools: output.builderTools,
     };
   },
 });

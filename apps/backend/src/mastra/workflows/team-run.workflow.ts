@@ -11,27 +11,121 @@ import {
   scopeRequestContextForRole,
   type AgentRole,
 } from '../team/ownership';
-import { teamRunEvents, type TeamRunPhase } from '../team/team-events';
+import {
+  teamRunEvents,
+  type TeamRunPhase,
+  type TeamToolCall,
+} from '../team/team-events';
 
 const briefSchema = z.object({ brief: z.string() });
+
+/** How much of an agent's summary to stream to the live monitor panel. */
+const DETAIL_LIMIT = 2000;
+
+/** Minimum gap between live partial-text emissions from a running specialist. */
+const PARTIAL_THROTTLE_MS = 400;
+
+/** One tool call an agent made, surfaced to the UI so a run is inspectable. */
+const toolSchema = z.object({
+  name: z.string(),
+  target: z.string().optional(),
+});
 
 const designResultSchema = z.object({
   role: z.literal('design'),
   summary: z.string(),
+  tools: z.array(toolSchema),
 });
 
 const reviewResultSchema = z.object({
   role: z.literal('review'),
   summary: z.string(),
+  tools: z.array(toolSchema),
 });
 
 const teamRunOutputSchema = z.object({
   summary: z.string(),
   design: designResultSchema,
   review: reviewResultSchema,
+  builderTools: z.array(toolSchema),
 });
 
 export type TeamRunOutput = z.infer<typeof teamRunOutputSchema>;
+
+/** Keys, in priority order, that identify what a tool call acted on. */
+const TARGET_KEYS = [
+  'path',
+  'file',
+  'query',
+  'pattern',
+  'command',
+  'url',
+  'question',
+  'name',
+] as const;
+
+function toolTarget(args: unknown): string | undefined {
+  if (!args || typeof args !== 'object') return undefined;
+  const record = args as Record<string, unknown>;
+  for (const key of TARGET_KEYS) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return undefined;
+}
+
+/**
+ * Normalize one tool-call entry into `{ name, target }`.
+ *
+ * Mastra is inconsistent here: `FullOutput.toolCalls` and `step.toolCalls` hold
+ * raw stream chunks shaped `{ type: 'tool-call', payload: { toolName, args } }`,
+ * while the durable path surfaces flat `{ toolName, args }` objects. Accept
+ * both so a run stays inspectable across both code paths.
+ */
+function pickToolCall(raw: unknown): TeamToolCall | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const entry = raw as {
+    toolName?: unknown;
+    name?: unknown;
+    args?: unknown;
+    input?: unknown;
+    payload?: {
+      toolName?: unknown;
+      name?: unknown;
+      args?: unknown;
+      input?: unknown;
+    };
+  };
+  const payload = entry.payload ?? entry;
+  const rawName = payload.toolName ?? payload.name;
+  const name = typeof rawName === 'string' ? rawName.trim() : '';
+  if (!name) return undefined;
+  return { name, target: toolTarget(payload.args ?? payload.input) };
+}
+
+/**
+ * Pull the tool calls an agent made out of its `generate` result. Prefers the
+ * flat `toolCalls` list and falls back to the per-step lists.
+ */
+function extractTools(result: unknown): TeamToolCall[] {
+  const record = result as {
+    toolCalls?: unknown[];
+    steps?: { toolCalls?: unknown[] }[];
+  };
+
+  const calls: unknown[] = [];
+  if (Array.isArray(record.toolCalls) && record.toolCalls.length > 0) {
+    calls.push(...record.toolCalls);
+  } else {
+    for (const step of record.steps ?? []) {
+      if (Array.isArray(step?.toolCalls)) calls.push(...step.toolCalls);
+    }
+  }
+
+  return calls
+    .map(pickToolCall)
+    .filter((tool): tool is TeamToolCall => Boolean(tool));
+}
 
 function projectIdOf(requestContext: RequestContext): string | undefined {
   const raw = requestContext.get('projectId');
@@ -68,26 +162,77 @@ async function runSpecialist({
   runId,
   maxSteps,
   memory,
-}: SpecialistRun): Promise<string> {
+}: SpecialistRun): Promise<{ summary: string; tools: TeamToolCall[] }> {
   const base = {
     runId,
     projectId: projectIdOf(requestContext),
     phase,
   };
   teamRunEvents.emit({ ...base, status: 'start' });
+
+  // Stream the specialist so the UI can watch it work instead of waiting for
+  // the whole run. Text is throttled; tool calls are surfaced as each step
+  // finishes so the user sees the files/commands being touched live.
+  const tools: TeamToolCall[] = [];
+  let liveText = '';
+  let lastEmit = 0;
+
+  const emitProgress = (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastEmit < PARTIAL_THROTTLE_MS) return;
+    lastEmit = now;
+    teamRunEvents.emit({
+      ...base,
+      status: 'start',
+      detail: liveText.slice(0, DETAIL_LIMIT),
+      ...(tools.length > 0 ? { tools: [...tools] } : {}),
+    });
+  };
+
   try {
-    const result = await agent.generate(prompt, {
+    const stream = await agent.stream(prompt, {
       requestContext: scopeRequestContextForRole(requestContext, role),
       maxSteps,
       ...(memory ? { memory } : {}),
+      onStepFinish: (step) => {
+        const stepTools = extractTools({
+          toolCalls: (step.toolCalls ?? []) as unknown[],
+        });
+        if (stepTools.length > 0) {
+          tools.push(...stepTools);
+          emitProgress(true);
+        }
+      },
     });
-    const summary = result.text.trim();
+
+    const reader = stream.textStream.getReader();
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          liveText += value;
+          emitProgress();
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    const finalText = await stream.text;
+    const summary = (finalText || liveText).trim();
+    const allTools =
+      tools.length > 0
+        ? tools
+        : extractTools({ toolCalls: await stream.toolCalls });
+
     teamRunEvents.emit({
       ...base,
       status: 'done',
-      detail: summary.slice(0, 600),
+      detail: summary.slice(0, DETAIL_LIMIT),
+      tools: allTools,
     });
-    return summary;
+    return { summary, tools: allTools };
   } catch (error) {
     teamRunEvents.emit({ ...base, status: 'error', detail: describe(error) });
     throw error;
@@ -104,12 +249,15 @@ const prepareStep = createStep({
   outputSchema: briefSchema,
   execute: ({ inputData, requestContext, runId }) => {
     ensureWorkspaceRunKey(requestContext, 'build');
+    const projectId = projectIdOf(requestContext);
+    const detail = inputData.request.slice(0, DETAIL_LIMIT);
+    teamRunEvents.emit({ runId, projectId, phase: 'prepare', status: 'start' });
     teamRunEvents.emit({
       runId,
-      projectId: projectIdOf(requestContext),
+      projectId,
       phase: 'prepare',
-      status: 'start',
-      detail: inputData.request.slice(0, 300),
+      status: 'done',
+      detail,
     });
     return Promise.resolve({ brief: inputData.request });
   },
@@ -120,7 +268,7 @@ const designStep = createStep({
   inputSchema: briefSchema,
   outputSchema: designResultSchema,
   execute: async ({ inputData, requestContext, runId }) => {
-    const summary = await runSpecialist({
+    const { summary, tools } = await runSpecialist({
       agent: designAgent,
       role: 'design',
       phase: 'design',
@@ -140,7 +288,7 @@ files you changed and the design decisions you made.`,
       runId,
       maxSteps: 15,
     });
-    return { role: 'design' as const, summary };
+    return { role: 'design' as const, summary, tools };
   },
 });
 
@@ -151,7 +299,7 @@ const reviewStep = createStep({
   // Read-only, so a retry can never duplicate a side effect.
   retries: 1,
   execute: async ({ inputData, requestContext, runId }) => {
-    const summary = await runSpecialist({
+    const { summary, tools } = await runSpecialist({
       agent: reviewAgent,
       role: 'review',
       phase: 'review',
@@ -169,7 +317,7 @@ already satisfies the request, say so briefly.`,
       runId,
       maxSteps: 12,
     });
-    return { role: 'review' as const, summary };
+    return { role: 'review' as const, summary, tools };
   },
 });
 
@@ -187,7 +335,7 @@ const builderStep = createStep({
     const thread = String(requestContext.get('conversationId') ?? '');
     const resource = String(requestContext.get('userId') ?? '');
 
-    const summary = await runSpecialist({
+    const { summary, tools } = await runSpecialist({
       agent: builderAgent,
       role: 'builder',
       phase: 'builder',
@@ -219,12 +367,14 @@ short summary of what you changed.`,
       phase: 'done',
       status: 'done',
       detail: summary.slice(0, 600),
+      tools,
     });
 
     return {
       summary,
       design: inputData.design,
       review: inputData.review,
+      builderTools: tools,
     };
   },
 });
