@@ -5,6 +5,7 @@ import { FileIcon, FolderIcon } from "@react-symbols/icons/utils";
 
 import { useEditor } from "@/lib/hooks/use-editor";
 import { useFilesStore } from "@/store/file.store";
+import { LoaderGrid, PATTERNS } from "@/components/beautiful-ui/primitives/LoadingState";
 import { socket } from "@/lib/socket/socket";
 import type { ProjectFileType } from "@/lib/api/apis/files/types";
 
@@ -414,19 +415,22 @@ export function ToolCalls({
         onClick={() => setOpen((current) => !current)}
         className="-mx-1.5 flex w-fit max-w-full items-center gap-1.5 rounded-control px-1.5 py-1 transition-colors duration-100 hover:bg-hover-2"
       >
-        <span role="status" className="contents">
+        <span role="status" className="flex items-center gap-1.5">
           {running ? (
-            <span
-              className="bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
-              style={{
-                backgroundImage:
-                  "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
-                backgroundSize: "200% 100%",
-                animation: "shimmer-text 1.4s linear infinite",
-              }}
-            >
-              {header}
-            </span>
+            <>
+              <LoaderGrid {...PATTERNS.Heart} />
+              <span
+                className="bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer-text 1.4s linear infinite",
+                }}
+              >
+                {header}
+              </span>
+            </>
           ) : (
             <span
               className="text-[13px] font-medium whitespace-nowrap text-ink-2"
@@ -777,19 +781,22 @@ function TeamRunReport({
         onClick={() => setOpen((current) => !current)}
         className="-mx-1.5 flex w-fit max-w-full items-center gap-1.5 rounded-control px-1.5 py-1 transition-colors duration-100 hover:bg-hover-2"
       >
-        <span role="status" className="contents">
+        <span role="status" className="flex items-center gap-1.5">
           {running ? (
-            <span
-              className="bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
-              style={{
-                backgroundImage:
-                  "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
-                backgroundSize: "200% 100%",
-                animation: "shimmer-text 1.4s linear infinite",
-              }}
-            >
-              {header}
-            </span>
+            <>
+              <LoaderGrid {...PATTERNS.Heart} />
+              <span
+                className="bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer-text 1.4s linear infinite",
+                }}
+              >
+                {header}
+              </span>
+            </>
           ) : (
             <span
               className="text-[13px] font-medium whitespace-nowrap text-ink-2"

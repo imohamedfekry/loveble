@@ -44,7 +44,7 @@ const heart = HEART.map((on, i) =>
   on ? (Math.floor(i / HEART_COLS) + (i % HEART_COLS)) * 55 : null,
 );
 
-const PATTERNS: Record<
+export const PATTERNS: Record<
   string,
   {
     delays: (number | null)[];
@@ -80,7 +80,7 @@ const PATTERNS: Record<
   },
 };
 
-function LoaderGrid({
+export function LoaderGrid({
   delays,
   dur,
   round,
