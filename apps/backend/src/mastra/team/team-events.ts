@@ -4,6 +4,16 @@ export type TeamRunPhase = 'prepare' | 'design' | 'review' | 'builder' | 'done';
 
 export type TeamRunStatus = 'start' | 'done' | 'error';
 
+/**
+ * One tool an agent called during a team run. `name` is the (workspace-stripped)
+ * tool name (e.g. `write_file`) and `target` is the path / query / command it
+ * touched, so the UI can show what each specialist actually did.
+ */
+export type TeamToolCall = {
+  name: string;
+  target?: string;
+};
+
 export type TeamRunEvent = {
   runId: string;
   projectId?: string;
@@ -11,6 +21,8 @@ export type TeamRunEvent = {
   status: TeamRunStatus;
   /** Short human-readable detail: the request head, an agent summary, or an error. */
   detail?: string;
+  /** Tools the agent for this phase called (present on `done` events). */
+  tools?: TeamToolCall[];
   files?: string[];
 };
 

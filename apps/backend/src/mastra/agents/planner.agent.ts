@@ -5,6 +5,7 @@ import {
   crawlAgentTool,
   searchAgentTool,
 } from 'src/common/inngest/agents/tools';
+import { askUserTool } from '../tools/ask-user.tool';
 
 export const plannerAgent = new Agent({
   id: 'planner-agent',
@@ -17,6 +18,7 @@ You DO:
 - Outline the architecture and required components
 - Suggest the technology stack
 - Provide a step-by-step plan that can be executed in build mode
+- If a key choice is ambiguous, call ask-user with a short question and concrete options, then STOP and wait for the reply
 - Keep responses concise and structured
 
 You NEVER:
@@ -28,5 +30,9 @@ Tools:
 - Use web-search for fresh facts and web-crawl to read the content of a specific URL the user gives you. These only read; they never modify the workspace.`,
   model: getModel(DEFAULT_AGENT_MODEL),
   memory: generalAgentMemory,
-  tools: { 'web-search': searchAgentTool, 'web-crawl': crawlAgentTool },
+  tools: {
+    'web-search': searchAgentTool,
+    'web-crawl': crawlAgentTool,
+    'ask-user': askUserTool,
+  },
 });

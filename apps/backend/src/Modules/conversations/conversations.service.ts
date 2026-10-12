@@ -14,6 +14,7 @@ import { MessageRepository } from 'src/common/database/repositories/conversation
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
 import { abortActiveBuild } from 'src/common/inngest/functions/conversation/build-abort.registry';
 import type {
+  CreateAssistantMessageDto,
   CreateMessageDto,
   StopMessageDto,
   UpdateConversationDto,
@@ -214,7 +215,7 @@ export class ConversationsService {
 
   async createAssistantMessage(
     conversationId: bigint,
-    body: CreateMessageDto,
+    body: CreateAssistantMessageDto,
     req: AuthenticatedRequest,
   ) {
     const conversation = await this.assertConversationOwnership(
@@ -225,8 +226,8 @@ export class ConversationsService {
     const message = await this.messageRepository.create({
       conversationId,
       projectId: conversation.projectId,
-      content: body.content,
-      parts: body.parts ?? null,
+      content: body.content?.trim() ?? '',
+      parts: body.parts && body.parts.length > 0 ? body.parts : null,
       role: 'assistant',
       status: 'completed',
     });
