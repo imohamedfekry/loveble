@@ -179,6 +179,9 @@ importers:
       valibot:
         specifier: ^1.5.0
         version: 1.5.0(typescript@6.0.3)
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.7

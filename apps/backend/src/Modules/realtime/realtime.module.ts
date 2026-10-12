@@ -7,6 +7,7 @@ import { RealtimeEmitService } from './core/realtime-emit.service';
 import { CollaborationService } from './core/collaboration.service';
 import { AwarenessService } from './core/awareness.service';
 import { DocumentStateService } from './core/document-state.service';
+import { TeamRunRelayService } from './core/team-run-relay.service';
 import { StorageModule } from '../storage/storage.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { StorageModule } from '../storage/storage.module';
     CollaborationService,
     AwarenessService,
     DocumentStateService,
+    TeamRunRelayService,
   ],
   exports: [
     RealtimeGateway,
