@@ -6,6 +6,7 @@ import type { RequestContext } from '@mastra/core/request-context';
 import { FileRepository } from 'src/common/database/repositories/project/file.repository';
 import { plannerAgent } from 'src/mastra/agents/planner.agent';
 import { builderAgent } from 'src/mastra/agents/builder.agent';
+import { quickEditAgent } from 'src/mastra/agents/quick-edit.agent';
 import { DocumentStateService } from '../../realtime/core/document-state.service';
 import { ProjectPathResolver } from './project-path.resolver';
 import { ProjectFilesystem, type ProjectMutations } from './project-filesystem';
@@ -74,6 +75,9 @@ export class AgentWorkspacesService implements OnModuleInit {
       this.workspaceFor(requestContext, 'plan'),
     );
     builderAgent.__setWorkspace(({ requestContext }) =>
+      this.workspaceFor(requestContext, 'build'),
+    );
+    quickEditAgent.__setWorkspace(({ requestContext }) =>
       this.workspaceFor(requestContext, 'build'),
     );
   }

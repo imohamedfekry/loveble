@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
  *            two fronts are always in flight
  *   Dots   — same wavefront, circular cells
  *   Orbit  — a comet lapping the grid perimeter
+ *   Heart  — circular cells arranged as a heart, lit by a
+ *            diagonal wavefront (used for the "thinking" state)
  *   Surfer — the Drive loader paired with a meme video below
  *
  * Paired with a shimmering label and a live elapsed timer
@@ -29,29 +31,95 @@ const orbit = Array.from({ length: 9 }, (_, i) => {
   return k === -1 ? null : k * 110;
 });
 
-const PATTERNS: Record<string, { delays: (number | null)[]; dur: number; round: boolean }> = {
-  Drive: { delays: chevron, dur: 650, round: false },
-  Dots: { delays: chevron, dur: 650, round: true },
-  Orbit: { delays: orbit, dur: 950, round: false },
+const HEART_COLS = 5;
+// 1 = a lit cell, 0 = a dim cell (kept in the grid so the heart keeps its shape).
+const HEART = [
+  0, 1, 0, 1, 0,
+  1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1,
+  0, 1, 1, 1, 0,
+  0, 0, 1, 0, 0,
+];
+const heart = HEART.map((on, i) =>
+  on ? (Math.floor(i / HEART_COLS) + (i % HEART_COLS)) * 55 : null,
+);
+
+const PATTERNS: Record<
+  string,
+  {
+    delays: (number | null)[];
+    dur: number;
+    round: boolean;
+    cols: number;
+    size: number;
+    gap: number;
+    /** Base opacity of a cell while its wavefront is not over it. */
+    base: number;
+    /** Opacity of a cell that never lights up (keeps the icon's silhouette). */
+    dim: number;
+    /** Clockwise tilt (deg) applied to the whole icon, e.g. a leaning heart. */
+    rotate?: number;
+  }
+> = {
+  Drive: { delays: chevron, dur: 650, round: false, cols: 3, size: 4, gap: 1.5, base: 0.15, dim: 0.07 },
+  Dots: { delays: chevron, dur: 650, round: true, cols: 3, size: 4, gap: 1.5, base: 0.15, dim: 0.07 },
+  Orbit: { delays: orbit, dur: 950, round: false, cols: 3, size: 4, gap: 1.5, base: 0.15, dim: 0.07 },
+  // The Heart is the compact "thinking" loader: only the heart-shaped cells
+  // show (the surrounding square is hidden), and the whole heart is rotated
+  // 30° to match the brand mark.
+  Heart: {
+    delays: heart,
+    dur: 650,
+    round: true,
+    cols: HEART_COLS,
+    size: 2,
+    gap: 1,
+    base: 0.16,
+    dim: 0,
+    rotate: 45,
+  },
 };
 
 function LoaderGrid({
   delays,
   dur,
   round,
+  cols,
+  size,
+  gap,
+  base,
+  dim,
+  rotate,
 }: {
   delays: (number | null)[];
   dur: number;
   round: boolean;
+  cols: number;
+  size: number;
+  gap: number;
+  base: number;
+  dim: number;
+  rotate?: number;
 }) {
   return (
-    <span aria-hidden className="grid shrink-0 grid-cols-[repeat(3,4px)] gap-[1.5px]">
+    <span
+      aria-hidden
+      className="grid shrink-0"
+      style={{
+        gridTemplateColumns: `repeat(${cols}, ${size}px)`,
+        gap: `${gap}px`,
+        transform: rotate ? `rotate(${rotate}deg)` : undefined,
+        transformOrigin: "center center",
+      }}
+    >
       {delays.map((delay, index) => (
         <span
           key={index}
-          className={`size-[4px] bg-ink ${round ? "rounded-full" : "rounded-[1px]"}`}
+          className={`bg-ink ${round ? "rounded-full" : "rounded-[1px]"}`}
           style={{
-            opacity: delay === null ? 0.07 : 0.15,
+            width: size,
+            height: size,
+            opacity: delay === null ? dim : base,
             animation: delay === null ? "none" : `pixel-on ${dur}ms ease-in-out ${delay}ms infinite`,
           }}
         />
@@ -84,7 +152,8 @@ export default function LoadingState({
   const surfer = variant === "Surfer";
   const resolvedLabel = label ?? (surfer ? "Subway surfing" : "Churning");
   const [videoOk, setVideoOk] = useState(true);
-  const { delays, dur, round } = PATTERNS[variant] ?? PATTERNS.Drive;
+  const { delays, dur, round, cols, size, gap, base, dim, rotate } =
+    PATTERNS[variant] ?? PATTERNS.Drive;
 
   const labelEl = (
     <span
@@ -139,9 +208,23 @@ export default function LoadingState({
     );
   }
 
+  const grid = (
+    <LoaderGrid
+      delays={delays}
+      dur={dur}
+      round={round}
+      cols={cols}
+      size={size}
+      gap={gap}
+      base={base}
+      dim={dim}
+      rotate={rotate}
+    />
+  );
+
   return (
     <div role="status" className="flex w-fit items-center gap-2.5">
-      <LoaderGrid delays={delays} dur={dur} round={round} />
+      {grid}
       {labelEl}
       {elapsedEl}
     </div>

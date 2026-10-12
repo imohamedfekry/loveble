@@ -8,13 +8,23 @@ const DEFAULT_TIMEOUT = 15000; // 15 seconds
 export async function apiFetch<T>(
     input: RequestInfo,
     init?: RequestInit,
+    options?: { timeoutMs?: number },
 ): Promise<ApiSuccess<T>> {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(
         () => controller.abort(), 
-        DEFAULT_TIMEOUT
+        options?.timeoutMs ?? DEFAULT_TIMEOUT
     );
+
+    const externalSignal = init?.signal;
+    if (externalSignal) {
+        if (externalSignal.aborted) {
+            controller.abort();
+        } else {
+            externalSignal.addEventListener("abort", () => controller.abort());
+        }
+    }
 
     try {
         const res = await fetch(`${API_BASE_URL}${input}`, {

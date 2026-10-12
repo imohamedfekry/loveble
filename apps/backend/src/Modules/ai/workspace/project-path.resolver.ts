@@ -22,6 +22,8 @@ export type ProjectNode = {
  */
 export class ProjectPathResolver {
   private readonly byPath = new Map<string, ProjectNode>();
+  private readonly byId = new Map<string, ProjectNode>();
+  private readonly pathMemo = new Map<string, string>();
   private readonly childrenByParent = new Map<string, ProjectNode[]>();
 
   constructor(
@@ -39,8 +41,7 @@ export class ProjectPathResolver {
       updatedAt: file.updatedAt,
     }));
 
-    const byId = new Map<string, ProjectNode>();
-    for (const node of nodes) byId.set(node.id, node);
+    for (const node of nodes) this.byId.set(node.id, node);
 
     // Children grouped by parent ("root" = null parent).
     for (const node of nodes) {
@@ -50,24 +51,30 @@ export class ProjectPathResolver {
       this.childrenByParent.set(key, bucket);
     }
 
-    // Resolve each node's full path by walking up the parent chain.
-    const pathMemo = new Map<string, string>();
-    const pathOf = (node: ProjectNode): string => {
-      const existing = pathMemo.get(node.id);
-      if (existing !== undefined) return existing;
-      if (node.parentId === null) {
-        pathMemo.set(node.id, node.name);
-        return node.name;
-      }
-      const parent = byId.get(node.parentId);
-      const resolved = parent ? `${pathOf(parent)}/${node.name}` : node.name;
-      pathMemo.set(node.id, resolved);
-      return resolved;
-    };
-
     for (const node of nodes) {
-      this.byPath.set(pathOf(node), node);
+      this.byPath.set(this.pathOf(node), node);
     }
+  }
+
+  /** Resolve a node's full path by walking up the parent chain. */
+  private pathOf(node: ProjectNode): string {
+    const existing = this.pathMemo.get(node.id);
+    if (existing !== undefined) return existing;
+    if (node.parentId === null) {
+      this.pathMemo.set(node.id, node.name);
+      return node.name;
+    }
+    const parent = this.byId.get(node.parentId);
+    const resolved = parent ? `${this.pathOf(parent)}/${node.name}` : node.name;
+    this.pathMemo.set(node.id, resolved);
+    return resolved;
+  }
+
+  /** Full project-relative path for a file/folder id (undefined if unknown). */
+  pathOfId(id: string): string | undefined {
+    const node = this.byId.get(id);
+    if (!node) return undefined;
+    return this.pathOf(node);
   }
 
   /** Normalize any agent-supplied path to the resolver's key form. */

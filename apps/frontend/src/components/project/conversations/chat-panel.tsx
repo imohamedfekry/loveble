@@ -6,7 +6,7 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
 import { DivideIcon, SparklesIcon } from "lucide-react";
-import { StreamText } from "@/components/beautiful-ui";
+import { LoadingState, StreamText } from "@/components/beautiful-ui";
 import {
   ToolCalls,
   type ToolPart,
@@ -94,8 +94,9 @@ function toolPartsFromParts(parts: UIMessage["parts"]): ToolPart[] {
   return result;
 }
 
-function ThinkingDot() {
-  return <span aria-hidden className="stream-caret is-streaming" />;
+/** The heart-pixel loader used wherever the agent is thinking. */
+function Thinking({ label = "Thinking" }: { label?: string }) {
+  return <LoadingState variant="Heart" label={label} />;
 }
 
 function AssistantShell({
@@ -130,7 +131,7 @@ function MarkdownText({
       plugins={{ code }}
       shikiTheme={["github-light", "github-dark"]}
       codeBlockMaxHeight={360}
-      className="[overflow-wrap:anywhere] [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_pre]:my-2 [&_code]:font-mono"
+      className="wrap-anywhere [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_pre]:my-2 [&_code]:font-mono"
     >
       {text}
     </Streamdown>
@@ -205,11 +206,10 @@ function AssistantReplyView({
       )}
       {reasoning && <ReasoningBlock text={reasoning} loading={reasoningStreaming} />}
       {showThinking ? (
-        <span className="inline-flex items-center gap-1 py-1 text-ink-2">
-          Working
-          <ThinkingDot />
+        <span className="inline-flex items-center py-1">
+          <Thinking />
         </span>
-      ) : (
+      ) : ( 
         <MarkdownText text={content} loading={loading} />
       )}
     </AssistantShell>
@@ -459,6 +459,28 @@ export function ChatPanel({
   );
   const displaySending = sending || hasRemoteStream;
 
+  // The dashboard "create project from a prompt" flow runs the build entirely
+  // server-side before it streams anything back. Until the first assistant
+  // message arrives the chat would otherwise look frozen on an empty pane, so
+  // we surface the thinking loader. Bound it with a grace window so a build
+  // that dies without persisting anything never spins forever.
+  const lastMessage = messages[messages.length - 1];
+  const lastIsUser = lastMessage?.role === "user";
+  const noAssistantYet =
+    messages.length > 0 &&
+    !messages.some((message) => message.role === "assistant");
+  const [pendingExpired, setPendingExpired] = useState(false);
+  useEffect(() => {
+    if (displaySending || !lastIsUser || !noAssistantYet) {
+      setPendingExpired(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setPendingExpired(true), 180_000);
+    return () => window.clearTimeout(timer);
+  }, [displaySending, lastIsUser, noAssistantYet, conversationId]);
+  const awaitingAssistant =
+    displaySending || (lastIsUser && noAssistantYet && !pendingExpired);
+
   useEffect(() => {
     conversationIdRef.current = conversationId;
     if (!sendingRef.current) {
@@ -528,7 +550,7 @@ export function ChatPanel({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages.length, scrollToBottom]);
+  }, [messages.length, awaitingAssistant, scrollToBottom]);
 
   const handleSend = useCallback(
     (payload: { text: string; files?: File[] }) => {
@@ -647,22 +669,33 @@ export function ChatPanel({
         className="flex-1 space-y-3 overflow-y-auto px-4 py-4 [scrollbar-gutter:stable]"
       >
         {messages.length > 0 ? (
-          messages.map((message) =>
-            isStreamMessage(message) ? (
-              <StreamMessageView
-                key={message.messageId}
-                message={message}
-                projectId={projectId}
-              />
-            ) : (
-              <StoredMessageView
-                key={String(message.id)}
-                message={message}
-                projectId={projectId}
-                onOpenPath={handleOpenPath}
-              />
-            ),
-          )
+          <>
+            {messages.map((message) =>
+              isStreamMessage(message) ? (
+                <StreamMessageView
+                  key={message.messageId}
+                  message={message}
+                  projectId={projectId}
+                />
+              ) : (
+                <StoredMessageView
+                  key={String(message.id)}
+                  message={message}
+                  projectId={projectId}
+                  onOpenPath={handleOpenPath}
+                />
+              ),
+            )}
+            {awaitingAssistant && lastIsUser && (
+              <AssistantShell>
+                <Thinking />
+              </AssistantShell>
+            )}
+          </>
+        ) : displaySending ? (
+          <AssistantShell>
+            <Thinking label="Building" />
+          </AssistantShell>
         ) : (
           <EmptyState />
         )}

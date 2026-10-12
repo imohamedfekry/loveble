@@ -6,6 +6,8 @@ export const showQuickEditEffect = StateEffect.define<boolean>();
 
 let editorView: EditorView | null = null;
 let currentAbortController: AbortController | null = null;
+let currentFileId: string | null = null;
+let currentProjectId: string | null = null;
 
 export const quickEditState = StateField.define<boolean>({
     create() {
@@ -94,42 +96,43 @@ function createQuickEditTooltip(state: EditorState): readonly Tooltip[] {
                     const instruction = input.value.trim();
                     if (!instruction) return;
 
+                    if (!currentProjectId || !currentFileId) return;
+
                     const selection = editorView.state.selection.main;
-                    const selectedCode = editorView.state.doc.sliceString(
-                        selection.from,
+                    const startLine = editorView.state.doc.lineAt(
+                        selection.from
+                    ).number;
+                    const endLine = editorView.state.doc.lineAt(
                         selection.to
-                    );
-                    const fullCode = editorView.state.doc.toString();
+                    ).number;
 
                     submitButton.disabled = true;
                     submitButton.textContent = "Editing...";
 
                     currentAbortController = new AbortController();
-                    const result = await quickEditApi(
-                        {
-                            selectedCode,
-                            fullCode,
+                    try {
+                        await quickEditApi({
+                            projectId: currentProjectId,
+                            fileId: currentFileId,
                             instruction,
-                        },
-                    );
-                    const editedCode = result.data.editedCode;
+                            startLine,
+                            endLine,
+                            signal: currentAbortController.signal,
+                        });
 
-                    if (editedCode) {
+                        // The edit is applied to the real project file on the
+                        // server and streamed back through the collaboration
+                        // channel, so the editor updates itself — we only close
+                        // the tooltip here.
                         editorView.dispatch({
-                            changes: {
-                                from: selection.from,
-                                to: selection.to,
-                                insert: editedCode,
-                            },
-                            selection: { anchor: selection.from + editedCode.length },
                             effects: showQuickEditEffect.of(false),
                         });
-                    } else {
+                    } catch {
                         submitButton.disabled = false;
                         submitButton.textContent = "Submit";
+                    } finally {
+                        currentAbortController = null;
                     }
-
-                    currentAbortController = null;
                 };
 
                 buttonContainer.appendChild(cancelButton);
@@ -193,9 +196,18 @@ const captureViewExtension = EditorView.updateListener.of((update) => {
     editorView = update.view;
 });
 
-export const quickEdit = (fileName: string) => [
-    quickEditState,
-    quickEditTooltipField,
-    quickEditKeymap,
-    captureViewExtension,
-];
+export const quickEdit = (options: {
+    fileName: string;
+    fileId?: string;
+    projectId?: string;
+}) => {
+    currentFileId = options.fileId ?? null;
+    currentProjectId = options.projectId ?? null;
+
+    return [
+        quickEditState,
+        quickEditTooltipField,
+        quickEditKeymap,
+        captureViewExtension,
+    ];
+};

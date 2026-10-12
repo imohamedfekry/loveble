@@ -1,7 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { generateProjectName } from 'src/mastra/naming';
 import { inngest } from '../../client';
-import { DEFAULT_AGENT_MODEL } from '../../agents/general.agent';
 
 const log = new Logger('Inngest:create-project');
 

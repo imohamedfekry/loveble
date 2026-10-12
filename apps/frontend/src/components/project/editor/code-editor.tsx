@@ -97,7 +97,7 @@ export const CodeEditor = ({
       minimap(),
       indentationMarkers(),
       ...(isTypeScript ? unusedDetection() : []),
-      quickEdit(fileName),
+      quickEdit({ fileName, fileId, projectId }),
       ...(projectId && fileId
         ? [selectionTooltip({ projectId, fileId })]
         : []),

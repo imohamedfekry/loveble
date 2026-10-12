@@ -1,13 +1,16 @@
 import * as v from 'valibot';
 
 export const QuickEditRequestSchema = v.object({
-  selectedCode: v.pipe(v.string(), v.nonEmpty('Selected code is required')),
-  fullCode: v.pipe(v.string(), v.nonEmpty('Full code is required')),
+  projectId: v.pipe(v.string(), v.nonEmpty('Project id is required')),
+  fileId: v.pipe(v.string(), v.nonEmpty('File id is required')),
   instruction: v.pipe(v.string(), v.nonEmpty('Instruction is required')),
+  startLine: v.optional(v.number()),
+  endLine: v.optional(v.number()),
 });
 
 export const QuickEditResponseSchema = v.object({
-  editedCode: v.pipe(v.string(), v.nonEmpty('Edited code is required')),
+  ok: v.boolean(),
+  path: v.optional(v.string()),
 });
 
 export type QuickEditRequestDto = v.InferOutput<typeof QuickEditRequestSchema>;

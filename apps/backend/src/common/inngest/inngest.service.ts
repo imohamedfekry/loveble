@@ -3,7 +3,6 @@ import { inngest } from './client';
 
 export const INNGEST_EVENTS = {
   CRAWL_RUN: 'crawl/run',
-  TEXT_GENERATE: 'text/generate',
   PROJECT_CREATE: 'project/create',
   FILE_PERSIST: 'file/persist',
   SEND_EMAIL: 'email/send',
@@ -22,10 +21,6 @@ export class InngestService {
 
   crawl(urls: string[]) {
     return this.send(INNGEST_EVENTS.CRAWL_RUN, { urls });
-  }
-
-  generateText(data: { prompt: string; model?: string }) {
-    return this.send(INNGEST_EVENTS.TEXT_GENERATE, data);
   }
 
   createProject(data: { projectId: string; prompt: string; model?: string }) {
