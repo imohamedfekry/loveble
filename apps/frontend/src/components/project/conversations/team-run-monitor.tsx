@@ -61,8 +61,6 @@ const IDLE: RunState = {
   detail: undefined,
 };
 
-const HIDE_AFTER_MS = 60_000;
-
 function reduce(prev: RunState, event: TeamRunEvent): RunState {
   // A different run id means the previous run is irrelevant — start over.
   const base =
@@ -105,11 +103,8 @@ export function TeamRunMonitor({ projectId }: { projectId: string }) {
     };
   }, [projectId]);
 
-  useEffect(() => {
-    if (!run.runId || run.outcome === "running") return;
-    const timer = setTimeout(() => setRun(IDLE), HIDE_AFTER_MS);
-    return () => clearTimeout(timer);
-  }, [run]);
+  // The panel no longer auto-hides: it stays until the user dismisses it (or the
+  // project/conversation changes), so a finished run can always be inspected.
 
   if (!run.runId) return null;
 
@@ -200,7 +195,11 @@ function AgentReport({
         onClick={() => setOpen((value) => !value)}
         className="flex w-full items-center justify-between gap-2 text-left"
       >
-        <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink">
+        <span
+          className={`flex items-center gap-1.5 text-[11px] font-medium ${
+            state === "done" ? "text-ink-3 line-through" : "text-ink"
+          }`}
+        >
           <PhaseGlyph state={state} />
           {label}
         </span>
@@ -254,7 +253,9 @@ function PhaseChip({ label, state }: { label: string; state: PhaseState }) {
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${tone}`}
     >
       {icon}
-      {label}
+      <span className={state === "done" ? "line-through" : undefined}>
+        {label}
+      </span>
     </span>
   );
 }

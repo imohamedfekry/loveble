@@ -29,6 +29,7 @@ export type ToolPart = {
 
 const EMPTY_FILES: ProjectFileType[] = [];
 const WORKSPACE_PREFIX = "mastra_workspace_";
+const TEAM_TOOL = "run-team-workflow";
 
 const TOOL_LABELS: Record<string, string> = {
   read_file: "Read",
@@ -236,9 +237,20 @@ export function ToolCalls({
   const pathIndex = useMemo(() => buildPathIndex(files), [files]);
   const { openFile } = useEditor(projectId);
 
+  // The team workflow tool is rendered as its own rich report (per-agent
+  // output), not as a generic timeline row.
+  const teamParts = useMemo(
+    () => parts.filter((part) => toolBase(part) === TEAM_TOOL),
+    [parts],
+  );
+  const timelineParts = useMemo(
+    () => parts.filter((part) => toolBase(part) !== TEAM_TOOL),
+    [parts],
+  );
+
   const rows = useMemo(
     () =>
-      parts.map((part) => {
+      timelineParts.map((part) => {
         const base = toolBase(part);
         const running =
           part.state === "input-streaming" || part.state === "input-available";
@@ -258,7 +270,7 @@ export function ToolCalls({
           errorText: part.errorText,
         };
       }),
-    [parts, pathIndex],
+    [timelineParts, pathIndex],
   );
 
   if (parts.length === 0) return null;
@@ -270,6 +282,12 @@ export function ToolCalls({
 
   return (
     <div className={className}>
+      {teamParts.map((part) => (
+        <TeamRunReport key={part.toolCallId ?? part.type} part={part} />
+      ))}
+
+      {timelineParts.length > 0 && (
+        <>
       <button
         type="button"
         aria-expanded={open}
@@ -495,6 +513,157 @@ const connector = (
 
         </div>
       </div>
+        </>
+      )}
     </div>
+  );
+}
+
+function teamField(source: unknown, key: string): string | undefined {
+  if (!source || typeof source !== "object") return undefined;
+  const value = (source as Record<string, unknown>)[key];
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+/**
+ * Rich report for the `run-team-workflow` tool: the brief the supervisor handed
+ * over plus what each specialist (design / review / builder) reported. Rendered
+ * from the tool's own input/output, so it persists in the conversation — the
+ * live `TeamRunMonitor` is only the transient progress view.
+ */
+function TeamRunReport({ part }: { part: ToolPart }) {
+  const [open, setOpen] = useState(true);
+
+  const running =
+    part.state === "input-streaming" || part.state === "input-available";
+  const failed = part.state === "output-error" || !!part.errorText;
+
+  const request = teamField(part.input, "request");
+  const sections = [
+    { label: "Design", text: teamField(part.output, "design") },
+    { label: "Review", text: teamField(part.output, "review") },
+    { label: "Builder", text: teamField(part.output, "summary") },
+  ].filter((section): section is { label: string; text: string } =>
+    Boolean(section.text),
+  );
+
+  const heading = failed
+    ? "Team run failed"
+    : running
+      ? "Team running"
+      : "Team run";
+
+  return (
+    <div className="mb-2 rounded-xl border border-line bg-surface px-3 py-2">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center justify-between gap-2 text-left"
+      >
+        <span className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink">
+          {running ? (
+            <span
+              className="size-3 rounded-full border-[1.5px] border-line-strong border-t-ink-2"
+              style={{ animation: "spin 700ms linear infinite" }}
+            />
+          ) : failed ? (
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--red, #e5484d)"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--primary)"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          )}
+          {heading}
+        </span>
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--ink-3)"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="shrink-0 transition-transform duration-300"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {open ? (
+        <div className="mt-2 max-h-80 space-y-2 overflow-y-auto">
+          {request ? (
+            <ReportSection label="Brief" text={request} muted />
+          ) : null}
+
+          {sections.map((section) => (
+            <ReportSection
+              key={section.label}
+              label={section.label}
+              text={section.text}
+            />
+          ))}
+
+          {failed && part.errorText ? (
+            <ReportSection label="Error" text={part.errorText} error />
+          ) : null}
+
+          {running && !request && sections.length === 0 ? (
+            <p className="text-[11.5px] text-ink-3">
+              Specialists are working…
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ReportSection({
+  label,
+  text,
+  muted,
+  error,
+}: {
+  label: string;
+  text: string;
+  muted?: boolean;
+  error?: boolean;
+}) {
+  return (
+    <section className="rounded-lg border border-line px-2 py-1.5">
+      <h4 className="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">
+        {label}
+      </h4>
+      <p
+        className={`mt-0.5 whitespace-pre-wrap text-[11.5px] leading-relaxed ${
+          error ? "text-red" : muted ? "text-ink-3" : "text-ink-2"
+        }`}
+      >
+        {text}
+      </p>
+    </section>
   );
 }
