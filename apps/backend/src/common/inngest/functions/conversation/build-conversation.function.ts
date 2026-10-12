@@ -5,7 +5,8 @@ import { readUIMessageStream } from 'ai';
 import { RequestContext } from '@mastra/core/request-context';
 import { inngest } from '../../client';
 import { mastra } from 'src/mastra';
-import { CHAT_AGENT_IDS } from 'src/mastra/agents/chat-agents';
+import { resolveChatAgent } from 'src/mastra/routing/team-router';
+import { ensureWorkspaceRunKey } from 'src/mastra/team/ownership';
 import { getNestApp } from '../../nest-context';
 import { RealtimeEmitService } from 'src/Modules/realtime/core/realtime-emit.service';
 import {
@@ -75,10 +76,20 @@ export const buildConversationFunction = inngest.createFunction(
         ['userId', userId],
         ['mode', 'build'],
       ]);
+      // Pin the run-scoped workspace key so a delegated team run shares one
+      // workspace, exactly like the /ai/chat path.
+      ensureWorkspaceRunKey(requestContext, 'build');
+
+      // Route by need: even the very first message of a project can reach the
+      // team supervisor when the request spans several areas.
+      const route = await resolveChatAgent({ mode: 'build', message: content });
+      log.log(
+        `▶ route agent=${route.agentId} reason=${route.reason} conversationId=${conversationId}`,
+      );
 
       const stream = await handleChatStream({
         mastra,
-        agentId: CHAT_AGENT_IDS.build,
+        agentId: route.agentId,
         version: 'v7',
         params: {
           messages: [message] as any[],

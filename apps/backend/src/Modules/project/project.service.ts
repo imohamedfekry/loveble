@@ -78,9 +78,12 @@ export class projectService {
     const prompt = typeof body.prompt === 'string' ? body.prompt : '';
     const explicitName = typeof body.name === 'string' ? body.name.trim() : '';
 
+    const hasExplicitName = Boolean(explicitName);
+    const placeholderName = deriveDefaultName(prompt) || 'Untitled project';
     const project = await this.projectRepository.create({
       userId: req.user.id,
-      name: explicitName || deriveDefaultName(prompt),
+      name: hasExplicitName ? explicitName : placeholderName,
+      nameGenerated: hasExplicitName,
     });
 
     this.realtimeEmitService.toUser(
@@ -121,18 +124,17 @@ export class projectService {
       }
     }
 
-    // Prompt-based creates get the final short name via Inngest; never blocks.
+    // Prompt-based creates get the final short names via Inngest; never blocks.
     // Explicit sidebar names are final as typed — no regeneration.
-    if (!explicitName && prompt) {
+    if (!hasExplicitName && prompt) {
       void this.inngestService
-        .createProject({
+        .nameConversation({
           projectId: project.id.toString(),
-          prompt,
+          conversationId: project.id.toString(),
+          text: prompt,
         })
         .catch((err) => {
-          this.logger.warn(
-            `project/create enqueue failed for ${project.id}: ${err}`,
-          );
+          this.logger.warn(`naming enqueue failed for ${project.id}: ${err}`);
         });
     }
 
@@ -178,7 +180,7 @@ export class projectService {
   ): Promise<Project | null> {
     const updated = await this.projectRepository.update(
       BigInt(body.projectId),
-      { name: body.name },
+      { name: body.name, nameGenerated: true },
     );
     if (!updated) return null;
 

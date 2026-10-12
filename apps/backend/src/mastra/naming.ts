@@ -18,7 +18,21 @@ export const ConversationTitleSchema = v.object({
   ),
 });
 
+export const ProjectAndConversationNamesSchema = v.object({
+  projectName: v.pipe(
+    v.string(),
+    v.nonEmpty('Project name is required'),
+    v.maxLength(80, 'Project name cannot exceed 80 characters'),
+  ),
+  conversationTitle: v.pipe(
+    v.string(),
+    v.nonEmpty('Conversation title is required'),
+    v.maxLength(255, 'Conversation title cannot exceed 255 characters'),
+  ),
+});
+
 export type ProjectNameOutput = v.InferOutput<typeof ProjectNameSchema>;
+export type ProjectAndConversationNames = v.InferOutput<typeof ProjectAndConversationNamesSchema>;
 
 export async function generateProjectName(
   prompt: string,
@@ -58,4 +72,30 @@ First user message:
     },
   );
   return object.title;
+}
+
+export async function generateNames(
+  prompt: string,
+  modelId?: string,
+): Promise<ProjectAndConversationNames> {
+  const agent = createNamingAgent(modelId);
+  const { object } = await agent.generate(
+    `Write two things based on the user's request, in the EXACT same language as the user's request.
+
+Return a JSON object with keys:
+- projectName: a concise descriptive project title (max 80 characters). This is a short DESCRIPTION of what the project does — NOT a brand, product, or invented name.
+- conversationTitle: a short conversation title (max 255 characters) summarizing the first user message.
+
+Return only the JSON object, no explanation, no markdown, no quotes.
+
+User request:
+"${prompt}"`,
+    {
+      structuredOutput: {
+        schema: valibotSchema(ProjectAndConversationNamesSchema),
+        jsonPromptInjection: true,
+      },
+    },
+  );
+  return object;
 }

@@ -101,6 +101,7 @@ export class ConversationsService {
     void this.inngestService
       .nameConversation({
         conversationId: conversation.id.toString(),
+        projectId: projectId.toString(),
         text: content,
       })
       .catch((err) => this.logger.warn(`name-conversation failed: ${err}`));
@@ -201,6 +202,7 @@ export class ConversationsService {
         void this.inngestService
           .nameConversation({
             conversationId: conversationId.toString(),
+            projectId: conversation.projectId.toString(),
             text: body.content,
           })
           .catch((err) => this.logger.warn(`name-conversation failed: ${err}`));

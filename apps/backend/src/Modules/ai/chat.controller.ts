@@ -1,7 +1,6 @@
 import { Body, Controller, Post, Req, Res } from '@nestjs/common';
 import { Auth, AuthUser } from 'src/common/decorator/auth-user.decorator';
 import type { User } from 'src/common/database/schema';
-import { MessageRepository } from 'src/common/database/repositories/conversations/message.repository';
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { handleChatStream } from '@mastra/ai-sdk';
@@ -45,8 +44,6 @@ function withTimeout<T>(
 @Controller('ai/chat')
 @Auth()
 export class ChatController {
-  constructor(private readonly messageRepository: MessageRepository) {}
-
   @Post()
   async chat(
     @Body({ schema: ChatRequestSchema }) body: ChatRequestDto,
@@ -75,29 +72,15 @@ export class ChatController {
 
       // Plan vs build decides which chat agent runs. Plan mode is intentionally
       // read-only; build mode gets the full workspace (edits + execution).
-      //
-      // A brand-new project starts out with exactly one message (the one the
-      // client persisted via /conversations/project/:projectId/messages before
-      // hitting this endpoint). Force the build agent for that first message —
-      // a fresh project always builds first, regardless of the selected mode.
-      // New conversations on projects with history keep the user's choice.
-      let mode: ChatMode = body.mode ?? 'build';
-      const projectMessageCount = await this.messageRepository.countByProject(
-        BigInt(body.projectId),
-      );
-      if (projectMessageCount <= 1) {
-        mode = 'build';
-      }
+      const mode: ChatMode = body.mode ?? 'build';
 
       // Route before the stream opens: plan mode → planner, a request that
-      // spans several areas → team supervisor, otherwise the build agent. The
+      // needs several specialists → team supervisor, otherwise the build agent.
+      // Routing is based on need only — the first message of a project is routed
+      // like any other, so a large first prompt can still reach the team. The
       // LLM tie-breaker only runs for messages the heuristic cannot place and
       // has a hard 4s budget, so routing never stalls the response.
-      const route = await resolveChatAgent({
-        mode,
-        message: body.message,
-        projectMessageCount,
-      });
+      const route = await resolveChatAgent({ mode, message: body.message });
       const agentId = route.agentId;
       console.log(
         `[ChatController] agent=${agentId} reason=${route.reason} mode=${mode}`,

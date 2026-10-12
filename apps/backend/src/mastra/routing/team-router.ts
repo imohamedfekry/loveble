@@ -83,8 +83,17 @@ function anyMatch(patterns: RegExp[], text: string): boolean {
 export type HeuristicTrigger = 'team' | 'builder' | 'uncertain';
 
 /**
- * Cheap, deterministic first pass. Returns `uncertain` only for the narrow band
- * where an LLM tie-break is worth its latency; everything else is decided here.
+ * Messages shorter than this are treated as trivial chat / one-line asks and go
+ * straight to the builder without paying for a classifier round-trip.
+ */
+const TRIVIAL_LENGTH = 40;
+/** A single, clearly-focused area under this length is a small edit. */
+const FOCUSED_LENGTH = 60;
+
+/**
+ * Cheap, deterministic first pass. It only short-circuits the obvious cases;
+ * anything substantial that carries no English signal (e.g. an Arabic request)
+ * returns `uncertain` so the language-agnostic LLM classifier can place it.
  */
 export function heuristicTrigger(rawMessage: string): HeuristicTrigger {
   const message = rawMessage.toLowerCase();
@@ -97,12 +106,14 @@ export function heuristicTrigger(rawMessage: string): HeuristicTrigger {
 
   if (areas >= 2) return 'team';
   if (areas === 1) {
-    if (scoped && length >= 60) return 'team';
-    if (length >= 150) return 'uncertain';
-    return 'builder';
+    if (scoped && length >= FOCUSED_LENGTH) return 'team';
+    if (length < FOCUSED_LENGTH) return 'builder';
+    return 'uncertain';
   }
-  if (scoped && length >= 150) return 'uncertain';
-  return 'builder';
+  // No English signal: a genuinely short line is chat, anything longer needs
+  // the classifier because the heuristic only understands English keywords.
+  if (length < TRIVIAL_LENGTH) return 'builder';
+  return 'uncertain';
 }
 
 /**
@@ -116,7 +127,7 @@ export async function classifyWithLlm(
   try {
     const { text } = await generateText({
       model: getModel(DEFAULT_AGENT_MODEL),
-      system: `You route one user request inside a website builder app.
+      system: `You route one user request inside a website builder app. The request may be written in ANY language (e.g. English, Arabic) — judge the intent, not the spelling.
 
 Answer with exactly one word:
 TEAM — the request needs several specialists working together (styling plus code plus review), or it is a large multi-part build.
@@ -138,25 +149,21 @@ Reply with only TEAM or BUILDER.`,
 
 export type ChatRoute = {
   agentId: string;
-  reason:
-    'first-message' | 'plan-mode' | 'heuristic' | 'classifier' | 'default';
+  reason: 'plan-mode' | 'heuristic' | 'classifier' | 'default';
 };
 
 /**
  * Picks the chat agent for one request: the planner for plan mode, the team
- * supervisor when the request spans several areas, otherwise the builder.
- * A project's very first message always builds, regardless of mode.
+ * supervisor when the request needs several specialists, otherwise the builder.
+ * Routing is based purely on need — a project's first message is treated like
+ * any other, so a large first prompt can still reach the team.
  */
 export async function resolveChatAgent(params: {
   mode: ChatMode;
   message: string;
-  projectMessageCount: number;
 }): Promise<ChatRoute> {
-  const { mode, message, projectMessageCount } = params;
+  const { mode, message } = params;
 
-  if (projectMessageCount <= 1) {
-    return { agentId: CHAT_AGENT_IDS.build, reason: 'first-message' };
-  }
   if (mode === 'plan') {
     return { agentId: CHAT_AGENT_IDS.plan, reason: 'plan-mode' };
   }

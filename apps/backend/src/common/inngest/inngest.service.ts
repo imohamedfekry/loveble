@@ -44,6 +44,7 @@ export class InngestService {
 
   nameConversation(data: {
     conversationId: string;
+    projectId?: string;
     text: string;
     model?: string;
   }) {

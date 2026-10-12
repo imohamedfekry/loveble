@@ -5,6 +5,7 @@ import {
   timestamp,
   index,
   varchar,
+  boolean,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { nextSnowflakeId } from 'src/common/utils/snowflake';
@@ -31,6 +32,7 @@ export const projects = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
+    nameGenerated: boolean('name_generated').default(false).notNull(),
     importStatus: importStatusEnum('import_status'),
     exportStatus: exportStatusEnum('export_status'),
     exportRepoUrl: varchar('export_repo_url', { length: 255 }),

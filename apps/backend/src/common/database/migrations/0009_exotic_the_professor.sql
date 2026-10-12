@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "name_generated" boolean DEFAULT false NOT NULL;

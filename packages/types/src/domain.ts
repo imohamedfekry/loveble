@@ -4,6 +4,7 @@ export type ExportStatus = "exporting" | "completed" | "failed";
 export type Project = {
   id: string;
   name: string;
+  nameGenerated?: boolean;
   userId: string;
   importStatus: ImportStatus;
   exportStatus: ExportStatus | null;

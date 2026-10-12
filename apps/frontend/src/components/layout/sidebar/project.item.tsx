@@ -94,7 +94,13 @@ export const ProjectItem = ({
           className="flex h-full min-w-0 flex-1 items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         >
           <div className="min-w-0 flex-1 pl-2">
-            <p className="truncate text-[13.5px] font-[450] text-foreground">
+            <p
+              className={cn(
+                "truncate text-[13.5px] font-[450]",
+                data.nameGenerated === false ? "text-ink-2" : "text-foreground",
+              )}
+              title={data.name}
+            >
               {data.name}
             </p>
           </div>
