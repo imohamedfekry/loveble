@@ -544,145 +544,224 @@ function teamField(source: unknown, key: string): string | undefined {
 }
 
 /**
- * Rich report for the `run-team-workflow` tool: the brief the supervisor handed
- * over plus what each specialist (design / review / builder) reported. Rendered
- * from the tool's own input/output, so it persists in the conversation — the
- * live `TeamRunMonitor` is only the transient progress view.
+ * The `run-team-workflow` tool rendered exactly like the tool timeline: a
+ * "Team run" header that expands into nested agent rows (Brief / Design /
+ * Review / Builder), each itself expandable to reveal that agent's output.
+ * Reads the tool's own input/output so it persists in the conversation.
  */
 function TeamRunReport({ part }: { part: ToolPart }) {
   const [open, setOpen] = useState(true);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const running =
     part.state === "input-streaming" || part.state === "input-available";
   const failed = part.state === "output-error" || !!part.errorText;
 
-  const request = teamField(part.input, "request");
-  const sections = [
-    { label: "Design", text: teamField(part.output, "design") },
-    { label: "Review", text: teamField(part.output, "review") },
-    { label: "Builder", text: teamField(part.output, "summary") },
-  ].filter((section): section is { label: string; text: string } =>
-    Boolean(section.text),
-  );
+  const items = [
+    { key: "brief", label: "Brief", text: teamField(part.input, "request") },
+    { key: "design", label: "Design", text: teamField(part.output, "design") },
+    { key: "review", label: "Review", text: teamField(part.output, "review") },
+    {
+      key: "builder",
+      label: "Builder",
+      text: teamField(part.output, "summary"),
+    },
+  ];
 
-  const heading = failed
+  const header = failed
     ? "Team run failed"
     : running
       ? "Team running"
-      : "Team run";
+      : "Team run · 3 agents";
+
+  const toggle = (key: string) =>
+    setExpanded((current) => ({ ...current, [key]: !current[key] }));
 
   return (
-    <div className="mb-2 rounded-xl border border-line bg-surface px-3 py-2">
+    <div className="mb-2">
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-2 text-left"
+        onClick={() => setOpen((current) => !current)}
+        className="-mx-1.5 flex w-fit max-w-full items-center gap-1.5 rounded-control px-1.5 py-1 transition-colors duration-100 hover:bg-hover-2"
       >
-        <span className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink">
+        <span role="status" className="contents">
           {running ? (
             <span
-              className="size-3 rounded-full border-[1.5px] border-line-strong border-t-ink-2"
-              style={{ animation: "spin 700ms linear infinite" }}
-            />
-          ) : failed ? (
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--red, #e5484d)"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              className="bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
+                backgroundSize: "200% 100%",
+                animation: "shimmer-text 1.4s linear infinite",
+              }}
             >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+              {header}
+            </span>
           ) : (
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--primary)"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <span
+              className="text-[13px] font-medium whitespace-nowrap text-ink-2"
+              style={{ animation: "fade-in 350ms ease-out both" }}
             >
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
+              {header}
+            </span>
           )}
-          {heading}
         </span>
-        <svg
-          width="13"
-          height="13"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="var(--ink-3)"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="shrink-0 transition-transform duration-300"
-          style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        <Chevron open={open} />
       </button>
 
-      {open ? (
-        <div className="mt-2 max-h-80 space-y-2 overflow-y-auto">
-          {request ? (
-            <ReportSection label="Brief" text={request} muted />
-          ) : null}
-
-          {sections.map((section) => (
-            <ReportSection
-              key={section.label}
-              label={section.label}
-              text={section.text}
+      <div
+        className="grid transition-[grid-template-rows,opacity] duration-300"
+        style={{
+          gridTemplateRows: open ? "1fr" : "0fr",
+          opacity: open ? 1 : 0,
+          transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+      >
+        <div className="overflow-hidden">
+          <div className="relative mt-0.5 ml-[5px] pl-4">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-[3px] top-0 bottom-0 w-px bg-line"
             />
-          ))}
 
-          {failed && part.errorText ? (
-            <ReportSection label="Error" text={part.errorText} error />
-          ) : null}
+            <div className="flex flex-col gap-0.5 py-1">
+              {items.map((item, index) => {
+                const isOpen = !!expanded[item.key];
+                const state: AgentState = item.text
+                  ? "done"
+                  : failed
+                    ? "error"
+                    : running
+                      ? "running"
+                      : "idle";
 
-          {running && !request && sections.length === 0 ? (
-            <p className="text-[11.5px] text-ink-3">
-              Specialists are working…
-            </p>
-          ) : null}
+                return (
+                  <div key={item.key}>
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      disabled={!item.text}
+                      onClick={() => toggle(item.key)}
+                      className="group/row relative flex min-h-7 w-full items-center gap-2 rounded-[6px] px-1.5 py-0.5 text-left transition-colors duration-150 hover:bg-hover disabled:cursor-default disabled:hover:bg-transparent"
+                      style={{
+                        animation: `fade-up 320ms cubic-bezier(0.23,1,0.32,1) ${index * 90}ms both`,
+                      }}
+                    >
+                      <Connector />
+                      <AgentGlyph state={state} />
+                      <span className="min-w-0 shrink-0 truncate text-[12.5px] font-medium text-ink">
+                        {item.label}
+                      </span>
+                      {item.text ? (
+                        <span className="ml-auto shrink-0 opacity-70">
+                          <Chevron open={isOpen} size={11} />
+                        </span>
+                      ) : null}
+                    </button>
+
+                    {isOpen && item.text ? (
+                      <div className="mb-0.5 ml-6 border-l border-line pl-3">
+                        <p className="whitespace-pre-wrap text-[11.5px] leading-[1.6] text-ink-2">
+                          {item.text}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+
+              {failed && part.errorText ? (
+                <div className="ml-6 border-l border-line pl-3">
+                  <span className="text-[11.5px] leading-[1.6] text-red">
+                    {part.errorText}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }
 
-function ReportSection({
-  label,
-  text,
-  muted,
-  error,
-}: {
-  label: string;
-  text: string;
-  muted?: boolean;
-  error?: boolean;
-}) {
+function Chevron({ open, size = 13 }: { open: boolean; size?: number }) {
   return (
-    <section className="rounded-lg border border-line px-2 py-1.5">
-      <h4 className="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">
-        {label}
-      </h4>
-      <p
-        className={`mt-0.5 whitespace-pre-wrap text-[11.5px] leading-relaxed ${
-          error ? "text-red" : muted ? "text-ink-3" : "text-ink-2"
-        }`}
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--ink-3)"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0 transition-transform duration-300"
+      style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function Connector() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute -left-[13px] top-1/2 -translate-y-1/2 overflow-visible"
+      width="13"
+      height="14"
+      viewBox="0 0 13 14"
+      fill="none"
+    >
+      <path
+        d="M0 9 C0 10.5 1.5 12 4 12 H13"
+        stroke="var(--line)"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+type AgentState = "idle" | "running" | "done" | "error";
+
+function AgentGlyph({ state }: { state: AgentState }) {
+  if (state === "running") {
+    return (
+      <span className="flex size-4 shrink-0 items-center justify-center">
+        <span
+          className="size-3 rounded-full border-[1.5px] border-line-strong border-t-ink-2"
+          style={{ animation: "spin 700ms linear infinite" }}
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex size-4 shrink-0 items-center justify-center">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={state === "error" ? "text-red" : "text-ink-3"}
       >
-        {text}
-      </p>
-    </section>
+        {state === "error" ? (
+          <path d="M18 6L6 18M6 6l12 12" />
+        ) : state === "done" ? (
+          <path d="M20 6L9 17l-5-5" />
+        ) : (
+          <circle cx="12" cy="12" r="4" />
+        )}
+      </svg>
+    </span>
   );
 }
 
