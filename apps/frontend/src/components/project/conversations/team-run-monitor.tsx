@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckIcon, Loader2Icon, XIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  Loader2Icon,
+  XIcon,
+} from "lucide-react";
 
 import { socket } from "@/lib/socket/socket";
 
@@ -22,6 +27,8 @@ type TeamRunEvent = {
 type RunState = {
   runId: string | null;
   phases: Record<TrackedPhase, PhaseState>;
+  /** Per-agent summaries: what each specialist reported doing / commenting on. */
+  details: Partial<Record<TrackedPhase, string>>;
   outcome: "running" | "done" | "error";
   detail?: string;
 };
@@ -29,7 +36,7 @@ type RunState = {
 const PHASES: TrackedPhase[] = ["prepare", "design", "review", "builder"];
 
 const LABELS: Record<TrackedPhase, string> = {
-  prepare: "Preparing",
+  prepare: "Brief",
   design: "Design",
   review: "Review",
   builder: "Builder",
@@ -49,11 +56,12 @@ const IDLE: RunState = {
     review: "idle",
     builder: "idle",
   },
+  details: {},
   outcome: "running",
   detail: undefined,
 };
 
-const HIDE_AFTER_MS = 8000;
+const HIDE_AFTER_MS = 60_000;
 
 function reduce(prev: RunState, event: TeamRunEvent): RunState {
   // A different run id means the previous run is irrelevant — start over.
@@ -71,13 +79,17 @@ function reduce(prev: RunState, event: TeamRunEvent): RunState {
   return {
     ...base,
     phases: { ...base.phases, [event.phase]: STATUS_STATE[event.status] },
+    details: event.detail
+      ? { ...base.details, [event.phase]: event.detail }
+      : base.details,
   };
 }
 
 /**
- * Live progress bar for a `team-run` workflow: shows which specialists are
- * working, in parallel, on the current project. Listens to the `team:run`
- * socket channel and hides itself a few seconds after the run settles.
+ * Live progress panel for a `team-run` workflow. Shows which specialists are
+ * working (in parallel) plus, per agent, what each one did or commented on.
+ * Listens to the `team:run` socket channel and hides itself a while after the
+ * run settles.
  */
 export function TeamRunMonitor({ projectId }: { projectId: string }) {
   const [run, setRun] = useState<RunState>(IDLE);
@@ -108,6 +120,8 @@ export function TeamRunMonitor({ projectId }: { projectId: string }) {
         ? "Team run finished"
         : "Team running";
 
+  const reported = PHASES.filter((phase) => Boolean(run.details[phase]));
+
   return (
     <div className="mb-2 rounded-xl border border-line bg-surface px-3 py-2">
       <div className="flex items-center justify-between gap-2">
@@ -121,7 +135,19 @@ export function TeamRunMonitor({ projectId }: { projectId: string }) {
           )}
           {heading}
         </span>
-        <span className="text-[11px] text-ink-3">team-run · {run.runId.slice(0, 8)}</span>
+        <span className="flex items-center gap-2">
+          <span className="text-[11px] text-ink-3">
+            team-run · {run.runId.slice(0, 8)}
+          </span>
+          <button
+            type="button"
+            onClick={() => setRun(IDLE)}
+            aria-label="Dismiss team run"
+            className="rounded p-0.5 text-ink-3 transition-colors hover:text-ink"
+          >
+            <XIcon className="size-3" />
+          </button>
+        </span>
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -134,13 +160,74 @@ export function TeamRunMonitor({ projectId }: { projectId: string }) {
         ))}
       </div>
 
-      {run.detail ? (
-        <p className="mt-1.5 text-[11px] leading-relaxed text-ink-2">
+      {run.outcome === "error" && run.detail ? (
+        <p className="mt-1.5 text-[11px] leading-relaxed text-destructive">
           {run.detail}
+        </p>
+      ) : null}
+
+      {reported.length > 0 ? (
+        <div className="mt-2 max-h-72 space-y-1 overflow-y-auto">
+          {reported.map((phase) => (
+            <AgentReport
+              key={phase}
+              label={LABELS[phase]}
+              state={run.phases[phase]}
+              text={run.details[phase] ?? ""}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function AgentReport({
+  label,
+  state,
+  text,
+}: {
+  label: string;
+  state: PhaseState;
+  text: string;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="rounded-lg border border-line bg-transparent px-2 py-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center justify-between gap-2 text-left"
+      >
+        <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink">
+          <PhaseGlyph state={state} />
+          {label}
+        </span>
+        <ChevronDownIcon
+          className={`size-3 text-ink-3 transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open ? (
+        <p className="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-ink-2">
+          {text}
         </p>
       ) : null}
     </div>
   );
+}
+
+function PhaseGlyph({ state }: { state: PhaseState }) {
+  if (state === "running") {
+    return <Loader2Icon className="size-3 animate-spin text-primary" />;
+  }
+  if (state === "done") {
+    return <CheckIcon className="size-3 text-primary" />;
+  }
+  if (state === "error") {
+    return <XIcon className="size-3 text-destructive" />;
+  }
+  return <span className="size-1.5 rounded-full bg-ink-3" />;
 }
 
 function PhaseChip({ label, state }: { label: string; state: PhaseState }) {

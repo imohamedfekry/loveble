@@ -15,6 +15,9 @@ import { teamRunEvents, type TeamRunPhase } from '../team/team-events';
 
 const briefSchema = z.object({ brief: z.string() });
 
+/** How much of an agent's summary to stream to the live monitor panel. */
+const DETAIL_LIMIT = 2000;
+
 const designResultSchema = z.object({
   role: z.literal('design'),
   summary: z.string(),
@@ -85,7 +88,7 @@ async function runSpecialist({
     teamRunEvents.emit({
       ...base,
       status: 'done',
-      detail: summary.slice(0, 600),
+      detail: summary.slice(0, DETAIL_LIMIT),
     });
     return summary;
   } catch (error) {
