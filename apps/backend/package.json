@@ -74,7 +74,8 @@
     "socket.io": "^4.8.4",
     "specscribe": "link:../../../../specscribe",
     "turndown": "^7.2.4",
-    "valibot": "^1.5.0"
+    "valibot": "^1.5.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",

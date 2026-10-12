@@ -8,7 +8,9 @@ import { handleChatStream } from '@mastra/ai-sdk';
 import { createUIMessageStreamResponse } from 'ai';
 import { RequestContext } from '@mastra/core/request-context';
 import { mastra } from 'src/mastra';
-import { CHAT_AGENT_IDS, type ChatMode } from 'src/mastra/agents/chat-agents';
+import type { ChatMode } from 'src/mastra/agents/chat-agents';
+import { resolveChatAgent } from 'src/mastra/routing/team-router';
+import { ensureWorkspaceRunKey } from 'src/mastra/team/ownership';
 import { ChatRequestSchema } from './dto/chat.dto';
 import type { ChatRequestDto } from './dto/chat.dto';
 
@@ -34,7 +36,7 @@ function withTimeout<T>(
       },
       (error) => {
         clearTimeout(timer);
-        reject(error);
+        reject(error instanceof Error ? error : new Error(String(error)));
       },
     );
   });
@@ -86,7 +88,20 @@ export class ChatController {
       if (projectMessageCount <= 1) {
         mode = 'build';
       }
-      const agentId = CHAT_AGENT_IDS[mode];
+
+      // Route before the stream opens: plan mode → planner, a request that
+      // spans several areas → team supervisor, otherwise the build agent. The
+      // LLM tie-breaker only runs for messages the heuristic cannot place and
+      // has a hard 4s budget, so routing never stalls the response.
+      const route = await resolveChatAgent({
+        mode,
+        message: body.message,
+        projectMessageCount,
+      });
+      const agentId = route.agentId;
+      console.log(
+        `[ChatController] agent=${agentId} reason=${route.reason} mode=${mode}`,
+      );
 
       // Per-request context flows into the agents' dynamic workspace/broker
       // resolvers so each tool call targets the right project + sandbox.
@@ -101,6 +116,11 @@ export class ChatController {
         ['userId', String(user.id)],
         ['mode', mode],
       ]);
+      // Pin the run-scoped workspace key on the request context before anything
+      // fans out. Every downstream copy (sub-agent delegation, workflow
+      // branches, tool calls) then inherits the same object reference, so the
+      // whole request shares one Workspace — one write lock, one file snapshot.
+      ensureWorkspaceRunKey(requestContext, mode);
 
       const stream = await withTimeout(
         handleChatStream({
@@ -131,7 +151,9 @@ export class ChatController {
         'Chat stream',
       );
       const response = createUIMessageStreamResponse({ stream });
-      response.headers.forEach((value, key) => reply.header(key, value));
+      response.headers.forEach((value, key) => {
+        reply.header(key, value);
+      });
       const nodeStream = Readable.fromWeb(
         response.body as import('node:stream/web').ReadableStream,
       );
