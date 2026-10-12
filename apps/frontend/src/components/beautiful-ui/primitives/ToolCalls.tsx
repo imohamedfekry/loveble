@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FileIcon, FolderIcon } from "@react-symbols/icons/utils";
 
 import { useEditor } from "@/lib/hooks/use-editor";
 import { useFilesStore } from "@/store/file.store";
+import { socket } from "@/lib/socket/socket";
 import type { ProjectFileType } from "@/lib/api/apis/files/types";
 
 /* ─────────────────────────────────────────────────────────
@@ -391,6 +392,7 @@ export function ToolCalls({
         <TeamRunReport
           key={part.toolCallId ?? part.type}
           part={part}
+          projectId={projectId}
           pathIndex={pathIndex}
           onOpenFile={(id) => openFile(id, { pinned: false })}
         />
@@ -637,44 +639,122 @@ function detailFromTarget(base: string, target?: string): Detail | undefined {
  * Review / Builder), each itself expandable to reveal that agent's output.
  * Reads the tool's own input/output so it persists in the conversation.
  */
+type LivePhase = "prepare" | "design" | "review" | "builder";
+type LiveStatus = "running" | "done" | "error";
+
+type TeamRunLiveEvent = {
+  runId: string;
+  projectId?: string;
+  phase: LivePhase | "done";
+  status: "start" | "done" | "error";
+  detail?: string;
+  tools?: TeamTool[];
+};
+
+type LiveState = {
+  runId: string | null;
+  status: Partial<Record<LivePhase, LiveStatus>>;
+  detail: Partial<Record<LivePhase, string>>;
+  tools: Partial<Record<LivePhase, TeamTool[]>>;
+};
+
+const EMPTY_LIVE: LiveState = { runId: null, status: {}, detail: {}, tools: {} };
+
+/** Fold one `team:run` socket event into the live view; a new run resets it. */
+function nextLive(prev: LiveState, event: TeamRunLiveEvent): LiveState {
+  const base =
+    prev.runId === event.runId
+      ? prev
+      : { runId: event.runId, status: {}, detail: {}, tools: {} };
+  if (event.phase === "done") return base;
+
+  return {
+    ...base,
+    status: {
+      ...base.status,
+      [event.phase]:
+        event.status === "error"
+          ? "error"
+          : event.status === "done"
+            ? "done"
+            : "running",
+    },
+    detail: event.detail
+      ? { ...base.detail, [event.phase]: event.detail }
+      : base.detail,
+    tools:
+      event.tools && event.tools.length > 0
+        ? { ...base.tools, [event.phase]: event.tools }
+        : base.tools,
+  };
+}
+
 function TeamRunReport({
   part,
+  projectId,
   pathIndex,
   onOpenFile,
 }: {
   part: ToolPart;
+  projectId: string;
   pathIndex: Map<string, ProjectFileType>;
   onOpenFile: (id: string) => void;
 }) {
   const [open, setOpen] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [live, setLive] = useState<LiveState>(EMPTY_LIVE);
 
   const running =
     part.state === "input-streaming" || part.state === "input-available";
   const failed = part.state === "output-error" || !!part.errorText;
 
-  const items = [
+  // While the run streams, follow the team's socket progress so each agent's
+  // text and tool calls appear as they happen — not only once the whole
+  // workflow (and this tool call) finishes.
+  useEffect(() => {
+    if (!running) return;
+    const onTeamRun = (event: TeamRunLiveEvent) => {
+      if (event.projectId && event.projectId !== projectId) return;
+      setLive((prev) => nextLive(prev, event));
+    };
+    socket.on("team:run", onTeamRun);
+    return () => {
+      socket.off("team:run", onTeamRun);
+    };
+  }, [running, projectId]);
+
+  const items: {
+    key: string;
+    label: string;
+    phase: LivePhase;
+    text?: string;
+    tools: TeamTool[];
+  }[] = [
     {
       key: "brief",
       label: "Brief",
+      phase: "prepare",
       text: teamField(part.input, "request"),
-      tools: [] as TeamTool[],
+      tools: [],
     },
     {
       key: "design",
       label: "Design",
+      phase: "design",
       text: teamField(part.output, "design"),
       tools: teamTools(part.output, "designTools"),
     },
     {
       key: "review",
       label: "Review",
+      phase: "review",
       text: teamField(part.output, "review"),
       tools: teamTools(part.output, "reviewTools"),
     },
     {
       key: "builder",
       label: "Builder",
+      phase: "builder",
       text: teamField(part.output, "summary"),
       tools: teamTools(part.output, "builderTools"),
     },
@@ -739,15 +819,28 @@ function TeamRunReport({
 
             <div className="flex flex-col gap-0.5 py-1">
               {items.map((item, index) => {
+                const liveText = running ? live.detail[item.phase] : undefined;
+                const text = liveText ?? item.text ?? "";
+                const liveTools = running ? live.tools[item.phase] : undefined;
+                const tools =
+                  liveTools && liveTools.length > 0 ? liveTools : item.tools;
+                const liveStatus = running ? live.status[item.phase] : undefined;
                 const isOpen = !!expanded[item.key];
-                const expandable = Boolean(item.text) || item.tools.length > 0;
-                const state: AgentState = item.text || item.tools.length > 0
-                  ? "done"
-                  : failed
+                const expandable = Boolean(text) || tools.length > 0;
+                const state: AgentState =
+                  liveStatus === "error"
                     ? "error"
-                    : running
-                      ? "running"
-                      : "idle";
+                    : liveStatus === "done"
+                      ? "done"
+                      : liveStatus === "running"
+                        ? "running"
+                        : text || tools.length > 0
+                          ? "done"
+                          : failed
+                            ? "error"
+                            : running
+                              ? "running"
+                              : "idle";
 
                 return (
                   <div key={item.key}>
@@ -766,9 +859,9 @@ function TeamRunReport({
                       <span className="min-w-0 shrink-0 truncate text-[12.5px] font-medium text-ink">
                         {item.label}
                       </span>
-                      {item.tools.length > 0 ? (
+                      {tools.length > 0 ? (
                         <span className="min-w-0 truncate text-[11.5px] text-ink-3">
-                          {item.tools.length} {item.tools.length === 1 ? "tool" : "tools"}
+                          {tools.length} {tools.length === 1 ? "tool" : "tools"}
                         </span>
                       ) : null}
                       {expandable ? (
@@ -780,15 +873,15 @@ function TeamRunReport({
 
                     {isOpen && expandable ? (
                       <div className="mb-0.5 ml-6 border-l border-line pl-3">
-                        {item.text ? (
+                        {text ? (
                           <p className="whitespace-pre-wrap text-[11.5px] leading-[1.6] text-ink-2">
-                            {item.text}
+                            {text}
                           </p>
                         ) : null}
 
-                        {item.tools.length > 0 ? (
+                        {tools.length > 0 ? (
                           <div className="mt-1 flex flex-col gap-0.5">
-                            {item.tools.map((tool, toolIndex) => {
+                            {tools.map((tool, toolIndex) => {
                               const base = teamToolBase(tool.name);
                               const detail = detailFromTarget(base, tool.target);
                               const node =

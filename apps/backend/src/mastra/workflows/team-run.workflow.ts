@@ -22,6 +22,9 @@ const briefSchema = z.object({ brief: z.string() });
 /** How much of an agent's summary to stream to the live monitor panel. */
 const DETAIL_LIMIT = 2000;
 
+/** Minimum gap between live partial-text emissions from a running specialist. */
+const PARTIAL_THROTTLE_MS = 400;
+
 /** One tool call an agent made, surfaced to the UI so a run is inspectable. */
 const toolSchema = z.object({
   name: z.string(),
@@ -166,21 +169,70 @@ async function runSpecialist({
     phase,
   };
   teamRunEvents.emit({ ...base, status: 'start' });
+
+  // Stream the specialist so the UI can watch it work instead of waiting for
+  // the whole run. Text is throttled; tool calls are surfaced as each step
+  // finishes so the user sees the files/commands being touched live.
+  const tools: TeamToolCall[] = [];
+  let liveText = '';
+  let lastEmit = 0;
+
+  const emitProgress = (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastEmit < PARTIAL_THROTTLE_MS) return;
+    lastEmit = now;
+    teamRunEvents.emit({
+      ...base,
+      status: 'start',
+      detail: liveText.slice(0, DETAIL_LIMIT),
+      ...(tools.length > 0 ? { tools: [...tools] } : {}),
+    });
+  };
+
   try {
-    const result = await agent.generate(prompt, {
+    const stream = await agent.stream(prompt, {
       requestContext: scopeRequestContextForRole(requestContext, role),
       maxSteps,
       ...(memory ? { memory } : {}),
+      onStepFinish: (step) => {
+        const stepTools = extractTools({
+          toolCalls: (step.toolCalls ?? []) as unknown[],
+        });
+        if (stepTools.length > 0) {
+          tools.push(...stepTools);
+          emitProgress(true);
+        }
+      },
     });
-    const summary = result.text.trim();
-    const tools = extractTools(result);
+
+    const reader = stream.textStream.getReader();
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          liveText += value;
+          emitProgress();
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    const finalText = await stream.text;
+    const summary = (finalText || liveText).trim();
+    const allTools =
+      tools.length > 0
+        ? tools
+        : extractTools({ toolCalls: await stream.toolCalls });
+
     teamRunEvents.emit({
       ...base,
       status: 'done',
       detail: summary.slice(0, DETAIL_LIMIT),
-      tools,
+      tools: allTools,
     });
-    return { summary, tools };
+    return { summary, tools: allTools };
   } catch (error) {
     teamRunEvents.emit({ ...base, status: 'error', detail: describe(error) });
     throw error;
