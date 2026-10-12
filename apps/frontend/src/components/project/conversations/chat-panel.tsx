@@ -41,7 +41,14 @@ const chatTransport = new DefaultChatTransport({
 });
 
 const STREAM_RELAY_INTERVAL_MS = 80;
-const STALL_TIMEOUT_MS = 45_000;
+// How long the stream may stay busy with NO new parts and NO running tool
+// before we treat it as a hung model call. Long enough to cover a slow model
+// turn, short enough that a dead stream doesn't spin for minutes.
+const STALL_TIMEOUT_MS = 120_000;
+// A running tool call (e.g. a long sandbox build or the team workflow) is not a
+// stall — the server is still working. Only give up if a single tool runs for
+// this long without ever resolving, so a hung tool can't spin forever.
+const TOOL_STALL_TIMEOUT_MS = 15 * 60_000;
 
 function textFromParts(parts: UIMessage["parts"]): string {
   let result = "";
@@ -323,6 +330,7 @@ export function ChatPanel({
   const lastRelayAtRef = useRef(0);
   const lastProgressAtRef = useRef(Date.now());
   const lastProgressKeyRef = useRef("");
+  const toolRunningSinceRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const allMentions = useChatContextStore((s) => s.items);
@@ -403,8 +411,17 @@ export function ChatPanel({
       const convId = turnRef.current?.convId ?? null;
       try {
         const content = textFromParts(message.parts).trim();
+        // A finished turn may be text-only, tool-only (the model hit its step
+        // cap and ended on a tool call), or empty. Keep anything meaningful —
+        // dropping a tool-only turn is how a completed run used to vanish.
+        const hasToolParts = message.parts.some(
+          (part) =>
+            part.type === "reasoning" ||
+            part.type === "dynamic-tool" ||
+            part.type.startsWith("tool-"),
+        );
         if (!isAbort && convId) {
-          if (content) {
+          if (content || hasToolParts) {
             await sendAssistantMessageToConversation(
               convId,
               content,
@@ -538,28 +555,49 @@ export function ChatPanel({
   }, [busy, liveMessages]);
 
   // Watchdog: if the stream stays busy but stops producing new parts for too
-  // long (a hung model/tool call the backend failed to time out), abort it and
-  // surface an error instead of freezing on "Working…" forever.
+  // long (a hung model call the backend failed to time out), abort it instead
+  // of freezing on "Working…" forever.
+  //
+  // A running tool call is NOT a stall — a slow sandbox build or the team
+  // workflow can legitimately take minutes with no streamed parts in between.
+  // We keep the timer alive while a tool runs (with a long hard cap so a truly
+  // hung tool still gives up eventually). We only call `stop()` here and let
+  // `onFinish` persist the partial turn — nulling the turn first would drop it.
   useEffect(() => {
     if (!busy) return;
     const timer = window.setInterval(() => {
-      if (Date.now() - lastProgressAtRef.current < STALL_TIMEOUT_MS) return;
+      const last = liveMessages[liveMessages.length - 1];
+      const toolRunning =
+        last?.role === "assistant" &&
+        last.parts.some((part) => {
+          const candidate = part as { type?: string; state?: string };
+          return (
+            typeof candidate.type === "string" &&
+            candidate.type.startsWith("tool-") &&
+            (candidate.state === "input-streaming" ||
+              candidate.state === "input-available")
+          );
+        });
+
+      if (toolRunning) {
+        if (toolRunningSinceRef.current === 0) {
+          toolRunningSinceRef.current = Date.now();
+        }
+        lastProgressAtRef.current = Date.now();
+        if (Date.now() - toolRunningSinceRef.current < TOOL_STALL_TIMEOUT_MS) {
+          return;
+        }
+      } else {
+        toolRunningSinceRef.current = 0;
+        if (Date.now() - lastProgressAtRef.current < STALL_TIMEOUT_MS) return;
+      }
+
       window.clearInterval(timer);
       console.error("[ChatPanel] stream stalled — aborting");
       stop();
-      const last = liveMessages[liveMessages.length - 1];
-      if (last?.role === "assistant" && last.id) {
-        relayStream(last.id, last.role, last.parts, "error", true);
-      }
-      const convId = turnRef.current?.convId ?? null;
-      if (convId) {
-        useMessagesStore.getState().pruneStreams(convId);
-      }
-      turnRef.current = null;
-      setSendingState(false);
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [busy, liveMessages, relayStream, setSendingState, stop]);
+  }, [busy, liveMessages, stop]);
 
   useEffect(() => {
     scrollToBottom();
@@ -577,6 +615,7 @@ export function ChatPanel({
       sendGenRef.current = generationRef.current;
       lastProgressAtRef.current = Date.now();
       lastProgressKeyRef.current = "";
+      toolRunningSinceRef.current = 0;
 
       void (async () => {
         try {

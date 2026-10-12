@@ -14,12 +14,14 @@ import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth
 import { ParseSnowflakePipe } from 'src/common/Global/security/validator/isId.validator';
 import { ConversationsService } from './conversations.service';
 import type {
+  CreateAssistantMessageDto,
   CreateMessageDto,
   StopMessageDto,
   UpdateConversationDto,
   UpdateMessageDto,
 } from './dto/conversation.dto';
 import {
+  CreateAssistantMessageSchema,
   CreateMessageSchema,
   StopMessageSchema,
   UpdateConversationSchema,
@@ -94,7 +96,8 @@ export class ConversationsController {
   @Post(':conversationId/messages/assistant')
   createAssistantMessage(
     @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,
-    @Body({ schema: CreateMessageSchema }) body: CreateMessageDto,
+    @Body({ schema: CreateAssistantMessageSchema })
+    body: CreateAssistantMessageDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.conversationsService.createAssistantMessage(
