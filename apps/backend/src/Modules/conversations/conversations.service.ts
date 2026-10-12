@@ -4,7 +4,11 @@ import { RESPONSE_MESSAGES } from '@loveble/utils';
 import { fail, success } from 'src/common/utils/response.util';
 import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
 import { InngestService } from 'src/common/inngest/inngest.service';
-import { mirrorStoppedTurnToMemory } from 'src/common/inngest/agents/memory';
+import {
+  ensureMemoryThread,
+  generalAgentMemory,
+  mirrorStoppedTurnToMemory,
+} from 'src/common/inngest/agents/memory';
 import { ConversationRepository } from 'src/common/database/repositories/conversations/conversation.repository';
 import { MessageRepository } from 'src/common/database/repositories/conversations/message.repository';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
@@ -15,6 +19,7 @@ import type {
   UpdateConversationDto,
   UpdateMessageDto,
 } from './dto/conversation.dto';
+import type { UpdateMemoryDto } from './dto/memory.dto';
 
 const STOP_MESSAGE = 'Generation stopped';
 
@@ -407,5 +412,85 @@ export class ConversationsService {
 
     await this.messageRepository.delete(messageId);
     return success(RESPONSE_MESSAGES.MESSAGE.DELETE_SUCCESS);
+  }
+
+  /**
+   * The agent's thread-scoped "working memory" for this conversation: a
+   * free-form markdown scratchpad it maintains itself (Current Task / Key
+   * Facts / Decisions / Open Questions). Exposed so the user can read it, edit
+   * it, or wipe it. Memory is keyed by (thread = conversation, resource = user),
+   * so conversations never share it.
+   */
+  async getMemory(conversationId: bigint, req: AuthenticatedRequest) {
+    await this.assertConversationOwnership(conversationId, req);
+    const workingMemory = await generalAgentMemory.getWorkingMemory({
+      threadId: conversationId.toString(),
+      resourceId: String(req.user.id),
+    });
+    return success(RESPONSE_MESSAGES.MEMORY.FETCH_SUCCESS, {
+      workingMemory: workingMemory ?? '',
+    });
+  }
+
+  async updateMemory(
+    conversationId: bigint,
+    body: UpdateMemoryDto,
+    req: AuthenticatedRequest,
+  ) {
+    const conversation = await this.assertConversationOwnership(
+      conversationId,
+      req,
+    );
+    await ensureMemoryThread({
+      threadId: conversationId.toString(),
+      resourceId: String(req.user.id),
+      title: conversation.title ?? undefined,
+    });
+    await generalAgentMemory.updateWorkingMemory({
+      threadId: conversationId.toString(),
+      resourceId: String(req.user.id),
+      workingMemory: body.workingMemory,
+    });
+
+    this.realtimeEmitService.toProject(
+      conversation.projectId,
+      'memory:updated',
+      {
+        conversationId: conversationId.toString(),
+        workingMemory: body.workingMemory,
+      },
+    );
+
+    return success(RESPONSE_MESSAGES.MEMORY.UPDATE_SUCCESS, {
+      workingMemory: body.workingMemory,
+    });
+  }
+
+  async clearMemory(conversationId: bigint, req: AuthenticatedRequest) {
+    const conversation = await this.assertConversationOwnership(
+      conversationId,
+      req,
+    );
+    await ensureMemoryThread({
+      threadId: conversationId.toString(),
+      resourceId: String(req.user.id),
+      title: conversation.title ?? undefined,
+    });
+    await generalAgentMemory.updateWorkingMemory({
+      threadId: conversationId.toString(),
+      resourceId: String(req.user.id),
+      workingMemory: '',
+    });
+
+    this.realtimeEmitService.toProject(
+      conversation.projectId,
+      'memory:updated',
+      {
+        conversationId: conversationId.toString(),
+        workingMemory: '',
+      },
+    );
+
+    return success(RESPONSE_MESSAGES.MEMORY.CLEAR_SUCCESS);
   }
 }

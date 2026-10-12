@@ -33,6 +33,7 @@ import { fileIdByPath, formatMentions } from "@/lib/chat-context";
 import { useEditor } from "@/lib/hooks/use-editor";
 import type { ConversationItem } from "@/store/conversations.store";
 import { UserMessage } from "./messages/user-message";
+import { MemoryPanel } from "./memory-panel";
 
 const chatTransport = new DefaultChatTransport({
   api: `${API_BASE_URL}/ai/chat`,
@@ -701,7 +702,8 @@ export function ChatPanel({
         )}
       </div>
       <div className="shrink-0 px-3 pb-3 pt-1">
-        <div className="mb-1.5 flex items-center justify-end pr-1">
+        <div className="mb-1.5 flex items-center justify-between gap-2 pr-1">
+          <MemoryPanel conversationId={conversationId} />
           <div
             role="tablist"
             aria-label="Agent mode"

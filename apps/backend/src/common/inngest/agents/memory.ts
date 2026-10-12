@@ -53,6 +53,33 @@ export const generalAgentMemory = new Memory({
 type MessageListAddInput = Parameters<MessageList['add']>[0];
 
 /**
+ * Ensure a Mastra thread exists for a conversation before touching its memory.
+ * The agent creates the thread on its first run, but the memory API (and the
+ * stop-mirror path) can be reached before that ever happened — an empty thread
+ * with a valid id is enough. Existing threads are never clobbered so the
+ * agent-generated title is preserved.
+ */
+export async function ensureMemoryThread(params: {
+  threadId: string;
+  resourceId: string;
+  title?: string;
+}): Promise<void> {
+  const thread = await generalAgentMemory.getThreadById({
+    threadId: params.threadId,
+  });
+  if (thread) return;
+  await generalAgentMemory.saveThread({
+    thread: {
+      id: params.threadId,
+      resourceId: params.resourceId,
+      title: params.title ?? '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+}
+
+/**
  * Mirror an aborted ("stopped") assistant turn into the thread's Mastra memory.
  *
  * When the user stops a generation the agent never finishes the run, so neither
@@ -78,22 +105,12 @@ export async function mirrorStoppedTurnToMemory(params: {
 
   // The agent normally creates the thread before generating, but we may be
   // stopping before that ever happened (or the thread was cleared). Ensure it
-  // exists first — saveMessages requires a valid thread. Only create when
-  // missing so we never clobber the agent-generated thread title.
-  const thread = await generalAgentMemory.getThreadById({
+  // exists first — saveMessages requires a valid thread.
+  await ensureMemoryThread({
     threadId: params.threadId,
+    resourceId: params.resourceId,
+    title: params.threadTitle,
   });
-  if (!thread) {
-    await generalAgentMemory.saveThread({
-      thread: {
-        id: params.threadId,
-        resourceId: params.resourceId,
-        title: params.threadTitle ?? '',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-  }
 
   const list = new MessageList({
     threadId: params.threadId,

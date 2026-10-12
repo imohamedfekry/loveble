@@ -186,6 +186,20 @@ export const RESPONSE_MESSAGES = {
       message: 'Message not found.',
     },
   },
+  MEMORY: {
+    FETCH_SUCCESS: {
+      code: 'MEMORY_FETCH_SUCCESS',
+      message: 'Memory retrieved successfully.',
+    },
+    UPDATE_SUCCESS: {
+      code: 'MEMORY_UPDATE_SUCCESS',
+      message: 'Memory updated successfully.',
+    },
+    CLEAR_SUCCESS: {
+      code: 'MEMORY_CLEAR_SUCCESS',
+      message: 'Memory cleared successfully.',
+    },
+  },
   FILE: {
     FETCH_SUCCESS: {
       code: 'FILE_FETCH_SUCCESS',

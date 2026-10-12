@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Req,
 } from '@nestjs/common';
 import { Auth } from 'src/common/decorator/auth-user.decorator';
@@ -23,6 +24,8 @@ import {
   StopMessageSchema,
   UpdateConversationSchema,
 } from './dto/conversation.dto';
+import type { UpdateMemoryDto } from './dto/memory.dto';
+import { UpdateMemorySchema } from './dto/memory.dto';
 
 @Controller('conversations')
 @Auth()
@@ -125,5 +128,31 @@ export class ConversationsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.conversationsService.deleteMessage(messageId, req);
+  }
+
+  // Thread-scoped agent memory for this conversation (read / edit / clear).
+  @Get(':conversationId/memory')
+  getMemory(
+    @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.conversationsService.getMemory(conversationId, req);
+  }
+
+  @Put(':conversationId/memory')
+  updateMemory(
+    @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,
+    @Body({ schema: UpdateMemorySchema }) body: UpdateMemoryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.conversationsService.updateMemory(conversationId, body, req);
+  }
+
+  @Delete(':conversationId/memory')
+  clearMemory(
+    @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.conversationsService.clearMemory(conversationId, req);
   }
 }
