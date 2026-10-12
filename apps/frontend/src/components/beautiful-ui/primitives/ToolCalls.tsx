@@ -224,6 +224,101 @@ function summarize(bases: string[]): string {
   );
 }
 
+/**
+ * The visual body of one tool row — status glyph, friendly label, and the
+ * file / command / search it touched. Shared by the tool timeline and the
+ * nested team-run rows so both read as tools, never as prose.
+ */
+function ToolRowContent({
+  label,
+  running,
+  failed,
+  detail,
+  node,
+}: {
+  label: string;
+  running: boolean;
+  failed: boolean;
+  detail?: Detail;
+  node?: ProjectFileType;
+}) {
+  const canOpen = node?.type === "file";
+
+  return (
+    <>
+      <span className="flex size-4 shrink-0 items-center justify-center">
+        {running ? (
+          <span
+            className="size-3 rounded-full border-[1.5px] border-line-strong border-t-ink-2"
+            style={{ animation: "spin 700ms linear infinite" }}
+          />
+        ) : (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={failed ? "text-red" : "text-ink-3"}
+          >
+            {failed ? (
+              <path d="M18 6L6 18M6 6l12 12" />
+            ) : (
+              <path d="M20 6L9 17l-5-5" />
+            )}
+          </svg>
+        )}
+      </span>
+
+      <span className="min-w-0 shrink-0 truncate text-[12.5px] font-medium text-ink">
+        {label}
+      </span>
+
+      {detail?.kind === "file" && (
+        <span
+          className="inline-flex h-5.5 min-w-0 max-w-60 items-center gap-1 rounded-chip bg-field px-1.5 font-mono text-[11.5px] text-ink-2 shadow-hairline"
+          title={detail.path}
+        >
+          {detail.isFolder ? (
+            <FolderIcon
+              folderName={detail.name}
+              className="size-4 shrink-0"
+            />
+          ) : (
+            <FileIcon
+              fileName={detail.name}
+              autoAssign
+              className="size-4 shrink-0"
+            />
+          )}
+          <span className="truncate">{detail.name}</span>
+        </span>
+      )}
+
+      {detail?.kind === "code" && (
+        <span className="min-w-0 flex-1 truncate rounded-chip bg-field px-1.5 font-mono text-[11.5px] text-ink-2 shadow-hairline">
+          {detail.text}
+        </span>
+      )}
+
+      {detail?.kind === "search" && (
+        <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">
+          {detail.text}
+        </span>
+      )}
+
+      {canOpen && (
+        <span className="ml-auto shrink-0 text-[11px] text-ink-3 opacity-0 transition-opacity duration-150 group-hover/row:opacity-100">
+          Open
+        </span>
+      )}
+    </>
+  );
+}
+
 export function ToolCalls({
   parts,
   projectId,
@@ -293,7 +388,12 @@ export function ToolCalls({
   return (
     <div className={className}>
       {teamParts.map((part) => (
-        <TeamRunReport key={part.toolCallId ?? part.type} part={part} />
+        <TeamRunReport
+          key={part.toolCallId ?? part.type}
+          part={part}
+          pathIndex={pathIndex}
+          onOpenFile={(id) => openFile(id, { pinned: false })}
+        />
       ))}
 
       {askParts.map((part) => (
@@ -378,77 +478,13 @@ export function ToolCalls({
                 };
 
                 const content = (
-                  <>
-                    <span className="flex size-4 shrink-0 items-center justify-center">
-                      {row.running ? (
-                        <span
-                          className="size-3 rounded-full border-[1.5px] border-line-strong border-t-ink-2"
-                          style={{ animation: "spin 700ms linear infinite" }}
-                        />
-                      ) : (
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className={row.failed ? "text-red" : "text-ink-3"}
-                        >
-                          {row.failed ? (
-                            <path d="M18 6L6 18M6 6l12 12" />
-                          ) : (
-                            <path d="M20 6L9 17l-5-5" />
-                          )}
-                        </svg>
-                      )}
-                    </span>
-
-                    <span className="min-w-0 shrink-0 truncate text-[12.5px] font-medium text-ink">
-                      {row.label}
-                    </span>
-
-                    {row.detail?.kind === "file" && (
-                      <span
-                        className="inline-flex h-5.5 min-w-0 max-w-60 items-center gap-1 rounded-chip bg-field px-1.5 font-mono text-[11.5px] text-ink-2 shadow-hairline"
-                        title={row.detail.path}
-                      >
-                        {row.detail.isFolder ? (
-                          <FolderIcon
-                            folderName={row.detail.name}
-                            className="size-4 shrink-0"
-                          />
-                        ) : (
-                          <FileIcon
-                            fileName={row.detail.name}
-                            autoAssign
-                            className="size-4 shrink-0"
-                          />
-                        )}
-                        <span className="truncate">{row.detail.name}</span>
-                      </span>
-                    )}
-
-                    {row.detail?.kind === "code" && (
-                      <span className="min-w-0 flex-1 truncate rounded-chip bg-field px-1.5 font-mono text-[11.5px] text-ink-2 shadow-hairline">
-                        {row.detail.text}
-                      </span>
-                    )}
-
-                    {row.detail?.kind === "search" && (
-                      <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">
-                        {row.detail.text}
-                      </span>
-                    )}
-
-                    {canOpen && (
-                      <span className="ml-auto shrink-0 text-[11px] text-ink-3 opacity-0 transition-opacity duration-150 group-hover/row:opacity-100">
-                        Open
-                      </span>
-                    )}
-                  </>
+                  <ToolRowContent
+                    label={row.label}
+                    running={row.running}
+                    failed={row.failed}
+                    detail={row.detail}
+                    node={row.node}
+                  />
                 );
 
                 const rowClass =
@@ -558,12 +594,41 @@ function teamTools(source: unknown, key: string): TeamTool[] {
   );
 }
 
-/** Friendly label for a team tool, reusing the timeline's labels. */
-function teamToolLabel(name: string): string {
-  const base = name.startsWith(WORKSPACE_PREFIX)
+/** Strip the workspace prefix to get the bare tool id (e.g. `write_file`). */
+function teamToolBase(name: string): string {
+  return name.startsWith(WORKSPACE_PREFIX)
     ? name.slice(WORKSPACE_PREFIX.length)
     : name;
-  return TOOL_LABELS[base] ?? prettify(base);
+}
+
+const FILE_TOOLS = new Set([
+  "read_file",
+  "write_file",
+  "edit_file",
+  "ast_edit",
+  "delete",
+  "file_stat",
+  "mkdir",
+  "list_files",
+]);
+
+const SEARCH_TOOLS = new Set(["grep", "search", "web-search"]);
+
+/** Rebuild a row detail from a team tool's name + target string. */
+function detailFromTarget(base: string, target?: string): Detail | undefined {
+  if (!target) return undefined;
+  if (FILE_TOOLS.has(base)) {
+    const path = normalizePath(target);
+    const name = path.split("/").pop() || path;
+    return {
+      kind: "file",
+      path,
+      name,
+      isFolder: base === "mkdir" || base === "list_files",
+    };
+  }
+  if (SEARCH_TOOLS.has(base)) return { kind: "search", text: target };
+  return { kind: "code", text: target };
 }
 
 /**
@@ -572,7 +637,15 @@ function teamToolLabel(name: string): string {
  * Review / Builder), each itself expandable to reveal that agent's output.
  * Reads the tool's own input/output so it persists in the conversation.
  */
-function TeamRunReport({ part }: { part: ToolPart }) {
+function TeamRunReport({
+  part,
+  pathIndex,
+  onOpenFile,
+}: {
+  part: ToolPart;
+  pathIndex: Map<string, ProjectFileType>;
+  onOpenFile: (id: string) => void;
+}) {
   const [open, setOpen] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -715,25 +788,44 @@ function TeamRunReport({ part }: { part: ToolPart }) {
 
                         {item.tools.length > 0 ? (
                           <div className="mt-1 flex flex-col gap-0.5">
-                            {item.tools.map((tool, toolIndex) => (
-                              <div
-                                key={`${tool.name}-${toolIndex}`}
-                                className="flex min-w-0 items-center gap-1.5 text-[11px]"
-                              >
-                                <span className="size-1 shrink-0 rounded-full bg-ink-3" />
-                                <span className="shrink-0 font-medium text-ink-2">
-                                  {teamToolLabel(tool.name)}
-                                </span>
-                                {tool.target ? (
-                                  <span
-                                    className="min-w-0 truncate font-mono text-ink-3"
-                                    title={tool.target}
-                                  >
-                                    {tool.target}
-                                  </span>
-                                ) : null}
-                              </div>
-                            ))}
+                            {item.tools.map((tool, toolIndex) => {
+                              const base = teamToolBase(tool.name);
+                              const detail = detailFromTarget(base, tool.target);
+                              const node =
+                                detail?.kind === "file"
+                                  ? pathIndex.get(detail.path)
+                                  : undefined;
+                              const openable = node?.type === "file";
+                              const rowClass =
+                                "group/row relative flex min-h-7 w-full items-center gap-2 rounded-[6px] px-1.5 py-0.5 text-left transition-colors duration-150 hover:bg-hover";
+                              const rowContent = (
+                                <ToolRowContent
+                                  label={TOOL_LABELS[base] ?? prettify(base)}
+                                  running={false}
+                                  failed={false}
+                                  detail={detail}
+                                  node={node}
+                                />
+                              );
+
+                              return openable ? (
+                                <button
+                                  key={`${tool.name}-${toolIndex}`}
+                                  type="button"
+                                  onClick={() => onOpenFile(node!.id)}
+                                  className={rowClass}
+                                >
+                                  {rowContent}
+                                </button>
+                              ) : (
+                                <div
+                                  key={`${tool.name}-${toolIndex}`}
+                                  className={rowClass}
+                                >
+                                  {rowContent}
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : null}
                       </div>

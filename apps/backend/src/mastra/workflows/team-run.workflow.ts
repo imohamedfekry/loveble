@@ -197,12 +197,15 @@ const prepareStep = createStep({
   outputSchema: briefSchema,
   execute: ({ inputData, requestContext, runId }) => {
     ensureWorkspaceRunKey(requestContext, 'build');
+    const projectId = projectIdOf(requestContext);
+    const detail = inputData.request.slice(0, DETAIL_LIMIT);
+    teamRunEvents.emit({ runId, projectId, phase: 'prepare', status: 'start' });
     teamRunEvents.emit({
       runId,
-      projectId: projectIdOf(requestContext),
+      projectId,
       phase: 'prepare',
-      status: 'start',
-      detail: inputData.request.slice(0, 300),
+      status: 'done',
+      detail,
     });
     return Promise.resolve({ brief: inputData.request });
   },
