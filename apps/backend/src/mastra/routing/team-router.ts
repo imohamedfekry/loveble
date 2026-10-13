@@ -158,22 +158,16 @@ export type ChatRoute = {
  * Routing is based purely on need — a project's first message is treated like
  * any other, so a large first prompt can still reach the team.
  */
-export async function resolveChatAgent(params: {
+export function resolveChatAgent(params: {
   mode: ChatMode;
   message: string;
-}): Promise<ChatRoute> {
-  const { mode, message } = params;
+}): ChatRoute {
+  const { mode } = params;
 
   if (mode === 'plan') {
     return { agentId: CHAT_AGENT_IDS.plan, reason: 'plan-mode' };
   }
 
-  const trigger = heuristicTrigger(message);
-  if (trigger === 'team') {
-    return { agentId: TEAM_SUPERVISOR_AGENT_ID, reason: 'heuristic' };
-  }
-  if (trigger === 'uncertain' && (await classifyWithLlm(message)) === 'team') {
-    return { agentId: TEAM_SUPERVISOR_AGENT_ID, reason: 'classifier' };
-  }
+  // Team building disabled for stability: default to builder agent for build mode.
   return { agentId: CHAT_AGENT_IDS.build, reason: 'default' };
 }
