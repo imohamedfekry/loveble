@@ -33,6 +33,14 @@ const PARTIAL_THROTTLE_MS = 400;
  */
 const SPECIALIST_TIMEOUT_MS = 10 * 60_000;
 
+/**
+ * Blind-stall budget: if a specialist produces no text chunk and no finished
+ * step within this window (e.g. the first model call never answers), abort
+ * early instead of sitting silent until the total budget. The timer resets on
+ * every sign of life.
+ */
+const FIRST_OUTPUT_STALL_MS = 3 * 60_000;
+
 /** One tool call an agent made, surfaced to the UI so a run is inspectable. */
 const toolSchema = z.object({
   name: z.string(),
@@ -200,16 +208,37 @@ async function runSpecialist({
   };
 
   const controller = new AbortController();
+  let abortReason: 'budget' | 'stall' | null = null;
   const budgetTimer = setTimeout(() => {
+    abortReason = 'budget';
     console.warn(
       `[team-run] ${phase} hit the ${SPECIALIST_TIMEOUT_MS / 60000}min budget after ${stepCount} steps, aborting`,
     );
     controller.abort();
   }, SPECIALIST_TIMEOUT_MS);
-  // A budgeted stream must not keep the process alive on its own.
+  // Budgeted streams must not keep the process alive on their own.
   budgetTimer.unref?.();
 
+  // Blind-stall watchdog: reset on every chunk / finished step. If the agent
+  // goes silent (typically a first model call that never answers), abort long
+  // before the total budget so the user isn't left staring at a frozen phase.
+  let stallTimer: ReturnType<typeof setTimeout> | null = null;
+  const pokeStall = () => {
+    if (stallTimer) clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => {
+      abortReason = 'stall';
+      console.warn(
+        `[team-run] ${phase} produced no output for ${FIRST_OUTPUT_STALL_MS / 60000}min after ${stepCount} steps, aborting`,
+      );
+      controller.abort();
+    }, FIRST_OUTPUT_STALL_MS);
+    stallTimer.unref?.();
+  };
+
   try {
+    // Arm the stall watchdog before stream creation too — memory/thread
+    // loading happens inside this await and must not hang silently either.
+    pokeStall();
     const stream = await agent.stream(prompt, {
       requestContext: scopeRequestContextForRole(requestContext, role),
       maxSteps,
@@ -226,9 +255,14 @@ async function runSpecialist({
         console.log(
           `[team-run] ${phase} step ${stepCount} done in ${Date.now() - startedAt}ms tools=${stepTools.length}`,
         );
+        pokeStall();
         emitProgress(true);
       },
     });
+    console.log(
+      `[team-run] ${phase} stream opened in ${Date.now() - startedAt}ms`,
+    );
+    pokeStall();
 
     const reader = stream.textStream.getReader();
     try {
@@ -237,6 +271,7 @@ async function runSpecialist({
         if (done) break;
         if (value) {
           liveText += value;
+          pokeStall();
           emitProgress();
         }
       }
@@ -262,25 +297,34 @@ async function runSpecialist({
     });
     return { summary, tools: allTools };
   } catch (error) {
-    // Budget abort: finish the phase with the partial work instead of hanging
-    // (or failing) the whole run — the workflow and chat complete normally.
+    // Aborted by our own watchdog: if the phase produced anything, finish with
+    // the partial work so the run completes. With zero output there is nothing
+    // to keep — fail loudly so the supervisor sees the stall and can react
+    // instead of reporting a success that built nothing.
     if (controller.signal.aborted) {
       const summary = liveText.trim();
-      console.warn(
-        `[team-run] ${phase} aborted after ${Date.now() - startedAt}ms steps=${stepCount}, keeping partial summary (${summary.length} chars) + ${tools.length} tools`,
-      );
-      teamRunEvents.emit({
-        ...base,
-        status: 'done',
-        detail: summary.slice(0, DETAIL_LIMIT),
-        tools,
-      });
-      return { summary, tools };
+      if (summary || tools.length > 0) {
+        console.warn(
+          `[team-run] ${phase} aborted (${abortReason ?? 'unknown'}) after ${Date.now() - startedAt}ms steps=${stepCount}, keeping partial summary (${summary.length} chars) + ${tools.length} tools`,
+        );
+        teamRunEvents.emit({
+          ...base,
+          status: 'done',
+          detail: summary.slice(0, DETAIL_LIMIT),
+          tools,
+        });
+        return { summary, tools };
+      }
+      const message = `${phase} specialist produced no output before abort (${abortReason ?? 'unknown'} after ${Date.now() - startedAt}ms, ${stepCount} steps) — likely a stalled model call`;
+      console.error(`[team-run] ${message}`);
+      teamRunEvents.emit({ ...base, status: 'error', detail: message });
+      throw new Error(message, { cause: error });
     }
     teamRunEvents.emit({ ...base, status: 'error', detail: describe(error) });
     throw error;
   } finally {
     clearTimeout(budgetTimer);
+    if (stallTimer) clearTimeout(stallTimer);
   }
 }
 
