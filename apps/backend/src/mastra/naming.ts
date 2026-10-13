@@ -32,7 +32,9 @@ export const ProjectAndConversationNamesSchema = v.object({
 });
 
 export type ProjectNameOutput = v.InferOutput<typeof ProjectNameSchema>;
-export type ProjectAndConversationNames = v.InferOutput<typeof ProjectAndConversationNamesSchema>;
+export type ProjectAndConversationNames = v.InferOutput<
+  typeof ProjectAndConversationNamesSchema
+>;
 
 export async function generateProjectName(
   prompt: string,

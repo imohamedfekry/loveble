@@ -25,6 +25,14 @@ const DETAIL_LIMIT = 2000;
 /** Minimum gap between live partial-text emissions from a running specialist. */
 const PARTIAL_THROTTLE_MS = 400;
 
+/**
+ * Hard wall-clock budget per specialist. A single hanging tool call or model
+ * stall must never wedge the whole team run (and the chat stream above it)
+ * forever — when the budget hits we abort the stream and finish the phase with
+ * whatever partial summary + tool calls were produced so far.
+ */
+const SPECIALIST_TIMEOUT_MS = 10 * 60_000;
+
 /** One tool call an agent made, surfaced to the UI so a run is inspectable. */
 const toolSchema = z.object({
   name: z.string(),
@@ -176,6 +184,8 @@ async function runSpecialist({
   const tools: TeamToolCall[] = [];
   let liveText = '';
   let lastEmit = 0;
+  let stepCount = 0;
+  const startedAt = Date.now();
 
   const emitProgress = (force = false) => {
     const now = Date.now();
@@ -189,19 +199,34 @@ async function runSpecialist({
     });
   };
 
+  const controller = new AbortController();
+  const budgetTimer = setTimeout(() => {
+    console.warn(
+      `[team-run] ${phase} hit the ${SPECIALIST_TIMEOUT_MS / 60000}min budget after ${stepCount} steps, aborting`,
+    );
+    controller.abort();
+  }, SPECIALIST_TIMEOUT_MS);
+  // A budgeted stream must not keep the process alive on its own.
+  budgetTimer.unref?.();
+
   try {
     const stream = await agent.stream(prompt, {
       requestContext: scopeRequestContextForRole(requestContext, role),
       maxSteps,
       ...(memory ? { memory } : {}),
+      abortSignal: controller.signal,
       onStepFinish: (step) => {
+        stepCount += 1;
         const stepTools = extractTools({
           toolCalls: (step.toolCalls ?? []) as unknown[],
         });
         if (stepTools.length > 0) {
           tools.push(...stepTools);
-          emitProgress(true);
         }
+        console.log(
+          `[team-run] ${phase} step ${stepCount} done in ${Date.now() - startedAt}ms tools=${stepTools.length}`,
+        );
+        emitProgress(true);
       },
     });
 
@@ -226,6 +251,9 @@ async function runSpecialist({
         ? tools
         : extractTools({ toolCalls: await stream.toolCalls });
 
+    console.log(
+      `[team-run] ${phase} finished in ${Date.now() - startedAt}ms steps=${stepCount} tools=${allTools.length}`,
+    );
     teamRunEvents.emit({
       ...base,
       status: 'done',
@@ -234,8 +262,25 @@ async function runSpecialist({
     });
     return { summary, tools: allTools };
   } catch (error) {
+    // Budget abort: finish the phase with the partial work instead of hanging
+    // (or failing) the whole run — the workflow and chat complete normally.
+    if (controller.signal.aborted) {
+      const summary = liveText.trim();
+      console.warn(
+        `[team-run] ${phase} aborted after ${Date.now() - startedAt}ms steps=${stepCount}, keeping partial summary (${summary.length} chars) + ${tools.length} tools`,
+      );
+      teamRunEvents.emit({
+        ...base,
+        status: 'done',
+        detail: summary.slice(0, DETAIL_LIMIT),
+        tools,
+      });
+      return { summary, tools };
+    }
     teamRunEvents.emit({ ...base, status: 'error', detail: describe(error) });
     throw error;
+  } finally {
+    clearTimeout(budgetTimer);
   }
 }
 

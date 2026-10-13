@@ -3,7 +3,6 @@ import { inngest } from './client';
 
 export const INNGEST_EVENTS = {
   CRAWL_RUN: 'crawl/run',
-  PROJECT_CREATE: 'project/create',
   FILE_PERSIST: 'file/persist',
   SEND_EMAIL: 'email/send',
   CONVERSATION_NAME: 'conversation/name',
@@ -21,10 +20,6 @@ export class InngestService {
 
   crawl(urls: string[]) {
     return this.send(INNGEST_EVENTS.CRAWL_RUN, { urls });
-  }
-
-  createProject(data: { projectId: string; prompt: string; model?: string }) {
-    return this.send(INNGEST_EVENTS.PROJECT_CREATE, data);
   }
 
   persistFile(data: { fileId: string; projectId?: string }) {
@@ -51,7 +46,7 @@ export class InngestService {
     return this.send(INNGEST_EVENTS.CONVERSATION_NAME, data);
   }
 
-  /** Force the build agent on the very first message of a brand-new project. */
+  /** Run the routed agent (builder or team) on the first message of a project. */
   runFirstBuild(data: {
     projectId: string;
     conversationId: string;

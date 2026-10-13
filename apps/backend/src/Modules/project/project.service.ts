@@ -124,20 +124,9 @@ export class projectService {
       }
     }
 
-    // Prompt-based creates get the final short names via Inngest; never blocks.
-    // Explicit sidebar names are final as typed — no regeneration.
-    if (!hasExplicitName && prompt) {
-      void this.inngestService
-        .nameConversation({
-          projectId: project.id.toString(),
-          conversationId: project.id.toString(),
-          text: prompt,
-        })
-        .catch((err) => {
-          this.logger.warn(`naming enqueue failed for ${project.id}: ${err}`);
-        });
-    }
-
+    // Naming (project name + conversation title) is enqueued inside
+    // createWithInitialMessage as one unified job. Explicit sidebar names are
+    // final as typed — nameGenerated is already true, so no regeneration.
     return success(RESPONSE_MESSAGES.PROJECT.CREATE.SUCCESS, {
       project: project,
     });
