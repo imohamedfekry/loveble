@@ -6,6 +6,6 @@ import { E2bService } from './e2b.service';
 @Module({
   controllers: [SandboxController],
   providers: [SandboxService, E2bService],
-  exports: [SandboxService],
+  exports: [SandboxService, E2bService],
 })
 export class SandboxModule {}

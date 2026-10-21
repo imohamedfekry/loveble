@@ -8,6 +8,7 @@ import Image from "next/image";
 import { RotateCcwIcon, TriangleAlertIcon } from "lucide-react";
 import { FileExplorer } from "./file-explorer";
 import { EditorView } from "./editor/editor-view";
+import { PreviewPane } from "./preview-pane";
 import { useEditorStore } from "@/store/use-editor-store";
 import { ensureSandbox } from "@/lib/hooks/projects/useLoadProject";
 
@@ -184,9 +185,12 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                     "absolute inset-0",
                     activeView === "preview" ? "visible" : "invisible",
                 )}>
-                    <div className="p-4 text-sm text-muted-foreground">
-                        preview : {projectId}
-                    </div>
+                    {activeView === "preview" && (
+                        <PreviewPane
+                            projectId={projectId}
+                            sandboxState={sandboxState}
+                        />
+                    )}
                 </div>
             </div>
         </div>

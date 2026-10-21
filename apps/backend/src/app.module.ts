@@ -13,6 +13,7 @@ import { InngestModule } from './common/inngest/inngest.module';
 import { PersistenceModule } from './common/persistence/persistence.module';
 import { AiModule } from './Modules/ai/ai.module';
 import { ConversationsModule } from './Modules/conversations/conversations.module';
+import { PreviewModule } from './Modules/preview/preview.module';
 import { SpecScribeModule } from 'specscribe';
 
 @Module({
@@ -33,6 +34,7 @@ import { SpecScribeModule } from 'specscribe';
     AiModule,
     SandboxModule,
     ConversationsModule,
+    PreviewModule,
   ],
 })
 export class AppModule {}

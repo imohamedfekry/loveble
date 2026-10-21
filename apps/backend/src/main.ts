@@ -14,6 +14,7 @@ import { fastifyPlugin } from 'inngest/fastify';
 import { inngest } from './common/inngest/client';
 import { functions } from './common/inngest/functions';
 import { setNestApp } from './common/inngest/nest-context';
+import { registerPreviewProxy } from './Modules/preview/preview.proxy';
 import * as Sentry from '@sentry/nestjs';
 
 async function bootstrap() {
@@ -22,13 +23,15 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
 
-  const fastify = app.getHttpAdapter().getInstance() as {
-    register: (plugin: unknown, opts?: unknown) => void;
-  };
+  const fastify = app.getHttpAdapter().getInstance();
   fastify.register(fastifyPlugin, {
     client: inngest,
     functions,
   });
+
+  // Preview proxy: raw Fastify routes so sandbox responses stream through
+  // unwrapped (outside the Nest response envelope).
+  registerPreviewProxy(fastify, app);
 
   process.on('unhandledRejection', (reason) => {
     Sentry.captureException(reason);
