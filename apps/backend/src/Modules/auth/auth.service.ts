@@ -197,7 +197,7 @@ export class AuthService {
     const callbackURL =
       process.env.OAUTH_CALLBACK_URL ??
       this.configService.get<string>('app.oauthCallbackUrl') ??
-      'http://localhost:3000/callback';
+      'https://app.loveble.localhost/callback';
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: callbackURL,

@@ -1,13 +1,15 @@
 "use client";
 
 import { cn } from "@loveble/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaGithub } from "react-icons/fa";
 import { Allotment } from "allotment";
 import Image from "next/image";
-import { RotateCcwIcon, TriangleAlertIcon } from "lucide-react";
+import { RotateCcwIcon, SquareTerminalIcon, TriangleAlertIcon } from "lucide-react";
 import { FileExplorer } from "./file-explorer";
 import { EditorView } from "./editor/editor-view";
+import { PreviewPane } from "./preview-pane";
+import { TerminalDock } from "./terminal-dock";
 import { useEditorStore } from "@/store/use-editor-store";
 import { ensureSandbox } from "@/lib/hooks/projects/useLoadProject";
 
@@ -117,7 +119,18 @@ const SandboxError = ({
 
 export const ProjectIdView = ({ projectId }: { projectId: string }) => {
     const [activeView, setActiveView] = useState<"editor" | "preview">("editor");
+    const [terminalOpen, setTerminalOpen] = useState(false);
     const sandboxState = useEditorStore((s) => s.getSandboxState(projectId));
+
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.code !== "Backquote" || !event.ctrlKey) return;
+            event.preventDefault();
+            setTerminalOpen((open) => !open);
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, []);
 
     const renderEditorPane = () => {
         if (sandboxState.status === "starting") {
@@ -152,6 +165,19 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                 <div className="flex h-full flex-1 justify-end">
                     <button
                         type="button"
+                        aria-pressed={terminalOpen}
+                        title="Toggle terminal (Ctrl+`)"
+                        onClick={() => setTerminalOpen((open) => !open)}
+                        className={cn(
+                            "flex h-full items-center gap-1.5 border-l border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground active:scale-[0.96]",
+                            terminalOpen && "bg-foreground/5 text-foreground",
+                        )}
+                    >
+                        <SquareTerminalIcon className="size-3.5" />
+                        <span className="text-sm">Terminal</span>
+                    </button>
+                    <button
+                        type="button"
                         className="flex h-full items-center gap-1.5 border-l border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground active:scale-[0.96]"
                     >
                         <FaGithub className="size-3.5" />
@@ -159,7 +185,7 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                     </button>
                 </div>
             </nav>
-            <div className="relative flex-1 bg-card ">
+            <div className="relative min-h-0 flex-1 bg-card ">
                 <div className={cn(
                     "absolute inset-0",
                     activeView === "editor" ? "visible" : "invisible",
@@ -184,11 +210,20 @@ export const ProjectIdView = ({ projectId }: { projectId: string }) => {
                     "absolute inset-0",
                     activeView === "preview" ? "visible" : "invisible",
                 )}>
-                    <div className="p-4 text-sm text-muted-foreground">
-                        preview : {projectId}
-                    </div>
+                    {activeView === "preview" && (
+                        <PreviewPane
+                            projectId={projectId}
+                            sandboxState={sandboxState}
+                        />
+                    )}
                 </div>
             </div>
+
+            <TerminalDock
+                projectId={projectId}
+                open={terminalOpen}
+                onClose={() => setTerminalOpen(false)}
+            />
         </div>
     );
 };

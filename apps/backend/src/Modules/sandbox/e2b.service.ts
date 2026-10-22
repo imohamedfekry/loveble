@@ -1,10 +1,49 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Sandbox, SandboxError, SandboxNotFoundError } from 'e2b';
+import {
+  Sandbox,
+  SandboxError,
+  SandboxNotFoundError,
+  type CommandHandle,
+  type CommandStartOpts,
+  type EntryInfo,
+  type ProcessInfo,
+} from 'e2b';
 
 export interface SandboxStatus {
   sandboxId: string;
   state: 'running' | 'paused';
+}
+
+/** A single file to write into the sandbox filesystem. */
+export interface SandboxFileEntry {
+  path: string;
+  data: string;
+}
+
+/** Result of starting a background (long-running) command. */
+export interface BackgroundCommand {
+  pid: number;
+}
+
+/** Live pseudo-terminal inside a sandbox (interactive shell). */
+export interface PtyHandle {
+  pid: number;
+  sendInput(data: Uint8Array): Promise<void>;
+  resize(cols: number, rows: number): Promise<void>;
+  kill(): Promise<boolean>;
+  disconnect(): Promise<void>;
+  wait(): Promise<{ exitCode?: number }>;
+}
+
+export interface PtyOptions {
+  cols: number;
+  rows: number;
+  cwd?: string;
+  envs?: Record<string, string>;
+  /** 0 keeps the session open until it is killed or exits on its own. */
+  timeoutMs?: number;
+  onData: (data: Uint8Array) => void;
 }
 
 @Injectable()
@@ -15,7 +54,12 @@ export class E2bService {
 
   async create(): Promise<{ sandboxId: string }> {
     const apiKey = this.configService.get<string>('e2b.key');
-    const sandbox = await Sandbox.create({ apiKey: apiKey });
+    const sandbox = await Sandbox.create(
+      { 
+        apiKey: apiKey,
+        network: { allowPublicTraffic: false }
+      }
+    );
 
     this.logger.log(`E2B sandbox created: ${sandbox.sandboxId}`);
 
@@ -103,5 +147,124 @@ export class E2bService {
     const sandbox = await Sandbox.connect(sandboxId, { apiKey: apiKey });
 
     await sandbox.kill();
+  }
+
+  private async connect(sandboxId: string): Promise<Sandbox> {
+    const apiKey = this.configService.get<string>('e2b.key');
+    return Sandbox.connect(sandboxId, { apiKey: apiKey });
+  }
+
+  /** Public URL hostname for a port exposed by the sandbox. */
+  async getHost(sandboxId: string, port: number): Promise<string> {
+    const sandbox = await this.connect(sandboxId);
+    return sandbox.getHost(port);
+  }
+
+  /** Write multiple files in one request (creates parent directories). */
+  async writeFiles(
+    sandboxId: string,
+    files: SandboxFileEntry[],
+    opts?: { requestTimeoutMs?: number },
+  ): Promise<void> {
+    if (files.length === 0) return;
+    const sandbox = await this.connect(sandboxId);
+    await sandbox.files.writeFiles(files, {
+      requestTimeoutMs: opts?.requestTimeoutMs,
+    });
+  }
+
+  /** Read a file as UTF-8 text. */
+  async readFile(sandboxId: string, path: string): Promise<string> {
+    const sandbox = await this.connect(sandboxId);
+    return sandbox.files.read(path, { format: 'text' });
+  }
+
+  /** Whether a path exists in the sandbox filesystem. */
+  async exists(sandboxId: string, path: string): Promise<boolean> {
+    const sandbox = await this.connect(sandboxId);
+    return sandbox.files.exists(path);
+  }
+
+  /** List directory entries. */
+  async list(sandboxId: string, path: string): Promise<EntryInfo[]> {
+    const sandbox = await this.connect(sandboxId);
+    return sandbox.files.list(path);
+  }
+
+  /** Run a command to completion and return its output. */
+  async runCommand(
+    sandboxId: string,
+    command: string,
+    opts?: Omit<CommandStartOpts, 'background'>,
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+    const sandbox = await this.connect(sandboxId);
+    const result = await sandbox.commands.run(command, opts);
+    return {
+      stdout: result.stdout,
+      stderr: result.stderr,
+      exitCode: result.exitCode,
+    };
+  }
+
+  /**
+   * Start a long-running command without waiting. The process keeps running on
+   * the sandbox; we disconnect the log stream immediately so the connection is
+   * not held open for the lifetime of the process.
+   */
+  async runBackground(
+    sandboxId: string,
+    command: string,
+    opts?: Omit<CommandStartOpts, 'background'>,
+  ): Promise<BackgroundCommand> {
+    const sandbox = await this.connect(sandboxId);
+    const handle: CommandHandle = await sandbox.commands.run(command, {
+      ...opts,
+      background: true,
+    });
+    const pid = handle.pid;
+    // Stop receiving output; the process itself keeps running.
+    void handle.disconnect().catch(() => undefined);
+    return { pid };
+  }
+
+  /** List running processes inside the sandbox. */
+  async listProcesses(sandboxId: string): Promise<ProcessInfo[]> {
+    const sandbox = await this.connect(sandboxId);
+    return sandbox.commands.list();
+  }
+
+  /** Kill a running process by pid. */
+  async killProcess(sandboxId: string, pid: number): Promise<boolean> {
+    const sandbox = await this.connect(sandboxId);
+    return sandbox.commands.kill(pid);
+  }
+
+  /**
+   * Open an interactive PTY (bash -i) inside the sandbox. The returned handle
+   * keeps the sandbox connection alive so keystrokes can be written without
+   * reconnecting on every chunk.
+   */
+  async createPty(sandboxId: string, opts: PtyOptions): Promise<PtyHandle> {
+    const sandbox = await this.connect(sandboxId);
+    const handle = await sandbox.pty.create({
+      cols: opts.cols,
+      rows: opts.rows,
+      cwd: opts.cwd,
+      envs: opts.envs,
+      timeoutMs: opts.timeoutMs,
+      onData: opts.onData,
+    });
+
+    return {
+      pid: handle.pid,
+      sendInput: (data) => sandbox.pty.sendInput(handle.pid, data),
+      resize: (cols, rows) => sandbox.pty.resize(handle.pid, { cols, rows }),
+      kill: () => sandbox.pty.kill(handle.pid),
+      disconnect: () => handle.disconnect(),
+      wait: async () => {
+        const result = await handle.wait();
+        return { exitCode: result.exitCode };
+      },
+    };
   }
 }

@@ -8,23 +8,29 @@ import { CatchAllFilter } from '../../filters/catchAll.filter';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 
-type RegisterPlugin = Parameters<NestFastifyApplication['register']>[0];
-
 export class BootstrapConfig {
   static async configureApp(
     app: NestFastifyApplication,
     configService: ConfigService,
   ) {
     const corsOrigins = configService.get<string | string[]>('app.cors.origin');
-    const origins = Array.isArray(corsOrigins)
-      ? corsOrigins
+    const configured = Array.isArray(corsOrigins)
+      ? corsOrigins.map((origin) => origin.trim())
       : corsOrigins
         ? corsOrigins.split(',').map((o) => o.trim())
+        : [];
+
+    // `*` cannot be combined with credentials; reflect the request origin.
+    const origins = configured.includes('*')
+      ? true
+      : configured.length > 0
+        ? configured
         : [
-            'http://localhost:3001',
-            'http://localhost:5500',
+            'https://app.loveble.localhost',
             'http://localhost:3000',
+            'http://localhost:3001',
             'http://localhost:4200',
+            'http://localhost:5500',
             'http://localhost:3730',
             'http://localhost:8288',
           ];
