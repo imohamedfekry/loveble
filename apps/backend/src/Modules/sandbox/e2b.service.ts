@@ -26,6 +26,26 @@ export interface BackgroundCommand {
   pid: number;
 }
 
+/** Live pseudo-terminal inside a sandbox (interactive shell). */
+export interface PtyHandle {
+  pid: number;
+  sendInput(data: Uint8Array): Promise<void>;
+  resize(cols: number, rows: number): Promise<void>;
+  kill(): Promise<boolean>;
+  disconnect(): Promise<void>;
+  wait(): Promise<{ exitCode?: number }>;
+}
+
+export interface PtyOptions {
+  cols: number;
+  rows: number;
+  cwd?: string;
+  envs?: Record<string, string>;
+  /** 0 keeps the session open until it is killed or exits on its own. */
+  timeoutMs?: number;
+  onData: (data: Uint8Array) => void;
+}
+
 @Injectable()
 export class E2bService {
   private readonly logger = new Logger(E2bService.name);
@@ -34,7 +54,12 @@ export class E2bService {
 
   async create(): Promise<{ sandboxId: string }> {
     const apiKey = this.configService.get<string>('e2b.key');
-    const sandbox = await Sandbox.create({ apiKey: apiKey });
+    const sandbox = await Sandbox.create(
+      { 
+        apiKey: apiKey,
+        network: { allowPublicTraffic: false }
+      }
+    );
 
     this.logger.log(`E2B sandbox created: ${sandbox.sandboxId}`);
 
@@ -212,5 +237,34 @@ export class E2bService {
   async killProcess(sandboxId: string, pid: number): Promise<boolean> {
     const sandbox = await this.connect(sandboxId);
     return sandbox.commands.kill(pid);
+  }
+
+  /**
+   * Open an interactive PTY (bash -i) inside the sandbox. The returned handle
+   * keeps the sandbox connection alive so keystrokes can be written without
+   * reconnecting on every chunk.
+   */
+  async createPty(sandboxId: string, opts: PtyOptions): Promise<PtyHandle> {
+    const sandbox = await this.connect(sandboxId);
+    const handle = await sandbox.pty.create({
+      cols: opts.cols,
+      rows: opts.rows,
+      cwd: opts.cwd,
+      envs: opts.envs,
+      timeoutMs: opts.timeoutMs,
+      onData: opts.onData,
+    });
+
+    return {
+      pid: handle.pid,
+      sendInput: (data) => sandbox.pty.sendInput(handle.pid, data),
+      resize: (cols, rows) => sandbox.pty.resize(handle.pid, { cols, rows }),
+      kill: () => sandbox.pty.kill(handle.pid),
+      disconnect: () => handle.disconnect(),
+      wait: async () => {
+        const result = await handle.wait();
+        return { exitCode: result.exitCode };
+      },
+    };
   }
 }

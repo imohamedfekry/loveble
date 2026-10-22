@@ -1,8 +1,9 @@
 import type { ApiResponse, ApiSuccess } from "@loveble/types/envelope";
 
-export const API_BASE_URL =
-  (process.env.NEXT_PUBLIC_API_URL as string | undefined) ??
-  "http://localhost:3001/api/v1";
+import { API_BASE_URL } from "../api";
+
+export { API_BASE_URL } from "../api";
+
 const DEFAULT_TIMEOUT = 15000; // 15 seconds
 
 export async function apiFetch<T>(

@@ -8,7 +8,7 @@ export default registerAs('app', () => ({
   apiVersion: 'v1',
 
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || '*',
+    origin: process.env.CORS_ORIGIN?.split(',') ?? '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   },

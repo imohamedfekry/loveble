@@ -49,15 +49,30 @@ const TOOL_LABELS: Record<string, string> = {
   execute_command: "Run",
   get_process_output: "Read output",
   kill_process: "Stop process",
+  terminal: "Run command",
+  "preview-read": "Read preview",
+  "preview-logs": "Preview logs",
   "web-search": "Search the web",
   "web-crawl": "Read page",
   updateWorkingMemory: "Update memory",
+  "update-working-memory": "Update memory",
+  setWorkingMemory: "Set memory",
+  "set-working-memory": "Set memory",
 };
+
+/** Mastra emits the working-memory tool under either the wire or kebab id. */
+const MEMORY_TOOLS = new Set([
+  "updateWorkingMemory",
+  "update-working-memory",
+  "setWorkingMemory",
+  "set-working-memory",
+]);
 
 type Category = "command" | "read" | "write" | "search" | "other";
 
 const CATEGORY: Record<string, Category> = {
   execute_command: "command",
+  terminal: "command",
   read_file: "read",
   list_files: "read",
   file_stat: "read",
@@ -119,10 +134,117 @@ function inputString(input: unknown, key: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+function inputValue(input: unknown, key: string): unknown {
+  if (!input || typeof input !== "object") return undefined;
+  return (input as Record<string, unknown>)[key];
+}
+
+function toText(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "string") return value.trim() ? value : undefined;
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+function oneLine(value: string, max = 90): string {
+  const line = value.replace(/\s+/g, " ").trim();
+  return line.length > max ? `${line.slice(0, max)}…` : line;
+}
+
+/** The expandable payload behind a tool row: what it sent and what it got back. */
+type ToolSection = { label: string; text: string };
+
+function sectionsFor(
+  base: string,
+  input: unknown,
+  output: unknown,
+): ToolSection[] {
+  const sections: ToolSection[] = [];
+  const push = (label: string, value: unknown) => {
+    const text = toText(value);
+    if (text) sections.push({ label, text });
+  };
+  const out =
+    output && typeof output === "object"
+      ? (output as Record<string, unknown>)
+      : undefined;
+
+  if (MEMORY_TOOLS.has(base)) {
+    const memoryInput =
+      typeof input === "string" ? input : inputValue(input, "memory");
+    const memory = toText(memoryInput);
+    if (memory) push("Memory", memory);
+    else if (input !== undefined) push("Input", input);
+    if (out?.message) push("Result", out.message);
+    if (sections.length === 0 && output !== undefined) push("Result", output);
+  } else if (base === "terminal" || base === "execute_command") {
+    push("Command", inputValue(input, "command"));
+    if (out) {
+      push("Output", out.stdout ?? out.output);
+      push("Errors", out.stderr);
+      if (typeof out.exitCode === "number") {
+        push("Exit code", String(out.exitCode));
+      }
+      push("Working directory", out.cwd);
+      push("Error", out.error);
+    } else if (output !== undefined) {
+      push("Output", output);
+    }
+  } else if (base === "preview-read") {
+    push("Path", inputValue(input, "path") ?? "/");
+    if (out) {
+      if (out.status !== undefined) push("HTTP status", String(out.status));
+      push("Preview status", out.previewStatus);
+      push("Response", out.content);
+      if (out.truncated === true) {
+        push("Note", "Response truncated to 20,000 characters.");
+      }
+      push("Error", out.error);
+      push("Server log", out.logs);
+    } else {
+      push("Response", output);
+    }
+  } else if (base === "preview-logs") {
+    if (out) {
+      push("Preview status", out.previewStatus);
+      push("Logs", out.logs);
+      push("Error", out.error);
+    } else {
+      push("Logs", output);
+    }
+  } else if (base === "web-crawl") {
+    push("URL", inputValue(input, "url"));
+    push("Content", output);
+  } else if (base === "get_process_output" || base === "kill_process") {
+    push("Process", inputValue(input, "id") ?? inputValue(input, "processId"));
+    push("Output", output);
+  } else {
+    push("Result", output);
+    if (sections.length === 0) push("Input", input);
+  }
+
+  return sections;
+}
+
 function detailFor(base: string, input: unknown): Detail | undefined {
-  if (base === "execute_command") {
+  if (base === "execute_command" || base === "terminal") {
     const command = inputString(input, "command");
     return command ? { kind: "code", text: command } : undefined;
+  }
+
+  if (base === "preview-read") {
+    const path = inputString(input, "path") ?? "/";
+    return { kind: "code", text: path };
+  }
+
+  if (MEMORY_TOOLS.has(base)) {
+    const memory = toText(
+      typeof input === "string" ? input : inputValue(input, "memory"),
+    );
+    return memory ? { kind: "code", text: oneLine(memory) } : undefined;
   }
 
   if (base === "grep" || base === "search" || base === "web-search") {
@@ -333,6 +455,9 @@ export function ToolCalls({
   onQuickReply?: (text: string) => void;
 }) {
   const [open, setOpen] = useState(true);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const toggleExpanded = (id: string, current: boolean) =>
+    setExpanded((state) => ({ ...state, [id]: !current }));
   const files = useFilesStore((state) => state.files[projectId] ?? EMPTY_FILES);
   const pathIndex = useMemo(() => buildPathIndex(files), [files]);
   const { openFile } = useEditor(projectId);
@@ -357,7 +482,7 @@ export function ToolCalls({
 
   const rows = useMemo(
     () =>
-      timelineParts.map((part) => {
+      timelineParts.map((part, index) => {
         const base = toolBase(part);
         const running =
           part.state === "input-streaming" || part.state === "input-available";
@@ -367,13 +492,14 @@ export function ToolCalls({
           detail?.kind === "file" ? pathIndex.get(detail.path) : undefined;
 
         return {
-          id: part.toolCallId ?? `${base}-${detail?.kind ?? ""}`,
+          id: part.toolCallId ?? `${base}-${index}`,
           base,
           label: labelFor(part, base),
           running,
           failed,
           detail,
           node,
+          details: sectionsFor(base, part.input, part.output),
           errorText: part.errorText,
         };
       }),
@@ -477,7 +603,8 @@ export function ToolCalls({
             <div className="flex flex-col gap-0.5 py-1">
               {rows.map((row, i) => {
                 const canOpen = row.node?.type === "file";
-                const isLast = i === rows.length - 1;
+                const memoryRow = MEMORY_TOOLS.has(row.base);
+                const isExpanded = expanded[row.id] ?? memoryRow;
 
                 const rowStyle = {
                   animation: `fade-up 320ms cubic-bezier(0.23,1,0.32,1) ${i * 90}ms both`,
@@ -498,8 +625,6 @@ export function ToolCalls({
 
                 // Rounded branch from the vertical line to this tool.
 
-
-
 const connector = (
   <svg
     aria-hidden="true"
@@ -519,51 +644,77 @@ const connector = (
   </svg>
 );
 
-
-
-
-                if (canOpen) {
-                  return (
-                    <button
-                      key={row.id}
-                      type="button"
-                      onClick={() =>
-                        openFile(row.node!.id, { pinned: false })
-                      }
-                      className={rowClass}
-                      style={rowStyle}
-                    >
+                return (
+                  <div key={row.id} style={rowStyle}>
+                    <div className={rowClass}>
                       {connector}
-                      {content}
-                    </button>
-                  );
-                }
+                      {canOpen ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openFile(row.node!.id, { pinned: false })
+                          }
+                          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        >
+                          {content}
+                        </button>
+                      ) : row.details.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleExpanded(row.id, isExpanded)}
+                          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          {content}
+                        </div>
+                      )}
 
-                if (row.failed && row.errorText) {
-                  return (
-                    <div key={row.id} style={rowStyle}>
-                      <div className={rowClass}>
-                        {connector}
-                        {content}
+                      {row.details.length > 0 && (
+                        <button
+                          type="button"
+                          aria-expanded={isExpanded}
+                          aria-label={
+                            isExpanded ? "Hide details" : "Show details"
+                          }
+                          onClick={() => toggleExpanded(row.id, isExpanded)}
+                          className="-mr-0.5 grid size-6 shrink-0 place-items-center rounded-[4px] text-ink-3 transition-colors duration-100 hover:bg-hover-2 hover:text-ink-2"
+                        >
+                          <Chevron open={isExpanded} size={11} />
+                        </button>
+                      )}
+                    </div>
+
+                    {isExpanded && row.details.length > 0 && (
+                      <div className="mb-1 ml-6 space-y-1.5 border-l border-line pl-3 pt-0.5">
+                        {row.details.map((section, index) => (
+                          <div key={`${section.label}-${index}`}>
+                            <div
+                              className={`text-[10.5px] font-medium tracking-[0.05em] uppercase ${
+                                section.label === "Error"
+                                  ? "text-red"
+                                  : "text-ink-3"
+                              }`}
+                            >
+                              {section.label}
+                            </div>
+                            <pre className="mt-0.5 max-h-56 overflow-auto rounded-md bg-field px-2 py-1.5 font-mono text-[11px] leading-relaxed break-words whitespace-pre-wrap text-ink-2">
+                              {section.text}
+                            </pre>
+                          </div>
+                        ))}
                       </div>
+                    )}
 
-                      <div className="ml-6 border-l border-line pl-3">
+                    {row.failed && row.errorText && (
+                      <div className="ml-6 border-l border-line pl-3 pt-0.5">
                         <span className="text-[11.5px] leading-[1.6] text-red">
                           {row.errorText}
                         </span>
                       </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={row.id}
-                    className={rowClass}
-                    style={rowStyle}
-                  >
-                    {connector}
-                    {content}
+                    )}
                   </div>
                 );
               })}

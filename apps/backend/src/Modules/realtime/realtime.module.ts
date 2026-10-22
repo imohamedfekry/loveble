@@ -25,6 +25,7 @@ import { StorageModule } from '../storage/storage.module';
   ],
   exports: [
     RealtimeGateway,
+    ConnectionHandler,
     ConnectionManager,
     RealtimeEmitService,
     CollaborationService,

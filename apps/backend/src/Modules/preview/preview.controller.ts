@@ -4,7 +4,9 @@ import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth
 import { ParseSnowflakePipe } from 'src/common/Global/security/validator/isId.validator';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
 import { success } from 'src/common/utils/response.util';
+import { PREVIEW_IFRAME_TOKEN_TTL_MS } from './preview.constants';
 import { PreviewService } from './preview.service';
+import { PreviewTokenService } from './preview-token.service';
 
 const PREVIEW_STATUS_MSG = {
   code: 'PREVIEW_STATUS',
@@ -15,6 +17,7 @@ const PREVIEW_STATUS_MSG = {
 export class PreviewController {
   constructor(
     private readonly previewService: PreviewService,
+    private readonly previewTokens: PreviewTokenService,
     private readonly projectRepository: ProjectRepository,
   ) {}
 
@@ -34,11 +37,20 @@ export class PreviewController {
     void this.previewService.ensure(projectId).catch(() => undefined);
 
     const state = this.previewService.peek(projectId);
+    const ready = state?.status === 'ready' && state.url;
 
     return success(PREVIEW_STATUS_MSG, {
       status: state?.status ?? 'starting',
       url: state?.url,
       error: state?.error,
+      // The preview iframe is cross-origin; this token bootstraps an HttpOnly
+      // cookie on the project's preview subdomain.
+      token: ready
+        ? this.previewTokens.issue(
+            projectId.toString(),
+            PREVIEW_IFRAME_TOKEN_TTL_MS,
+          )
+        : undefined,
     });
   }
 }

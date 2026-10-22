@@ -89,17 +89,21 @@ export const PreviewPane = ({
     projectId: string;
     sandboxState: SandboxState;
 }) => {
-    const { status, url, error, reload } = usePreview(projectId, true);
+    const { status, url, token, error, reload } = usePreview(projectId, true);
     const [iframeKey, setIframeKey] = useState(0);
 
     const src = useMemo(() => {
         if (!url) return undefined;
         try {
-            return new URL(url, API_BASE_URL).toString();
+            const target = new URL(url, API_BASE_URL);
+            // Bootstraps the preview-host cookie; the proxy strips it from the
+            // URL and redirects to the same page.
+            if (token) target.searchParams.set("__preview_token", token);
+            return target.toString();
         } catch {
             return undefined;
         }
-    }, [url]);
+    }, [url, token]);
 
     if (sandboxState.status === "starting") {
         return <PreviewLoading label="Starting environment..." />;
@@ -134,7 +138,10 @@ export const PreviewPane = ({
 
                 <button
                     type="button"
-                    onClick={() => setIframeKey((key) => key + 1)}
+                    onClick={() => {
+                        setIframeKey((key) => key + 1);
+                        reload();
+                    }}
                     title="Reload preview"
                     className="grid size-6 place-items-center rounded text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground active:scale-95"
                 >

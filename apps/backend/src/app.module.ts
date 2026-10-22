@@ -14,6 +14,7 @@ import { PersistenceModule } from './common/persistence/persistence.module';
 import { AiModule } from './Modules/ai/ai.module';
 import { ConversationsModule } from './Modules/conversations/conversations.module';
 import { PreviewModule } from './Modules/preview/preview.module';
+import { TerminalModule } from './Modules/terminal/terminal.module';
 import { SpecScribeModule } from 'specscribe';
 
 @Module({
@@ -35,6 +36,7 @@ import { SpecScribeModule } from 'specscribe';
     SandboxModule,
     ConversationsModule,
     PreviewModule,
+    TerminalModule,
   ],
 })
 export class AppModule {}

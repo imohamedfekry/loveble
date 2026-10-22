@@ -8,6 +8,7 @@ const POLL_INTERVAL_MS = 2500;
 export interface PreviewState {
   status: PreviewStatus;
   url?: string;
+  token?: string;
   error?: string;
 }
 
@@ -38,6 +39,7 @@ export function usePreview(projectId: string, active: boolean) {
         setState({
           status: result.status,
           url: result.url,
+          token: result.token,
           error: result.error,
         });
 

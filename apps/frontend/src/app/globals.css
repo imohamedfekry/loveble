@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "../components/beautiful-ui/beautiful-ui.css";
 @import "../../node_modules/streamdown/styles.css";
+@import "../../node_modules/@xterm/xterm/css/xterm.css";
 @custom-variant dark (&:is(.dark *));
 
 @source "../../node_modules/@loveble/ui/src";
@@ -319,6 +320,41 @@
 
 ::-webkit-scrollbar-thumb {
   @apply rounded-full bg-border border border-transparent border-solid bg-clip-padding;
+}
+
+/* ── Interactive terminal (xterm.js) ───────────────────────────────────── */
+.terminal-surface {
+  background: var(--card);
+}
+
+.terminal-surface .xterm {
+  height: 100%;
+  padding: 0;
+}
+
+.terminal-surface .xterm-viewport {
+  background-color: var(--card);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.terminal-surface .xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.terminal-surface .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.terminal-surface .xterm-viewport::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: none;
+  border-radius: 999px;
+}
+
+.terminal-surface .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }
 
 @keyframes loveble-pulse {
