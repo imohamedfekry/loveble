@@ -29,7 +29,7 @@ function corsOrigins(): string[] {
   return process.env.WS_CORS_ORIGINS
     ? process.env.WS_CORS_ORIGINS.split(',').map((origin) => origin.trim())
     : [
-        'https://app.loveble.localhost',
+        'https://loveble.app',
         'http://localhost:3000',
         'http://localhost:3001',
         'http://localhost:4200',

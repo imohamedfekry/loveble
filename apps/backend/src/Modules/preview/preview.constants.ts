@@ -25,9 +25,9 @@ export const PREVIEW_TOKEN_COOKIE = '__preview_auth';
 /** Lifetime of the token handed to the preview iframe (ms). */
 export const PREVIEW_IFRAME_TOKEN_TTL_MS = 60 * 60_000;
 
-/** Base domain that hosts per-project previews (e.g. `<id>.app.loveble.localhost`). */
+/** Base domain that hosts per-project previews (e.g. `<id>.loveble.app`). */
 export function previewBaseDomain(): string {
-  return (process.env.PREVIEW_BASE_DOMAIN ?? 'app.loveble.localhost')
+  return (process.env.PREVIEW_BASE_DOMAIN ?? 'loveble.app')
     .trim()
     .toLowerCase()
     .replace(/^\.+|\.+$/g, '');

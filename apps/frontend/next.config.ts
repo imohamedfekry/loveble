@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["app.loveble.localhost", "*.app.loveble.localhost"],
+  allowedDevOrigins: ["loveble.app", "*.loveble.app"],
   transpilePackages: [
     "@loveble/types",
     "@loveble/validation",

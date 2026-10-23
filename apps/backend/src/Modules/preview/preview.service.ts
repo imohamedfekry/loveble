@@ -33,6 +33,8 @@ export interface PreviewState {
   url?: string;
   /** Sandbox public hostname (used by internal/AI callers). */
   host?: string;
+  /** Server-side token required by the sandbox proxy. Never send to clients. */
+  trafficToken?: string;
   error?: string;
 }
 
@@ -47,6 +49,7 @@ interface InternalState {
   installed: boolean;
   pid?: number;
   host?: string;
+  trafficToken?: string;
   error?: string;
   checkedAt: number;
 }
@@ -129,6 +132,8 @@ export class PreviewService {
       state.sandboxId = sandboxId;
       state.pid = undefined;
       state.signature = undefined;
+      state.host = undefined;
+      state.trafficToken = undefined;
       state.installed = false;
     }
 
@@ -154,6 +159,7 @@ export class PreviewService {
       status: state.status,
       url: state.status === 'ready' ? state.publicUrl : undefined,
       host: state.host,
+      trafficToken: state.trafficToken,
       error: state.error,
     };
   }
@@ -224,11 +230,14 @@ export class PreviewService {
       }
 
       state.host = await this.e2bService.getHost(sandboxId, PREVIEW_DEV_PORT);
+      state.trafficToken = this.e2bService.trafficToken(sandboxId);
       state.status = 'starting';
 
       // Only trust a server we started in this process; after a restart the
       // sandbox may still hold an older dev server with a stale config.
-      const alreadyUp = state.pid != null && (await this.isHealthy(state.host));
+      const alreadyUp =
+        state.pid != null &&
+        (await this.isHealthy(state.host, state.trafficToken));
       if (!alreadyUp) {
         await this.stopTrackedServer(sandboxId, state);
         await this.killStaleServers(sandboxId);
@@ -237,7 +246,10 @@ export class PreviewService {
           state.host,
           commands.start,
         );
-        const ok = await this.waitForHealthy(state.host);
+        const ok = await this.waitForHealthy(
+          state.host,
+          state.trafficToken,
+        );
         if (!ok) {
           const logs = await this.readLogTail(sandboxId, 30);
           throw new Error(
@@ -561,7 +573,10 @@ export class PreviewService {
 
   // --------------------------------------------------------------- health ---
 
-  private async isHealthy(host: string): Promise<boolean> {
+  private async isHealthy(
+    host: string,
+    trafficToken?: string,
+  ): Promise<boolean> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5_000);
     try {
@@ -569,6 +584,9 @@ export class PreviewService {
         method: 'GET',
         redirect: 'manual',
         signal: controller.signal,
+        headers: trafficToken
+          ? { 'e2b-traffic-access-token': trafficToken }
+          : undefined,
       });
       // Anything below a gateway/server error means the dev server answered.
       return res.status < 500;
@@ -579,10 +597,13 @@ export class PreviewService {
     }
   }
 
-  private async waitForHealthy(host: string): Promise<boolean> {
+  private async waitForHealthy(
+    host: string,
+    trafficToken?: string,
+  ): Promise<boolean> {
     const deadline = Date.now() + PREVIEW_START_TIMEOUT_MS;
     while (Date.now() < deadline) {
-      if (await this.isHealthy(host)) return true;
+      if (await this.isHealthy(host, trafficToken)) return true;
       await new Promise((resolve) => setTimeout(resolve, 1_500));
     }
     return false;

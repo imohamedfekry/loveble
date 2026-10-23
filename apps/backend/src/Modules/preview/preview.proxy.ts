@@ -9,7 +9,6 @@ import { AccessTokenService } from 'src/common/Global/security/jwt/services/acce
 
 import {
   PREVIEW_PUBLIC_PREFIX,
-  PREVIEW_TOKEN_COOKIE,
   previewProjectFromHost,
   previewPublicScheme,
 } from './preview.constants';
@@ -26,6 +25,7 @@ const STRIP_REQUEST_HEADERS = new Set([
   'cookie',
   'authorization',
   'x-preview-token',
+  'e2b-traffic-access-token',
   'connection',
   'content-length',
   'accept-encoding',
@@ -50,7 +50,7 @@ interface ProxyServices {
 /**
  * Register the raw Fastify preview-proxy handlers.
  *
- * Public previews are served from `<projectId>.app.loveble.localhost` (nginx routes the
+ * Public previews are served from `<projectId>.loveble.app` (nginx routes the
  * whole wildcard host here) and proxied to the sandbox root, so the app sees
  * normal root-relative URLs and needs no response rewriting.
  *
@@ -106,7 +106,7 @@ export function registerPreviewProxy(
     }
 
     const prefix = `${PREVIEW_PUBLIC_PREFIX}/${rawId}`;
-    return forward(req, reply, rawId, sandboxHost, prefix);
+    return forward(req, reply, rawId, sandboxHost, prefix, state.trafficToken);
   };
 
   const methods: Array<
@@ -131,37 +131,19 @@ export function registerPreviewProxy(
     reply: FastifyReply,
     rawId: string,
   ): Promise<FastifyReply | undefined> {
-    const { tokens } = services();
-
     // Authenticate before provisioning: an unknown caller must not be able to
-    // trigger an install/start cycle for an arbitrary project id.
-    const cookieToken = readCookie(req.headers.cookie, PREVIEW_TOKEN_COOKIE);
-    if (!tokens.verify(rawId, cookieToken)) {
-      const query = req.query as Record<string, unknown>;
-      const queryToken =
-        typeof query.__preview_token === 'string'
-          ? query.__preview_token
-          : undefined;
+    // trigger an install/start cycle for an arbitrary project id. The shared
+    // auth cookie is scoped to .loveble.app, so it is sent to the
+    // project's preview subdomain as well.
+    if (!(await authorizeHost(req, rawId))) {
+      return reply
+        .code(401)
+        .type('text/plain')
+        .send('Preview link expired. Reload the preview from the project.');
+    }
 
-      if (!tokens.verify(rawId, queryToken)) {
-        return reply
-          .code(401)
-          .type('text/plain')
-          .send('Preview link expired. Reload the preview from the project.');
-      }
-
-      const token = queryToken as string;
-      const exp = Number(token.slice(0, token.indexOf('.')));
-      reply.setCookie(PREVIEW_TOKEN_COOKIE, token, {
-        path: '/',
-        httpOnly: true,
-        // The preview runs in a cross-site iframe, so Lax would not be sent.
-        sameSite: 'none',
-        secure: true,
-        maxAge: Math.max(1, exp - Math.floor(Date.now() / 1000)),
-      });
-
-      // Drop the token from the URL before rendering the app.
+    // Ignore old links that still carry the removed preview token.
+    if (stripPreviewToken(req.url) !== req.url) {
       return reply.redirect(stripPreviewToken(req.url), 302);
     }
 
@@ -174,7 +156,14 @@ export function registerPreviewProxy(
         .send({ message: state?.error ?? 'Preview is starting' });
     }
 
-    return forward(req, reply, rawId, sandboxHost, null);
+    return forward(
+      req,
+      reply,
+      rawId,
+      sandboxHost,
+      null,
+      state.trafficToken,
+    );
   }
 
   // --------------------------------------------------------------- helpers ---
@@ -185,6 +174,29 @@ export function registerPreviewProxy(
       return await preview.ensure(BigInt(rawId));
     } catch {
       return preview.peek(BigInt(rawId));
+    }
+  }
+
+  async function authorizeHost(
+    req: FastifyRequest,
+    rawId: string,
+  ): Promise<boolean> {
+    const { accessTokens, projects } = services();
+
+    // `req.cookies` is populated by the cookie plugin during normal routing,
+    // but this hook can run before that; fall back to the raw header.
+    const cookie =
+      req.cookies?.['Authorization'] ??
+      readCookie(req.headers.cookie, 'Authorization');
+    if (!cookie) return false;
+
+    try {
+      const payload = await accessTokens.verify<{ sub: string }>(cookie.trim());
+      if (!payload?.sub) return false;
+      const project = await projects.findById(BigInt(rawId));
+      return Boolean(project && project.userId === BigInt(payload.sub));
+    } catch {
+      return false;
     }
   }
 
@@ -200,7 +212,9 @@ export function registerPreviewProxy(
       : internalHeader;
     if (internal && tokens.verify(rawId, internal)) return true;
 
-    const cookie = req.cookies?.['Authorization'];
+    const cookie =
+      req.cookies?.['Authorization'] ??
+      readCookie(req.headers.cookie, 'Authorization');
     if (!cookie) return false;
 
     try {
@@ -219,6 +233,7 @@ export function registerPreviewProxy(
     rawId: string,
     sandboxHost: string,
     prefix: string | null,
+    trafficToken?: string,
   ): Promise<FastifyReply> {
     const targetPath = prefix ? stripPrefix(req.url, prefix) : req.url;
     const target = `https://${sandboxHost}${targetPath}`;
@@ -229,6 +244,10 @@ export function registerPreviewProxy(
       if (STRIP_REQUEST_HEADERS.has(lower) || value === undefined) continue;
       if (Array.isArray(value)) headers.set(lower, value.join(', '));
       else headers.set(lower, String(value));
+    }
+
+    if (trafficToken) {
+      headers.set('e2b-traffic-access-token', trafficToken);
     }
 
     const method = req.method.toUpperCase();

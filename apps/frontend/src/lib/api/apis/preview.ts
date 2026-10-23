@@ -11,7 +11,6 @@ export interface PreviewStatusResult {
   success: boolean;
   status: PreviewStatus;
   url?: string;
-  token?: string;
   error?: string;
   message?: string;
 }
@@ -46,7 +45,6 @@ export async function getPreviewStatus(
     success: json.success ?? true,
     status: (data.status as PreviewStatus) ?? "error",
     url: data.url,
-    token: data.token,
     error: data.error,
     message: json.message,
   };

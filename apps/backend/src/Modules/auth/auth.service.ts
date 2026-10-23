@@ -124,6 +124,7 @@ export class AuthService {
       sameSite: 'none',
       path: '/',
       maxAge: 3 * 60,
+      ...this.authCookieOptions(),
     });
 
     return success(RESPONSE_MESSAGES.AUTH.OTP.VERFIED);
@@ -169,7 +170,10 @@ export class AuthService {
       await this.tempUserRepository.deleteById(tempUser.id);
 
       this.issueTokens(res, user.id.toString());
-      res.clearCookie('temptoken', { path: '/' });
+      res.clearCookie('temptoken', {
+        path: '/',
+        ...this.authCookieOptions(),
+      });
 
       return success(RESPONSE_MESSAGES.USER.CREATE.SUCCESS);
     } catch {
@@ -197,7 +201,7 @@ export class AuthService {
     const callbackURL =
       process.env.OAUTH_CALLBACK_URL ??
       this.configService.get<string>('app.oauthCallbackUrl') ??
-      'https://app.loveble.localhost/callback';
+      'https://loveble.app/callback';
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: callbackURL,
@@ -340,6 +344,19 @@ export class AuthService {
       linked: true,
     });
   }
+  /**
+   * Share auth cookies between api.* and app.*. Without a domain the cookie is
+   * host-only on the API origin, so Next.js middleware on the app origin never
+   * sees the session.
+   */
+  private authCookieOptions(): { domain?: string } {
+    const domain =
+      this.configService.get<string>('AUTH_COOKIE_DOMAIN') ??
+      process.env.AUTH_COOKIE_DOMAIN;
+    const trimmed = domain?.trim();
+    return trimmed ? { domain: trimmed } : {};
+  }
+
   private issueTokens(res: FastifyReply, userId: string) {
     const accessToken = this.accessService.sign({
       sub: userId,
@@ -352,18 +369,20 @@ export class AuthService {
 
     res.setCookie('Authorization', accessToken, {
       httpOnly: true,
-      secure: true, // ← دايماً true مع SameSite=None
+      secure: true,
       sameSite: 'none',
       path: '/',
       maxAge: 7 * 24 * 60 * 60,
+      ...this.authCookieOptions(),
     });
 
     res.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true, // ← دايماً true مع SameSite=None
+      secure: true,
       sameSite: 'none',
       path: '/',
       maxAge: 30 * 24 * 60 * 60,
+      ...this.authCookieOptions(),
     });
   }
 }

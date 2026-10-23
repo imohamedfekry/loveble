@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@loveble/utils";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
     ExternalLinkIcon,
@@ -9,7 +9,6 @@ import {
     RefreshCwIcon,
     TriangleAlertIcon,
 } from "lucide-react";
-import { API_BASE_URL } from "@/lib/api";
 import { usePreview } from "@/lib/hooks/projects/usePreview";
 import type { SandboxState } from "@/store/use-editor-store";
 
@@ -89,21 +88,9 @@ export const PreviewPane = ({
     projectId: string;
     sandboxState: SandboxState;
 }) => {
-    const { status, url, token, error, reload } = usePreview(projectId, true);
+    const { status, url, error, reload } = usePreview(projectId, true);
     const [iframeKey, setIframeKey] = useState(0);
-
-    const src = useMemo(() => {
-        if (!url) return undefined;
-        try {
-            const target = new URL(url, API_BASE_URL);
-            // Bootstraps the preview-host cookie; the proxy strips it from the
-            // URL and redirects to the same page.
-            if (token) target.searchParams.set("__preview_token", token);
-            return target.toString();
-        } catch {
-            return undefined;
-        }
-    }, [url, token]);
+    const src = url;
 
     if (sandboxState.status === "starting") {
         return <PreviewLoading label="Starting environment..." />;

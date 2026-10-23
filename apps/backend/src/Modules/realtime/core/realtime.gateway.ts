@@ -25,7 +25,7 @@ import { serializeBigInt } from 'src/common/utils/bigint.util';
     origin: process.env.WS_CORS_ORIGINS
       ? process.env.WS_CORS_ORIGINS.split(',').map((o) => o.trim())
       : [
-          'https://app.loveble.localhost',
+          'https://loveble.app',
           'http://localhost:3000',
           'http://localhost:3001',
           'http://localhost:4200',

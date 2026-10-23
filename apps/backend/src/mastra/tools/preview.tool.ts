@@ -82,7 +82,11 @@ If it fails, inspect the returned "logs" or use the terminal tool to debug.`,
     const url = `https://${state.host}${cleanPath}`;
 
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: state.trafficToken
+          ? { 'e2b-traffic-access-token': state.trafficToken }
+          : undefined,
+      });
       const text = await res.text();
       const logs = res.ok
         ? ''

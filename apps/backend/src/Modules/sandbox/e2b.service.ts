@@ -49,17 +49,29 @@ export interface PtyOptions {
 @Injectable()
 export class E2bService {
   private readonly logger = new Logger(E2bService.name);
+  private readonly trafficTokens = new Map<string, string>();
 
   constructor(private readonly configService: ConfigService) {}
 
+  private rememberTrafficToken(
+    sandboxId: string,
+    token: string | undefined,
+  ): void {
+    if (token) this.trafficTokens.set(sandboxId, token);
+  }
+
+  /** Token required by the E2B proxy when public traffic is disabled. */
+  trafficToken(sandboxId: string): string | undefined {
+    return this.trafficTokens.get(sandboxId);
+  }
+
   async create(): Promise<{ sandboxId: string }> {
     const apiKey = this.configService.get<string>('e2b.key');
-    const sandbox = await Sandbox.create(
-      { 
-        apiKey: apiKey,
-        network: { allowPublicTraffic: false }
-      }
-    );
+    const sandbox = await Sandbox.create({
+      apiKey: apiKey,
+      network: { allowPublicTraffic: false },
+    });
+    this.rememberTrafficToken(sandbox.sandboxId, sandbox.trafficAccessToken);
 
     this.logger.log(`E2B sandbox created: ${sandbox.sandboxId}`);
 
@@ -81,8 +93,9 @@ export class E2bService {
       const info = await Sandbox.getInfo(sandboxId, { apiKey: apiKey });
 
       if (info.state === 'paused') {
-        this.logger.log(`E2B sandbox ${sandboxId} found paused — resuming it`);
-        await Sandbox.connect(sandboxId, { apiKey: apiKey });
+        this.logger.log(`E2B sandbox ${sandboxId} found paused - resuming it`);
+        const resumed = await Sandbox.connect(sandboxId, { apiKey: apiKey });
+        this.rememberTrafficToken(sandboxId, resumed.trafficAccessToken);
         this.logger.log(`E2B sandbox ${sandboxId} resumed: running`);
         return { sandboxId, state: 'running' };
       }
@@ -151,7 +164,9 @@ export class E2bService {
 
   private async connect(sandboxId: string): Promise<Sandbox> {
     const apiKey = this.configService.get<string>('e2b.key');
-    return Sandbox.connect(sandboxId, { apiKey: apiKey });
+    const sandbox = await Sandbox.connect(sandboxId, { apiKey: apiKey });
+    this.rememberTrafficToken(sandboxId, sandbox.trafficAccessToken);
+    return sandbox;
   }
 
   /** Public URL hostname for a port exposed by the sandbox. */

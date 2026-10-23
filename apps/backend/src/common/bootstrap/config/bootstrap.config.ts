@@ -26,7 +26,7 @@ export class BootstrapConfig {
       : configured.length > 0
         ? configured
         : [
-            'https://app.loveble.localhost',
+            'https://loveble.app',
             'http://localhost:3000',
             'http://localhost:3001',
             'http://localhost:4200',

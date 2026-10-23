@@ -19,6 +19,7 @@
     "dev": "pnpm -r --parallel dev",
     "dev:backend": "pnpm --filter @loveble/backend dev",
     "dev:frontend": "pnpm --filter @loveble/frontend dev",
+    "dev:browser": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/open-dev-browser.ps1",
     "inngest": "pnpm dlx inngest-cli@latest dev",
     "build": "pnpm -r --parallel build",
     "build:backend": "pnpm --filter @loveble/backend build",
