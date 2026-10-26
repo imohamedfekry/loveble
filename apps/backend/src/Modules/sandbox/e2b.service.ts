@@ -7,26 +7,33 @@ import {
   type CommandHandle,
   type CommandStartOpts,
   type EntryInfo,
+  type FilesystemEvent,
   type ProcessInfo,
+  type WatchHandle,
 } from 'e2b';
+
+export interface SandboxWatchOpts {
+  recursive?: boolean;
+  timeoutMs?: number;
+  includeEntry?: boolean;
+  onExit?: (err?: Error) => void | Promise<void>;
+  requestTimeoutMs?: number;
+}
 
 export interface SandboxStatus {
   sandboxId: string;
   state: 'running' | 'paused';
 }
 
-/** A single file to write into the sandbox filesystem. */
 export interface SandboxFileEntry {
   path: string;
-  data: string;
+  data: string | Uint8Array;
 }
 
-/** Result of starting a background (long-running) command. */
 export interface BackgroundCommand {
   pid: number;
 }
 
-/** Live pseudo-terminal inside a sandbox (interactive shell). */
 export interface PtyHandle {
   pid: number;
   sendInput(data: Uint8Array): Promise<void>;
@@ -41,9 +48,23 @@ export interface PtyOptions {
   rows: number;
   cwd?: string;
   envs?: Record<string, string>;
-  /** 0 keeps the session open until it is killed or exits on its own. */
   timeoutMs?: number;
   onData: (data: Uint8Array) => void;
+}
+
+/** A long-running command whose output is pushed to callbacks as it arrives. */
+export interface StreamingCommand {
+  pid: number;
+  /** Resolves once the process exits (or its stream ends). */
+  exited: Promise<void>;
+  kill(): Promise<boolean>;
+  disconnect(): Promise<void>;
+}
+
+export interface StreamingCommandOptions {
+  onStdout?: (data: string) => void;
+  onStderr?: (data: string) => void;
+  timeoutMs?: number;
 }
 
 @Injectable()
@@ -60,35 +81,44 @@ export class E2bService {
     if (token) this.trafficTokens.set(sandboxId, token);
   }
 
-  /** Token required by the E2B proxy when public traffic is disabled. */
   trafficToken(sandboxId: string): string | undefined {
     return this.trafficTokens.get(sandboxId);
   }
 
   async create(): Promise<{ sandboxId: string }> {
     const apiKey = this.configService.get<string>('e2b.key');
-    const sandbox = await Sandbox.create({
-      apiKey: apiKey,
-      network: { allowPublicTraffic: false },
-    });
+    const timeoutMs = this.configService.get<number>('e2b.timeoutMs');
+    const template = this.configService.get<string>('e2b.template');
+
+    const options = {
+      apiKey,
+      timeoutMs,
+      network: { 
+        allowPublicTraffic: false 
+      },
+    } as const;
+    const sandbox = template
+      ? await Sandbox.create(template, options)
+      : await Sandbox.create(options);
     this.rememberTrafficToken(sandbox.sandboxId, sandbox.trafficAccessToken);
 
-    this.logger.log(`E2B sandbox created: ${sandbox.sandboxId}`);
+    this.logger.log(
+      `E2B sandbox created: ${sandbox.sandboxId}` +
+        (template ? ` from template ${template}` : ''),
+    );
 
     return { sandboxId: sandbox.sandboxId };
   }
 
-  /**
-   * Verify a sandbox still exists on E2B and is usable.
-   * Returns null when the sandbox is gone (expired / killed).
-   * Paused sandboxes are resumed so the returned state is 'running'.
-   */
+  async extend(sandboxId: string): Promise<void> {
+    const apiKey = this.configService.get<string>('e2b.key');
+    const timeoutMs =
+      this.configService.get<number>('e2b.timeoutMs') ?? 3_600_000;
+    await Sandbox.setTimeout(sandboxId, timeoutMs, { apiKey });
+  }
+
   async verify(sandboxId: string): Promise<SandboxStatus | null> {
     const apiKey = this.configService.get<string>('e2b.key');
-    console.log(
-      'e2b key loaded:',
-      apiKey ? `yes (${apiKey.length} chars)` : 'missing',
-    );
     try {
       const info = await Sandbox.getInfo(sandboxId, { apiKey: apiKey });
 
@@ -96,10 +126,12 @@ export class E2bService {
         this.logger.log(`E2B sandbox ${sandboxId} found paused - resuming it`);
         const resumed = await Sandbox.connect(sandboxId, { apiKey: apiKey });
         this.rememberTrafficToken(sandboxId, resumed.trafficAccessToken);
+        await this.extend(sandboxId).catch(() => undefined);
         this.logger.log(`E2B sandbox ${sandboxId} resumed: running`);
         return { sandboxId, state: 'running' };
       }
 
+      await this.extend(sandboxId).catch(() => undefined);
       this.logger.log(
         `E2B sandbox ${sandboxId} verified alive (state: ${info.state})`,
       );
@@ -169,13 +201,11 @@ export class E2bService {
     return sandbox;
   }
 
-  /** Public URL hostname for a port exposed by the sandbox. */
   async getHost(sandboxId: string, port: number): Promise<string> {
     const sandbox = await this.connect(sandboxId);
     return sandbox.getHost(port);
   }
 
-  /** Write multiple files in one request (creates parent directories). */
   async writeFiles(
     sandboxId: string,
     files: SandboxFileEntry[],
@@ -183,30 +213,65 @@ export class E2bService {
   ): Promise<void> {
     if (files.length === 0) return;
     const sandbox = await this.connect(sandboxId);
-    await sandbox.files.writeFiles(files, {
-      requestTimeoutMs: opts?.requestTimeoutMs,
-    });
+    await sandbox.files.writeFiles(
+      files.map((file) => ({
+        path: file.path,
+        data:
+          typeof file.data === 'string'
+            ? file.data
+            : new Blob([file.data as BlobPart]),
+      })),
+      {
+        requestTimeoutMs: opts?.requestTimeoutMs,
+      },
+    );
   }
 
-  /** Read a file as UTF-8 text. */
   async readFile(sandboxId: string, path: string): Promise<string> {
     const sandbox = await this.connect(sandboxId);
     return sandbox.files.read(path, { format: 'text' });
   }
 
-  /** Whether a path exists in the sandbox filesystem. */
+  async readFileBytes(sandboxId: string, path: string): Promise<Uint8Array> {
+    const sandbox = await this.connect(sandboxId);
+    return sandbox.files.read(path, { format: 'bytes' });
+  }
+
   async exists(sandboxId: string, path: string): Promise<boolean> {
     const sandbox = await this.connect(sandboxId);
     return sandbox.files.exists(path);
   }
 
-  /** List directory entries. */
+  async getInfo(sandboxId: string, path: string): Promise<EntryInfo> {
+    const sandbox = await this.connect(sandboxId);
+    return sandbox.files.getInfo(path);
+  }
+
+  async remove(sandboxId: string, path: string): Promise<void> {
+    const sandbox = await this.connect(sandboxId);
+    await sandbox.files.remove(path);
+  }
+
+  async makeDir(sandboxId: string, path: string): Promise<void> {
+    const sandbox = await this.connect(sandboxId);
+    await sandbox.files.makeDir(path);
+  }
+
   async list(sandboxId: string, path: string): Promise<EntryInfo[]> {
     const sandbox = await this.connect(sandboxId);
     return sandbox.files.list(path);
   }
 
-  /** Run a command to completion and return its output. */
+  async watchDir(
+    sandboxId: string,
+    path: string,
+    onEvent: (event: FilesystemEvent) => void | Promise<void>,
+    opts?: SandboxWatchOpts,
+  ): Promise<WatchHandle> {
+    const sandbox = await this.connect(sandboxId);
+    return sandbox.files.watchDir(path, onEvent, opts);
+  }
+
   async runCommand(
     sandboxId: string,
     command: string,
@@ -221,11 +286,6 @@ export class E2bService {
     };
   }
 
-  /**
-   * Start a long-running command without waiting. The process keeps running on
-   * the sandbox; we disconnect the log stream immediately so the connection is
-   * not held open for the lifetime of the process.
-   */
   async runBackground(
     sandboxId: string,
     command: string,
@@ -237,28 +297,54 @@ export class E2bService {
       background: true,
     });
     const pid = handle.pid;
-    // Stop receiving output; the process itself keeps running.
     void handle.disconnect().catch(() => undefined);
     return { pid };
   }
 
-  /** List running processes inside the sandbox. */
+  /**
+   * Start a command that keeps streaming its output to the callbacks until it
+   * exits. Unlike {@link runBackground} the handle stays connected, so
+   * `onStdout`/`onStderr` keep firing and `exited` resolves when the process
+   * ends (killed, timed out or finished).
+   */
+  async streamCommand(
+    sandboxId: string,
+    command: string,
+    opts: StreamingCommandOptions,
+  ): Promise<StreamingCommand> {
+    const sandbox = await this.connect(sandboxId);
+    const handle: CommandHandle = await sandbox.commands.run(command, {
+      background: true,
+      timeoutMs: opts.timeoutMs,
+      onStdout: opts.onStdout,
+      onStderr: opts.onStderr,
+    });
+
+    return {
+      pid: handle.pid,
+      exited: handle.wait().then(
+        () => undefined,
+        () => undefined,
+      ),
+      kill: async () => {
+        const killed = await handle.kill().catch(() => false);
+        await handle.disconnect().catch(() => undefined);
+        return killed;
+      },
+      disconnect: () => handle.disconnect().catch(() => undefined),
+    };
+  }
+
   async listProcesses(sandboxId: string): Promise<ProcessInfo[]> {
     const sandbox = await this.connect(sandboxId);
     return sandbox.commands.list();
   }
 
-  /** Kill a running process by pid. */
   async killProcess(sandboxId: string, pid: number): Promise<boolean> {
     const sandbox = await this.connect(sandboxId);
     return sandbox.commands.kill(pid);
   }
 
-  /**
-   * Open an interactive PTY (bash -i) inside the sandbox. The returned handle
-   * keeps the sandbox connection alive so keystrokes can be written without
-   * reconnecting on every chunk.
-   */
   async createPty(sandboxId: string, opts: PtyOptions): Promise<PtyHandle> {
     const sandbox = await this.connect(sandboxId);
     const handle = await sandbox.pty.create({

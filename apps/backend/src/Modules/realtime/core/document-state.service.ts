@@ -1,14 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+﻿import { Injectable, Logger } from '@nestjs/common';
 import { ChangeSet, Text } from '@codemirror/state';
 import { RedisService } from 'src/common/redis/redis.service';
 import { FileRepository } from 'src/common/database/repositories/project/file.repository';
 import { StorageService } from 'src/Modules/storage/storage.service';
 import { InngestService } from 'src/common/inngest/inngest.service';
 import { PersistFileService } from 'src/common/persistence/persist-file.service';
+import { ProjectRevisionService } from './project-revision.service';
 
 export type StoredUpdate = {
   clientID: string;
-  changes: unknown; // ناتج ChangeSet.toJSON() من الفرونت
+  changes: unknown;
 };
 
 type DocumentMeta = {
@@ -17,9 +18,6 @@ type DocumentMeta = {
   baseVersion: number;
 };
 
-// Hot state never lives in Redis longer than this. It is a safety net only:
-// normal operation clears keys on last-leave (unload) and refreshes TTL on
-// every edit, so an actively edited file is never evicted.
 const HOT_STATE_TTL_SECONDS = 24 * 60 * 60;
 
 @Injectable()
@@ -35,6 +33,7 @@ export class DocumentStateService {
     private readonly storageService: StorageService,
     private readonly inngestService: InngestService,
     private readonly persistFileService: PersistFileService,
+    private readonly projectRevision: ProjectRevisionService,
   ) {}
 
   private contentKey(fileId: string) {
@@ -83,7 +82,6 @@ export class DocumentStateService {
     );
   }
 
-  /** Absolute doc version = baseVersion (compacted away) + buffered update count. */
   private async currentVersion(fileId: string): Promise<number> {
     const [meta, len] = await Promise.all([
       this.readMeta(fileId),
@@ -117,10 +115,8 @@ export class DocumentStateService {
     await this.redis.eval(script, 1, this.lockKey(fileId), token);
   }
 
-  /** لو المستند مش موجود في Redis، حمّله من S3 (lazy load) */
   private async ensureLoaded(fileId: string): Promise<void> {
     if (await this.redis.exists(this.contentKey(fileId))) {
-      // Ensure meta is cached for persistence
       if (!(await this.redis.exists(this.metaKey(fileId)))) {
         const file = await this.fileRepository.getFile(BigInt(fileId));
         if (file?.storageKey) {
@@ -129,7 +125,6 @@ export class DocumentStateService {
             projectId: file.projectId.toString(),
             baseVersion: 0,
           });
-          // Initialize persistedVersion if not set
           if (!(await this.redis.exists(this.persistedVersionKey(fileId)))) {
             const v = await this.currentVersion(fileId);
             await this.redis.set(
@@ -177,7 +172,7 @@ export class DocumentStateService {
 
   private async loadFromPersistence(fileId: string): Promise<string> {
     const file = await this.fileRepository.getFile(BigInt(fileId));
-    if (!file?.storageKey) return '';
+    if (!file?.storageKey || file.isBinary) return '';
     try {
       return (await this.storageService.getFileContent(file.storageKey))
         .content;
@@ -187,7 +182,6 @@ export class DocumentStateService {
     }
   }
 
-  /** بيتنادى عند join: يرجّع المحتوى الحالي كامل + رقم النسخة */
   async getDocument(fileId: string): Promise<{ doc: string; version: number }> {
     await this.ensureLoaded(fileId);
     const [content, version] = await Promise.all([
@@ -197,7 +191,6 @@ export class DocumentStateService {
     return { doc: content ?? '', version };
   }
 
-  /** للعملاء اللي متأخرين عن الـ version الحالي */
   private async pullUpdates(
     fileId: string,
     fromVersion: number,
@@ -205,8 +198,6 @@ export class DocumentStateService {
     const base = (await this.readMeta(fileId))?.baseVersion ?? 0;
     const len = await this.redis.llen(this.updatesKey(fileId));
 
-    // Client is behind the compaction point — we cannot reconstruct the
-    // missing edits from the buffer. Ask them to do a full resync instead.
     if (fromVersion < base || fromVersion > base + len) {
       return { updates: [], forceResync: true };
     }
@@ -219,7 +210,6 @@ export class DocumentStateService {
     return { updates: raw.map((r) => JSON.parse(r) as StoredUpdate) };
   }
 
-  /** قلب البروتوكول: قبول التحديث بس لو الـ version مطابق تمامًا */
   async pushUpdates(
     fileId: string,
     expectedVersion: number,
@@ -288,7 +278,7 @@ export class DocumentStateService {
           expectedVersion,
         );
         this.logger.warn(
-          `[pushUpdates] VERSION MISMATCH file=${fileId} expected=${expectedVersion} actual=${currentVersion} → sending ${missing.length} missing updates${forceResync ? ' (resync)' : ''}`,
+          `[pushUpdates] VERSION MISMATCH file=${fileId} expected=${expectedVersion} actual=${currentVersion} sending ${missing.length} missing updates${forceResync ? ' (resync)' : ''}`,
         );
         if (forceResync) {
           const content = (await this.redis.get(this.contentKey(fileId))) ?? '';
@@ -313,16 +303,8 @@ export class DocumentStateService {
       const contentStr = currentContent ?? '';
       let doc = Text.of(contentStr.split('\n'));
 
-      this.logger.debug(
-        `[pushUpdates] file=${fileId} currentDocLength=${doc.length} currentDocLines=${doc.lines}`,
-      );
-
       for (const [i, u] of updates.entries()) {
         const changeSet = ChangeSet.fromJSON(u.changes);
-        this.logger.debug(
-          `[pushUpdates] file=${fileId} update[${i}] clientID=${u.clientID} changeSetLength(before)=${changeSet.length} docLength=${doc.length}`,
-        );
-
         if (changeSet.length !== doc.length) {
           this.logger.error(
             `[pushUpdates] LENGTH MISMATCH file=${fileId} update[${i}] changeSet.length=${changeSet.length} !== doc.length=${doc.length}. Forcing full resync for this client.`,
@@ -332,7 +314,7 @@ export class DocumentStateService {
             version: currentVersion,
             error: `Length mismatch: client is desynced`,
             forceResync: true,
-            doc: doc.toString(), // ⬅️ المستند الصحيح الحالي كامل
+            doc: doc.toString(),
             document: doc.toString(),
           };
         }
@@ -350,16 +332,13 @@ export class DocumentStateService {
       pipeline.expire(this.persistedVersionKey(fileId), HOT_STATE_TTL_SECONDS);
       await pipeline.exec();
 
-      this.logger.debug(
-        `[pushUpdates] file=${fileId} SUCCESS newVersion=${currentVersion + updates.length} newDocLength=${doc.length}`,
-      );
-
-      // Debounced persistence via Inngest (function-level debounce on fileId)
       void this.inngestService.persistFile({ fileId }).catch((err) => {
         this.logger.warn(
           `[pushUpdates] inngest persist enqueue failed file=${fileId}: ${err}`,
         );
       });
+
+      await this.bumpProjectRevision(fileId);
 
       return { accepted: true, version: currentVersion + updates.length };
     } catch (err) {
@@ -376,9 +355,24 @@ export class DocumentStateService {
     }
   }
 
-  /** بتتنادى لما آخر مستخدم يسيب الملف، بعد ما الـ checkpoint يتحفظ في S3 */
+  private async bumpProjectRevision(fileId: string): Promise<void> {
+    try {
+      const meta = await this.readMeta(fileId);
+      let projectId = meta?.projectId;
+      if (!projectId) {
+        const file = await this.fileRepository.getFile(BigInt(fileId));
+        projectId = file?.projectId?.toString();
+      }
+      if (!projectId) return;
+      await this.projectRevision.bump(projectId, 'content', fileId, 'collab');
+    } catch (err) {
+      this.logger.warn(
+        `[pushUpdates] revision bump failed file=${fileId}: ${String(err)}`,
+      );
+    }
+  }
+
   async unload(fileId: string): Promise<void> {
-    // Persist synchronously before dropping Redis keys so the last state is durable.
     await this.persistFileService.persist({ fileId });
 
     await this.redis.del(

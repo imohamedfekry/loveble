@@ -9,7 +9,7 @@ enum ImportStatus {
 const promptField = v.pipe(
   v.string('Prompt must be a string'),
   v.minLength(10, 'Describe your app a bit more (at least 10 characters)'),
-  v.maxLength(2000, 'Prompt cannot exceed 2000 characters'),
+  v.maxLength(20_000, 'Prompt cannot exceed 20000 characters'),
 );
 
 const nameField = v.pipe(

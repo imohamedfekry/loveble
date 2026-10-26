@@ -39,6 +39,10 @@ export const FileStandardSchema = v.object({
   name: v.string(),
   type: v.picklist(['file', 'folder']),
   storageKey: v.nullable(v.string()),
+  contentType: v.string(),
+  size: v.number(),
+  checksum: v.nullable(v.string()),
+  isBinary: v.boolean(),
   createdAt: v.date(),
   updatedAt: v.date(),
 });

@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { previewBaseDomain } from '../preview/preview.constants';
 import type {
   CreateUserDto,
   LoginDto,
@@ -26,6 +22,7 @@ import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth
 import { OauthTokenService } from 'src/common/Global/security/jwt/services/oauth-token.service';
 import { InngestService } from 'src/common/inngest/inngest.service';
 import { RESPONSE_MESSAGES } from '@loveble/utils';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 interface GitHubProfile {
   provider: string;
   providerId: string;
@@ -350,10 +347,13 @@ export class AuthService {
    * sees the session.
    */
   private authCookieOptions(): { domain?: string } {
-    const domain =
+    const previewDomain = previewBaseDomain();
+    const domain = previewDomain.startsWith('.') ? previewDomain : '.' + previewDomain;
+    const finalDomain =
       this.configService.get<string>('AUTH_COOKIE_DOMAIN') ??
-      process.env.AUTH_COOKIE_DOMAIN;
-    const trimmed = domain?.trim();
+      process.env.AUTH_COOKIE_DOMAIN ??
+      domain;
+    const trimmed = finalDomain?.trim();
     return trimmed ? { domain: trimmed } : {};
   }
 

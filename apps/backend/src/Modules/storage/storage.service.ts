@@ -1,4 +1,4 @@
-import {
+﻿import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
@@ -50,6 +50,12 @@ export class StorageService {
     );
   }
 
+  async downloadBytes(key: string): Promise<Uint8Array> {
+    const object = await this.download(key);
+    if (!object.Body) return new Uint8Array();
+    return object.Body.transformToByteArray();
+  }
+
   async exists(key: string): Promise<boolean> {
     try {
       await this.client.send(
@@ -77,7 +83,6 @@ export class StorageService {
       },
     );
   }
-  // Used in file service //
 
   async delete(key: string) {
     await this.client.send(

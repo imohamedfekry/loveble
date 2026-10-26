@@ -1,5 +1,5 @@
 import { apiFetch } from "../../api-fetch";
-import { CreateFileRequest, FileContentResponse, FileResponse, GetFilesResponse, MoveFileRequest, ProjectFileType, UpdateFile } from "./types";
+import { CreateFileRequest, FileContentResponse, FileDownloadResponse, FileResponse, GetFilesResponse, MoveFileRequest, ProjectFileType, UpdateFile } from "./types";
 export function getFiles(projectId: string) {
     return apiFetch<GetFilesResponse>(
         `/projects/${projectId}/files`,
@@ -91,6 +91,18 @@ export function getFolderContent(
 export function getFileContent(projectId: string, fileId: string) {
     return apiFetch<FileContentResponse>(
         `/projects/${projectId}/files/${fileId}/content`,
+        {
+            method: "Get",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        },
+    );
+}
+
+export function getFileDownload(projectId: string, fileId: string) {
+    return apiFetch<FileDownloadResponse>(
+        `/projects/${projectId}/files/${fileId}/download`,
         {
             method: "Get",
             headers: {

@@ -22,6 +22,7 @@ import { deriveDefaultName } from './project-name.util';
 import type { Project } from 'src/common/database/schema/projects/project.schema';
 import { SandboxService } from 'src/Modules/sandbox/sandbox.service';
 import { ConversationsService } from 'src/Modules/conversations/conversations.service';
+import { PreviewService } from 'src/Modules/preview/preview.service';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -45,6 +46,7 @@ export class projectService {
     private readonly inngestService: InngestService,
     private readonly sandboxService: SandboxService,
     private readonly conversationsService: ConversationsService,
+    private readonly previewService: PreviewService,
   ) {}
   async findAll(req: AuthenticatedRequest, query: ProjectQueryDto) {
     if (query.recent === 'true') {
@@ -155,6 +157,16 @@ export class projectService {
     if (!project || project.userId !== req.user.id) {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
     }
+    await this.previewService.detach(projectId);
+    if (project.sandboxId) {
+      await this.sandboxService
+        .destroy(project.sandboxId)
+        .catch((err) =>
+          this.logger.warn(
+            `Could not destroy sandbox ${project.sandboxId}: ${String(err)}`,
+          ),
+        );
+    }
     await this.projectRepository.delete(projectId);
     this.realtimeEmitService.toUser(
       req.user.id.toString(),
@@ -202,14 +214,12 @@ export class projectService {
         this.logger.log(`Open project ${key}: no stored sandbox`);
       }
 
-      const result = await this.sandboxService.ensure(existingSandboxId);
+      // Shares the preview's per-project lock, so the project page and a
+      // concurrent first build (or preview ensure) never provision two
+      // sandboxes for the same project.
+      const result = await this.previewService.ensureSandbox(projectId);
 
       if (result.created) {
-        await this.projectRepository.updateSandboxId(
-          projectId,
-          result.sandboxId,
-        );
-
         this.realtimeEmitService.toProject(
           projectId,
           PROJECT_EVENTS.SANDBOX_READY,
@@ -225,6 +235,8 @@ export class projectService {
 
     try {
       const { sandboxId, status, created } = await inflight;
+
+      await this.previewService.attach(projectId, sandboxId);
 
       this.logger.log(
         `Open project ${key}: sandbox ${sandboxId} ready ` +

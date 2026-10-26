@@ -10,6 +10,10 @@ import { mastra } from 'src/mastra';
 import type { ChatMode } from 'src/mastra/agents/chat-agents';
 import { resolveChatAgent } from 'src/mastra/routing/team-router';
 import { ensureWorkspaceRunKey } from 'src/mastra/team/ownership';
+import { MessageRepository } from 'src/common/database/repositories/conversations/message.repository';
+import { FileRepository } from 'src/common/database/repositories/project/file.repository';
+import { buildProjectStructureContext } from './workspace/project-context';
+import { ensureProjectMaterialized } from './workspace/project-materialization';
 import { ChatRequestSchema } from './dto/chat.dto';
 import type { ChatRequestDto } from './dto/chat.dto';
 
@@ -44,6 +48,11 @@ function withTimeout<T>(
 @Controller('ai/chat')
 @Auth()
 export class ChatController {
+  constructor(
+    private readonly messageRepository: MessageRepository,
+    private readonly fileRepository: FileRepository,
+  ) {}
+
   @Post()
   async chat(
     @Body({ schema: ChatRequestSchema }) body: ChatRequestDto,
@@ -64,10 +73,34 @@ export class ChatController {
       // The agent prompt is built entirely on the server. The current message
       // is the only thing taken from the client; prior turns come from Mastra
       // memory, scoped to this conversation (thread) so threads never share.
+      // On the first turn of a conversation, prepend the current project
+      // structure so the agent starts from the scaffold that already exists
+      // instead of recreating every file.
+      let agentInput = body.message;
+      const isFirstTurn = await this.messageRepository
+        .countByConversation(BigInt(body.conversationId))
+        .then((count) => count <= 1)
+        .catch(() => true);
+      if (isFirstTurn) {
+        // The first turn must not run against a workspace that is still empty:
+        // wait until the project template has been adopted into the database.
+        await ensureProjectMaterialized(
+          BigInt(body.projectId),
+          'the first chat turn',
+        );
+        const context = await buildProjectStructureContext(
+          this.fileRepository,
+          BigInt(body.projectId),
+        ).catch(() => null);
+        if (context) {
+          agentInput = `${context}\n\n<user_request>\n${body.message}\n</user_request>`;
+        }
+      }
+
       const message = {
         id: randomUUID(),
         role: 'user' as const,
-        parts: [{ type: 'text' as const, text: body.message }],
+        parts: [{ type: 'text' as const, text: agentInput }],
       };
 
       // Plan vs build decides which chat agent runs. Plan mode is intentionally

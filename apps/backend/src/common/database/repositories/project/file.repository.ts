@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+﻿import { Injectable, Inject } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
 
 import { BaseRepository } from '../base.repository';
@@ -9,6 +9,14 @@ import {
 } from 'src/common/database/database.constants';
 
 import { File, files, NewFile } from '../../schema/projects/file.schema';
+
+export interface FileContentMetadata {
+  storageKey?: string;
+  contentType: string;
+  size: number;
+  checksum: string;
+  isBinary: boolean;
+}
 
 @Injectable()
 export class FileRepository extends BaseRepository {
@@ -57,7 +65,6 @@ export class FileRepository extends BaseRepository {
     ancestorId: bigint,
     descendantId: bigint,
   ): Promise<boolean> {
-    // Single recursive query instead of loading every file in the project.
     const rows = await this.db.execute<{
       is_descendant: boolean;
     }>(sql`
@@ -112,6 +119,24 @@ export class FileRepository extends BaseRepository {
       .update(files)
       .set({
         ...data,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(files.id, fileId), eq(files.projectId, projectId)))
+      .returning();
+
+    return file;
+  }
+
+  async updateFileContentMetadata(
+    fileId: bigint,
+    projectId: bigint,
+    data: FileContentMetadata,
+  ): Promise<File | undefined> {
+    const [file] = await this.db
+      .update(files)
+      .set({
+        ...data,
+        version: sql`${files.version} + 1`,
         updatedAt: new Date(),
       })
       .where(and(eq(files.id, fileId), eq(files.projectId, projectId)))

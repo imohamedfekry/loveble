@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Delete,
@@ -43,7 +43,6 @@ export class FileController {
   ) {
     return this.fileService.findFolderContent(projectId, folderId, req);
   }
-  // create only save meta data no file upload now
   @Post(':projectId/files')
   createFile(
     @Body({ schema: CreateFileSchema }) body: CreateFileDto,
@@ -59,6 +58,14 @@ export class FileController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.fileService.getFileContent(projectId, fileId, req);
+  }
+  @Get(':projectId/files/:fileId/download')
+  getFileDownload(
+    @Param('projectId', ParseSnowflakePipe) projectId: bigint,
+    @Param('fileId', ParseSnowflakePipe) fileId: bigint,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.fileService.getFileDownload(projectId, fileId, req);
   }
   @Put(':projectId/files/:fileId/content')
   updateFileContent(

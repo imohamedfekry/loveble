@@ -1,4 +1,4 @@
-import type { File } from 'src/common/database/schema/projects/file.schema';
+﻿import type { File } from 'src/common/database/schema/projects/file.schema';
 
 export type ProjectNode = {
   id: string;
@@ -6,20 +6,15 @@ export type ProjectNode = {
   name: string;
   type: 'file' | 'folder';
   storageKey: string | null;
+  contentType: string;
+  size: number;
+  checksum: string | null;
+  isBinary: boolean;
   version: number;
   createdAt: Date;
   updatedAt: Date;
 };
 
-/**
- * Maps the flat `files` rows of a single project onto a POSIX-like tree so an
- * agent's workspace filesystem can resolve `/src/app.ts` → file id.
- *
- * Paths are stored WITHOUT a leading slash and without any `./` prefix
- * ("src/app.ts", "README.md"). The root directory is the empty string "".
- * This matches how the Mastra workspace tools build paths during a directory
- * walk (`dir === "." ? "./name" : dir + "/" + name`), which we normalize.
- */
 export class ProjectPathResolver {
   private readonly byPath = new Map<string, ProjectNode>();
   private readonly byId = new Map<string, ProjectNode>();
@@ -36,6 +31,10 @@ export class ProjectPathResolver {
       name: file.name,
       type: file.type,
       storageKey: file.storageKey ?? null,
+      contentType: file.contentType,
+      size: file.size,
+      checksum: file.checksum ?? null,
+      isBinary: file.isBinary,
       version: file.version,
       createdAt: file.createdAt,
       updatedAt: file.updatedAt,
@@ -43,7 +42,6 @@ export class ProjectPathResolver {
 
     for (const node of nodes) this.byId.set(node.id, node);
 
-    // Children grouped by parent ("root" = null parent).
     for (const node of nodes) {
       const key = node.parentId ?? 'root';
       const bucket = this.childrenByParent.get(key) ?? [];
@@ -56,7 +54,6 @@ export class ProjectPathResolver {
     }
   }
 
-  /** Resolve a node's full path by walking up the parent chain. */
   private pathOf(node: ProjectNode): string {
     const existing = this.pathMemo.get(node.id);
     if (existing !== undefined) return existing;
@@ -70,14 +67,16 @@ export class ProjectPathResolver {
     return resolved;
   }
 
-  /** Full project-relative path for a file/folder id (undefined if unknown). */
   pathOfId(id: string): string | undefined {
     const node = this.byId.get(id);
     if (!node) return undefined;
     return this.pathOf(node);
   }
 
-  /** Normalize any agent-supplied path to the resolver's key form. */
+  nodeOfId(id: string): ProjectNode | undefined {
+    return this.byId.get(id);
+  }
+
   static normalize(path: string): string {
     const withoutLeading = path.replace(/^\/+/, '').replace(/^\.\/+/, '');
     const segments = withoutLeading
@@ -98,7 +97,6 @@ export class ProjectPathResolver {
     return this.childrenByParent.get(parentKey) ?? [];
   }
 
-  /** Children of a node by its id (used during recursive deletes). */
   childrenOf(parentId: string): ProjectNode[] {
     return this.childrenByParent.get(parentId) ?? [];
   }
@@ -107,7 +105,6 @@ export class ProjectPathResolver {
     return ProjectPathResolver.normalize(path) === '';
   }
 
-  /** True when a node exists at the path and is a folder (the root counts). */
   isDirectory(path: string): boolean {
     const normalized = ProjectPathResolver.normalize(path);
     if (normalized === '') return true;

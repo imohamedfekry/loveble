@@ -15,7 +15,9 @@ import { inngest } from './common/inngest/client';
 import { functions } from './common/inngest/functions';
 import { setNestApp } from './common/inngest/nest-context';
 import { registerPreviewProxy } from './Modules/preview/preview.proxy';
+import { registerPreviewWebSocketProxy } from './Modules/preview/preview-websocket';
 import * as Sentry from '@sentry/nestjs';
+import { LoggingInterceptor } from './common/interceptors/LoggingInterceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -49,6 +51,7 @@ async function bootstrap() {
   // BigIntInterceptor: Converts all BigInt values to strings for JSON serialization
   // ResponseInterceptor: Wraps all responses in the standard ApiResponse format
   app.useGlobalInterceptors(new BigIntInterceptor(), new ResponseInterceptor());
+  app.useGlobalInterceptors(new LoggingInterceptor())
   setNestApp(app);
 
   console.log('🧭 About to start listening on port', serverInfo.port);
@@ -63,6 +66,11 @@ async function bootstrap() {
   } catch (err) {
     console.error(`❗ app.listen did not resolve within ${timeoutMs}ms`, err);
   }
+
+  // After listen so Socket.IO's upgrade handler is already attached; we wrap
+  // it and only steal `<projectId>.loveble.app` Vite HMR connections.
+  registerPreviewWebSocketProxy(app.getHttpServer(), app);
+
   AppBootstrap.logServerInfo(serverInfo);
 }
 

@@ -1,4 +1,4 @@
-import {
+﻿import {
   pgTable,
   bigint,
   timestamp,
@@ -8,6 +8,7 @@ import {
   integer,
   unique,
   uuid,
+  boolean,
 } from 'drizzle-orm/pg-core';
 
 import { nextSnowflakeId } from 'src/common/utils/snowflake';
@@ -37,6 +38,12 @@ export const files = pgTable(
     name: varchar('name', { length: 255 }).notNull(),
     type: fileTypeEnum('type').notNull(),
     storageKey: uuid('storage_key').default(sql`gen_random_uuid()`),
+    contentType: varchar('content_type', { length: 255 })
+      .default('text/plain; charset=utf-8')
+      .notNull(),
+    size: bigint('size', { mode: 'number' }).default(0).notNull(),
+    checksum: varchar('checksum', { length: 64 }),
+    isBinary: boolean('is_binary').default(false).notNull(),
     version: integer('version').default(1).notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

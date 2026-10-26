@@ -19,6 +19,7 @@ import { DocumentStateService } from '../../realtime/core/document-state.service
 import { ProjectPathResolver } from './project-path.resolver';
 import { ProjectFilesystem, type ProjectMutations } from './project-filesystem';
 import { ProjectMutationsService } from './project-mutations.service';
+import { ensureProjectMaterialized } from './project-materialization';
 
 type WorkspaceMode = 'plan' | 'build';
 
@@ -148,6 +149,11 @@ export class AgentWorkspacesService implements OnModuleInit {
     if (cached) return cached;
 
     const projectIdBig = BigInt(projectId);
+
+    // Never hand an agent an empty snapshot of a project whose template has not
+    // been adopted into the database yet — it would rebuild every file.
+    await ensureProjectMaterialized(projectIdBig, `the ${mode} run`);
+
     const files =
       await this.fileRepository.getAllFilesWithProjectId(projectIdBig);
     const reload = async () =>

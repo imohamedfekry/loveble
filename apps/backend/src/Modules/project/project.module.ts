@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+﻿import { Module } from '@nestjs/common';
 import { projectService } from './project.service';
 import { ProjectController } from './project.controller';
 import { RepositoryModule } from 'src/common/database/repositories/repository.module';
@@ -6,6 +6,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
 import { StorageModule } from '../storage/storage.module';
 import { SandboxModule } from 'src/Modules/sandbox/sandbox.module';
 import { ConversationsModule } from 'src/Modules/conversations/conversations.module';
+import { PreviewModule } from 'src/Modules/preview/preview.module';
 import { ProjectWebhookController } from './webhook.controller';
 
 @Module({
@@ -15,6 +16,7 @@ import { ProjectWebhookController } from './webhook.controller';
     StorageModule,
     SandboxModule,
     ConversationsModule,
+    PreviewModule,
   ],
   controllers: [ProjectController, ProjectWebhookController],
   providers: [projectService],

@@ -126,6 +126,7 @@ export async function createProject(body: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
     credentials: "include",
+    signal: AbortSignal.timeout(20_000),
   });
 
   const json = await response.json().catch(() => null);

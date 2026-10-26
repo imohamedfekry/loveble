@@ -366,8 +366,8 @@ const designStep = createStep({
 Request:
 ${inputData.brief}
 
-Own the visual layer only: stylesheets, theme/tokens, Tailwind and PostCSS
-config, global styles. Do not touch components or application logic — the
+Own the visual layer only: stylesheets, theme/tokens, styling configuration,
+global styles. Do not touch components or application logic — the
 builder owns that surface and the workspace will reject your writes there.
 
 Read the existing styles and structure first, extend the current design system
@@ -434,7 +434,7 @@ Request:
 ${request}
 
 Design specialist output (styling is already handled — do NOT edit style
-files, theme/tokens, or Tailwind config; that surface belongs to the design
+files, theme/tokens, or styling configuration; that surface belongs to the design
 specialist):
 ${inputData.design.summary}
 

@@ -19,6 +19,8 @@ const MIN_HEIGHT = 180;
 const DEFAULT_HEIGHT = 300;
 const MAX_HEIGHT = 720;
 const HEIGHT_STORAGE_KEY = "loveble:terminal-height";
+/** Dragging the dock below this height and releasing closes it. */
+const CLOSE_DRAG_THRESHOLD = 100;
 
 type TerminalStatus =
   | "connecting"
@@ -88,12 +90,13 @@ function readStoredHeight(): number {
   return clampHeight(stored);
 }
 
+function maxDockHeight(): number {
+  if (typeof window === "undefined") return MAX_HEIGHT;
+  return Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, window.innerHeight * 0.62));
+}
+
 function clampHeight(value: number): number {
-  const max =
-    typeof window === "undefined"
-      ? MAX_HEIGHT
-      : Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, window.innerHeight * 0.62));
-  return Math.round(Math.min(Math.max(value, MIN_HEIGHT), max));
+  return Math.round(Math.min(Math.max(value, MIN_HEIGHT), maxDockHeight()));
 }
 
 const STATUS_META: Record<
@@ -188,13 +191,11 @@ export function TerminalDock({
   const fitRef = useRef<FitAddon | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const readyRef = useRef(false);
+  /** Forces the next (re)connection to create a brand-new server session. */
+  const freshRestart = useRef(false);
   const [status, setStatus] = useState<TerminalStatus>("connecting");
-  const [session, setSession] = useState<{
-    userName?: string;
-    projectId?: string;
-    cwd?: string;
-  } | null>(null);
   const [height, setHeight] = useState(readStoredHeight);
+  const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
 
   useEffect(() => {
@@ -205,12 +206,22 @@ export function TerminalDock({
   }, [resolvedTheme]);
 
   useEffect(() => {
+    if (dragging) return; // persist once per drag, not per pixel
     try {
       window.localStorage.setItem(HEIGHT_STORAGE_KEY, String(height));
     } catch {
       // Storage can be disabled (private mode) — resizing still works.
     }
-  }, [height]);
+  }, [height, dragging]);
+
+  // The dock height is stored in pixels, so a shrinking window can leave it
+  // taller than the workspace: the bottom rows then get clipped by the outer
+  // overflow-hidden and the terminal looks stuck at its old size.
+  useEffect(() => {
+    const onResize = () => setHeight((current) => clampHeight(current));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -223,10 +234,145 @@ export function TerminalDock({
     let socket: Socket | null = null;
     let observer: ResizeObserver | null = null;
     let frame = 0;
+    let fitTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Dimensions the server (shell/PTY) already knows about. */
+    let lastSentCols = 0;
+    let lastSentRows = 0;
     let connectedOnce = false;
-    let authFailed = false;
+    let hardFail = false;
+    let startAttempts = 0;
+    let connectFailures = 0;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let readyTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const MAX_START_ATTEMPTS = 5;
+    const MAX_AUTH_ATTEMPTS = 5;
+    const MAX_CONNECT_FAILURES = 10;
+    const READY_TIMEOUT_MS = 60_000;
+
+    // Set by the Restart button when the socket is down (or exited); consumed
+    // by the next "connect" so the revived session is forced fresh.
+    const freshRestartRef = freshRestart;
 
     setStatus("connecting");
+
+    /**
+     * Fit every trigger through one place: dock drag, window resize, panel
+     * switch, font load and reconnect all collapse into a single fit per
+     * frame. Emitting the resize only when the grid actually changed keeps the
+     * PTY in sync without spamming it during a drag.
+     */
+    const pushResize = () => {
+      if (!readyRef.current || !term) return;
+      if (term.cols === lastSentCols && term.rows === lastSentRows) return;
+      lastSentCols = term.cols;
+      lastSentRows = term.rows;
+      socket?.emit("terminal:resize", { cols: term.cols, rows: term.rows });
+    };
+
+    const fitNow = () => {
+      if (disposed || !fit || !term) return;
+      // Collapsed/hidden boxes measure 0×0. Fitting there clamps the grid to
+      // the minimum and the wrong dimensions then stick.
+      if (container.clientWidth === 0 || container.clientHeight === 0) return;
+      try {
+        fit.fit();
+      } catch {
+        return;
+      }
+      pushResize();
+    };
+
+    const scheduleFit = () => {
+      if (disposed) return;
+      const run = () => {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        if (fitTimer) {
+          clearTimeout(fitTimer);
+          fitTimer = null;
+        }
+        fitNow();
+      };
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(run);
+      // Browsers pause rAF for occluded windows, so a rAF-only fit can be
+      // deferred forever and the grid stays at the previous size. The timer
+      // fallback always lands.
+      if (fitTimer) clearTimeout(fitTimer);
+      fitTimer = setTimeout(run, 120);
+    };
+
+    const onViewportChange = () => scheduleFit();
+    const onFontsLoaded = () => scheduleFit();
+    window.addEventListener("resize", onViewportChange);
+    window.addEventListener("orientationchange", onViewportChange);
+    // Returning to an occluded/minimized window never fires visibilitychange,
+    // and without frames the grid would stay at its previous dimensions.
+    window.addEventListener("focus", onViewportChange);
+    window.addEventListener("pageshow", onViewportChange);
+    document.addEventListener("visibilitychange", onViewportChange);
+    document.fonts?.addEventListener("loadingdone", onFontsLoaded);
+
+    const clearTimers = () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      if (readyTimer) {
+        clearTimeout(readyTimer);
+        readyTimer = null;
+      }
+    };
+
+    const armReadyTimeout = () => {
+      if (readyTimer) clearTimeout(readyTimer);
+      readyTimer = setTimeout(() => {
+        if (disposed || readyRef.current) return;
+        // The backend may still be preparing the sandbox (this is heavy).
+        // Keep retrying instead of hanging on "Connecting" forever.
+        if (startAttempts < MAX_START_ATTEMPTS) {
+          term?.write(
+            "\r\n\x1b[2m— still connecting, retrying —\x1b[0m\r\n",
+          );
+          emitStart();
+          return;
+        }
+        hardFail = true;
+        socket?.disconnect();
+        setStatus("error");
+      }, READY_TIMEOUT_MS);
+    };
+
+    const emitStart = (opts?: { fresh?: boolean }) => {
+      if (disposed || !socket?.connected || !term) return;
+      startAttempts += 1;
+      socket.emit("terminal:start", {
+        projectId,
+        cols: term.cols,
+        rows: term.rows,
+        fresh: opts?.fresh ?? false,
+      });
+      lastSentCols = term.cols;
+      lastSentRows = term.rows;
+      armReadyTimeout();
+    };
+
+    const scheduleStart = () => {
+      if (disposed) return;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => emitStart(), 700 * startAttempts);
+    };
+
+    const retryAfterFailure = () => {
+      if (disposed) return;
+      if (startAttempts >= MAX_START_ATTEMPTS) {
+        setStatus("error");
+        return;
+      }
+      setStatus("connecting");
+      scheduleStart();
+    };
 
     void (async () => {
       const [{ Terminal }, { FitAddon: Fit }, { WebLinksAddon }] =
@@ -265,11 +411,17 @@ export function TerminalDock({
       termRef.current = term;
       fitRef.current = fit;
 
-      try {
-        fit.fit();
-      } catch {
-        // The container can still be 0×0 during the open animation.
-      }
+      // First fit runs synchronously (the container has its final size by the
+      // time effects run), then again on the next frame/timer and once the web
+      // font xterm measures its cell with has finished loading — a fit against
+      // fallback metrics leaves the terminal on the old cols/rows.
+      fitNow();
+      scheduleFit();
+      void document.fonts?.ready.then(() => {
+        if (disposed) return;
+        scheduleFit();
+        if (term) term.refresh(0, term.rows - 1);
+      });
 
       term.onData((data) => {
         if (!readyRef.current) return;
@@ -283,35 +435,28 @@ export function TerminalDock({
       socketRef.current = socket;
 
       socket.on("connect", () => {
-        authFailed = false;
-    setStatus("connecting");
-    setSession(null);
+        connectFailures = 0;
+        startAttempts = 0;
+        hardFail = false;
+        setStatus("connecting");
         if (connectedOnce) term?.write("\r\n\x1b[2m— reconnected —\x1b[0m\r\n");
         connectedOnce = true;
-        socket?.emit("terminal:start", {
-          projectId,
-          cols: term?.cols ?? 80,
-          rows: term?.rows ?? 24,
-        });
+        const fresh = freshRestartRef.current;
+        freshRestartRef.current = false;
+        emitStart({ fresh });
       });
 
       socket.on("terminal:ready", (payload: unknown) => {
+        if (readyTimer) {
+          clearTimeout(readyTimer);
+          readyTimer = null;
+        }
+        startAttempts = 0;
         readyRef.current = true;
         setStatus("ready");
-        if (payload && typeof payload === "object") {
-          const meta = payload as {
-            userName?: unknown;
-            projectId?: unknown;
-            cwd?: unknown;
-          };
-          setSession({
-            userName:
-              typeof meta.userName === "string" ? meta.userName : undefined,
-            projectId:
-              typeof meta.projectId === "string" ? meta.projectId : undefined,
-            cwd: typeof meta.cwd === "string" ? meta.cwd : undefined,
-          });
-        }
+        // The shell now owns the PTY size; make sure it matches the current
+        // grid before typing.
+        scheduleFit();
         requestAnimationFrame(() => term?.focus());
       });
 
@@ -320,6 +465,10 @@ export function TerminalDock({
       });
 
       socket.on("terminal:exit", (payload: unknown) => {
+        if (readyTimer) {
+          clearTimeout(readyTimer);
+          readyTimer = null;
+        }
         readyRef.current = false;
         setStatus("exited");
         const code =
@@ -327,28 +476,40 @@ export function TerminalDock({
             ? (payload as { exitCode?: unknown }).exitCode
             : undefined;
         term?.write(
-          `\r\n\x1b[0m\x1b[2mShell session ended${
+          `\r\n\x1b[0m\x1b[2mTerminal session ended${
             typeof code === "number" ? ` (exit ${code})` : ""
           }. Press ↻ to restart.\x1b[0m\r\n`,
         );
       });
 
       socket.on("terminal:error", (payload: unknown) => {
+        if (readyTimer) {
+          clearTimeout(readyTimer);
+          readyTimer = null;
+        }
         readyRef.current = false;
-        setStatus("error");
+        const meta = (payload ?? {}) as { message?: unknown; code?: unknown };
         const message =
-          payload &&
-          typeof payload === "object" &&
-          typeof (payload as { message?: unknown }).message === "string"
-            ? (payload as { message: string }).message
+          typeof meta.message === "string"
+            ? meta.message
             : "The terminal failed to start.";
         term?.write(`\r\n\x1b[31m${message.replace(/\x1b/g, "")}\x1b[0m\r\n`);
+        // Fatal errors (bad project, unauthorized) never recover on their
+        // own; transient ones (sandbox provisioning) are worth retrying.
+        if (meta.code === "fatal") {
+          hardFail = true;
+          setStatus("error");
+          return;
+        }
+        retryAfterFailure();
       });
 
       socket.on("connect:error", (payload: unknown) => {
-        authFailed = true;
+        if (readyTimer) {
+          clearTimeout(readyTimer);
+          readyTimer = null;
+        }
         readyRef.current = false;
-        setStatus("error");
         const message =
           payload &&
           typeof payload === "object" &&
@@ -356,43 +517,68 @@ export function TerminalDock({
             ? (payload as { message: string }).message
             : "Unauthorized";
         term?.write(`\r\n\x1b[31m${message.replace(/\x1b/g, "")}\x1b[0m\r\n`);
+        // The server closes the socket after an auth failure. The cookie may
+        // simply not have been attached yet — give the handshake a few more
+        // chances instead of killing the socket forever.
+        connectFailures += 1;
+        if (connectFailures < MAX_AUTH_ATTEMPTS) {
+          setStatus("reconnecting");
+          return;
+        }
+        hardFail = true;
         socket?.disconnect();
+        setStatus("error");
       });
 
       socket.on("disconnect", () => {
+        if (readyTimer) {
+          clearTimeout(readyTimer);
+          readyTimer = null;
+        }
         readyRef.current = false;
-        if (!disposed && !authFailed) setStatus("reconnecting");
+        if (!disposed && !hardFail) setStatus("reconnecting");
       });
 
       socket.on("connect_error", () => {
+        connectFailures += 1;
+        if (readyTimer) {
+          clearTimeout(readyTimer);
+          readyTimer = null;
+        }
         readyRef.current = false;
-        if (!disposed) setStatus("error");
+        if (disposed) return;
+        if (connectFailures >= MAX_CONNECT_FAILURES) {
+          hardFail = true;
+          socket?.disconnect();
+          setStatus("error");
+          return;
+        }
+        // socket.io keeps retrying the handshake on its own.
+        setStatus("reconnecting");
       });
 
-      observer = new ResizeObserver(() => {
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => {
-          if (!fit || !term) return;
-          try {
-            fit.fit();
-          } catch {
-            return;
-          }
-          if (readyRef.current) {
-            socket?.emit("terminal:resize", {
-              cols: term.cols,
-              rows: term.rows,
-            });
-          }
-        });
-      });
+      // Observe both the fit container and the surface it fills: a split/panel
+      // change resizes the surface, the container follows it.
+      observer = new ResizeObserver(scheduleFit);
       observer.observe(container);
+      if (container.parentElement) observer.observe(container.parentElement);
     })();
 
     return () => {
       disposed = true;
       readyRef.current = false;
       cancelAnimationFrame(frame);
+      if (fitTimer) {
+        clearTimeout(fitTimer);
+        fitTimer = null;
+      }
+      clearTimers();
+      window.removeEventListener("resize", onViewportChange);
+      window.removeEventListener("orientationchange", onViewportChange);
+      window.removeEventListener("focus", onViewportChange);
+      window.removeEventListener("pageshow", onViewportChange);
+      document.removeEventListener("visibilitychange", onViewportChange);
+      document.fonts?.removeEventListener("loadingdone", onFontsLoaded);
       observer?.disconnect();
       if (socket) {
         socket.removeAllListeners();
@@ -403,26 +589,34 @@ export function TerminalDock({
       fitRef.current = null;
       socketRef.current = null;
     };
-  }, [open, projectId]);
+  }, [open, projectId, freshRestart]);
 
   const restart = useCallback(() => {
     const term = termRef.current;
     const socket = socketRef.current;
-    if (!term || !socket?.connected) return;
+    if (!term) return;
 
     readyRef.current = false;
     setStatus("connecting");
-    term.write("\r\n\x1b[2mRestarting shell…\x1b[0m\r\n");
-    socket.emit("terminal:start", {
-      projectId,
-      cols: term.cols,
-      rows: term.rows,
-    });
+    term.write("\r\n\x1b[2mRestarting terminal…\x1b[0m\r\n");
+    if (socket?.connected) {
+      socket.emit("terminal:start", {
+        projectId,
+        cols: term.cols,
+        rows: term.rows,
+        fresh: true,
+      });
+    } else {
+      // Ask the next successful handshake to force a fresh session.
+      freshRestart.current = true;
+      socket?.connect();
+    }
   }, [projectId]);
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
     dragRef.current = { startY: event.clientY, startHeight: height };
+    setDragging(true);
     event.currentTarget.setPointerCapture(event.pointerId);
     document.body.style.userSelect = "none";
   };
@@ -430,22 +624,38 @@ export function TerminalDock({
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag) return;
-    setHeight(clampHeight(drag.startHeight + drag.startY - event.clientY));
+    // No lower clamp while dragging: the dock shrinks past its minimum so the
+    // user can see it heading toward the close threshold.
+    const next = drag.startHeight + drag.startY - event.clientY;
+    setHeight(Math.round(Math.max(0, Math.min(next, maxDockHeight()))));
   };
 
   const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragRef.current) return;
+    const drag = dragRef.current;
+    if (!drag) return;
     dragRef.current = null;
+    setDragging(false);
     document.body.style.userSelect = "";
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    if (height <= CLOSE_DRAG_THRESHOLD) {
+      // Released inside the close zone — dismiss the dock and restore the
+      // height it had before the drag for the next open.
+      setHeight(clampHeight(drag.startHeight));
+      onClose();
+      return;
+    }
+    setHeight(clampHeight(height));
   };
 
   if (!open) return null;
 
   return (
-    <div className="shrink-0 border-t border-border bg-card" style={{ height }}>
+    <div
+      className="shrink-0 border-t border-border bg-card"
+      style={{ height, maxHeight: "100%" }}
+    >
       <div className="flex h-full flex-col overflow-hidden bg-card">
         <div
           role="separator"
@@ -457,22 +667,20 @@ export function TerminalDock({
           onPointerCancel={endDrag}
           className="group flex h-2.5 w-full shrink-0 cursor-row-resize touch-none items-center justify-center"
         >
-          <span className="h-0.5 w-9 rounded-full bg-border transition-colors duration-150 group-hover:bg-muted-foreground/50" />
+          <span
+            className={cn(
+              "h-0.5 w-9 rounded-full transition-colors duration-150",
+              dragging && height <= CLOSE_DRAG_THRESHOLD
+                ? "bg-red-500/80"
+                : "bg-border group-hover:bg-muted-foreground/50",
+            )}
+          />
         </div>
 
         <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border bg-card/80 px-3 backdrop-blur-sm">
           <SquareTerminalIcon className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="text-xs font-medium text-foreground">Terminal</span>
           <StatusPill status={status} />
-          {(session?.userName || session?.projectId) && (
-            <span
-              title={session.cwd}
-              className="ml-1 hidden max-w-[18rem] truncate rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground md:inline"
-            >
-              {session.userName ? `${session.userName}@` : ""}
-              {session.projectId ?? ""}
-            </span>
-          )}
           <div className="flex-1" />
 
           <HeaderButton
@@ -481,7 +689,7 @@ export function TerminalDock({
           >
             <EraserIcon className="size-3.5" />
           </HeaderButton>
-          <HeaderButton label="Restart shell" onClick={restart}>
+          <HeaderButton label="Restart terminal" onClick={restart}>
             <RotateCcwIcon className="size-3.5" />
           </HeaderButton>
           <HeaderButton label="Close terminal" onClick={onClose}>
@@ -489,8 +697,13 @@ export function TerminalDock({
           </HeaderButton>
         </div>
 
-        <div className="terminal-surface relative min-h-0 flex-1 bg-card">
-          <div ref={containerRef} className="size-full px-2 py-1.5" />
+        <div className="terminal-surface relative min-h-0 min-w-0 flex-1 overflow-hidden bg-card">
+          {/*
+            No padding here: FitAddon subtracts only the `.xterm` element's
+            padding, so the inset lives in globals.css. Padding on this box
+            makes every fit overshoot and the grid keeps its old size.
+          */}
+          <div ref={containerRef} className="size-full" />
         </div>
       </div>
     </div>

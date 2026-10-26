@@ -11,10 +11,20 @@
 
 export const LOVABLE_CONF_PATH = 'lovable.conf';
 
+/** Manifest injected into projects created from the TanStack Start template. */
+export const DEFAULT_TANSTACK_CONF = `start: bash /home/user/bin/dev-server.sh start
+stop: bash /home/user/bin/dev-server.sh stop
+health: bash /home/user/bin/health-check.sh
+install: pnpm install --prefer-offline
+build: pnpm run build
+`;
+
 export interface LovableConfig {
   start?: string;
   install?: string;
   build?: string;
+  stop?: string;
+  health?: string;
 }
 
 /** Parse the flat `key: value` manifest (comments and blank lines ignored). */
@@ -40,7 +50,13 @@ export function parseLovableConfig(raw: string | undefined): LovableConfig {
       value = value.slice(1, -1);
     }
 
-    if (key === 'start' || key === 'install' || key === 'build') {
+    if (
+      key === 'start' ||
+      key === 'install' ||
+      key === 'build' ||
+      key === 'stop' ||
+      key === 'health'
+    ) {
       config[key] = value;
     }
   }
@@ -75,7 +91,12 @@ export function resolvePreviewCommands(
   config: LovableConfig,
   packageJsonRaw: string | undefined,
   port: number,
-): { start?: string; install?: string } {
+): {
+  start?: string;
+  install?: string;
+  stop?: string;
+  health?: string;
+} {
   const pkg = parsePackageJson(packageJsonRaw);
   const deps = {
     ...pkg?.dependencies,
@@ -100,5 +121,10 @@ export function resolvePreviewCommands(
   const install =
     config.install ?? (pkg ? 'npm install --no-audit --no-fund' : undefined);
 
-  return { start, install };
+  return {
+    start,
+    install,
+    stop: config.stop,
+    health: config.health,
+  };
 }

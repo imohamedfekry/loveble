@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ChangeSet, Text } from '@codemirror/state';
 import * as v from 'valibot';
+import { createHash, randomUUID } from 'node:crypto';
 
 import { FileRepository } from 'src/common/database/repositories/project/file.repository';
 import { FileStandard } from 'src/Modules/files/dto/file.dto';
@@ -10,9 +11,13 @@ import {
 } from 'src/Modules/realtime/events/files.events';
 import { DocumentStateService } from 'src/Modules/realtime/core/document-state.service';
 import { RealtimeEmitService } from 'src/Modules/realtime/core/realtime-emit.service';
+import { ProjectRevisionService } from 'src/Modules/realtime/core/project-revision.service';
+import { StorageService } from 'src/Modules/storage/storage.service';
+import { RedisService } from 'src/common/redis/redis.service';
 import { ProjectPathResolver } from './project-path.resolver';
 
 const AGENT_CLIENT_ID = 'loveble-agent';
+const TEXT_CONTENT_TYPE = 'text/plain; charset=utf-8';
 
 /**
  * Applies agent filesystem mutations to a project.
@@ -30,12 +35,59 @@ export class ProjectMutationsService {
     private readonly fileRepository: FileRepository,
     private readonly documentState: DocumentStateService,
     private readonly realtimeEmit: RealtimeEmitService,
+    private readonly projectRevision: ProjectRevisionService,
+    private readonly storageService: StorageService,
+    private readonly redisService: RedisService,
   ) {}
 
   /** Create or overwrite a file at `path` (creating folders on the way). */
   async writeFile(projectId: bigint, path: string, content: string) {
     const file = await this.ensureFileNode(projectId, path);
     await this.replaceDocument(file.id.toString(), content);
+    await this.updateMetadata(file.id, projectId, {
+      storageKey: file.storageKey ?? undefined,
+      contentType: TEXT_CONTENT_TYPE,
+      size: Buffer.byteLength(content, 'utf8'),
+      checksum: createHash('sha256').update(content).digest('hex'),
+      isBinary: false,
+    });
+  }
+
+  async writeBinaryFile(
+    projectId: bigint,
+    path: string,
+    data: Uint8Array,
+    contentType: string,
+  ) {
+    const file = await this.ensureFileNode(projectId, path);
+    const storageKey = file.storageKey ?? randomUUID();
+    const bytes = Buffer.from(data);
+    await this.storageService.upload({
+      key: storageKey,
+      body: bytes,
+      contentType,
+    });
+    const updated = await this.updateMetadata(file.id, projectId, {
+      storageKey,
+      contentType,
+      size: bytes.byteLength,
+      checksum: createHash('sha256').update(bytes).digest('hex'),
+      isBinary: true,
+    });
+    await this.invalidateDocument(file.id.toString());
+    if (updated) {
+      this.emitFileEvent(projectId, FILE_EVENTS.UPDATED, updated);
+      this.realtimeEmit.toFile(file.id.toString(), 'file:collab:reload', {
+        fileId: file.id.toString(),
+      });
+    }
+    await this.projectRevision.bump(
+      projectId,
+      'content',
+      file.id.toString(),
+      'binary-write',
+    );
+    return updated;
   }
 
   async mkdir(projectId: bigint, path: string) {
@@ -48,6 +100,7 @@ export class ProjectMutationsService {
     for (const segment of segments) {
       parentId = await this.ensureFolder(projectId, parentId, segment);
     }
+    await this.projectRevision.bump(projectId, 'tree', undefined, 'mkdir');
   }
 
   /**
@@ -107,6 +160,9 @@ export class ProjectMutationsService {
     );
     if (!deleted) return;
     this.emitFileEvent(projectId, FILE_EVENTS.DELETED, deleted);
+    if (deleted.storageKey) {
+      await this.storageService.delete(deleted.storageKey).catch(() => undefined);
+    }
     try {
       await this.documentState.unload(node.id);
     } catch (err) {
@@ -114,6 +170,7 @@ export class ProjectMutationsService {
         `deleteFile unload failed file=${node.id}: ${String(err)}`,
       );
     }
+    await this.projectRevision.bump(projectId, 'tree', undefined, 'delete');
   }
 
   /**
@@ -156,7 +213,9 @@ export class ProjectMutationsService {
     // Delete deepest first so parent folders are removed after their children.
     toDelete.sort((a, b) => b.depth - a.depth);
     for (const { node } of toDelete) {
-      let deleted: unknown = null;
+      let deleted:
+        | Awaited<ReturnType<FileRepository['deleteFile']>>
+        | undefined;
       try {
         deleted = await this.fileRepository.deleteFile(
           BigInt(node.id),
@@ -167,7 +226,14 @@ export class ProjectMutationsService {
           `deletePath failed node=${node.id} path=${path}: ${String(err)}`,
         );
       }
-      if (deleted) this.emitFileEvent(projectId, FILE_EVENTS.DELETED, deleted);
+      if (deleted) {
+        this.emitFileEvent(projectId, FILE_EVENTS.DELETED, deleted);
+        if (deleted.storageKey) {
+          await this.storageService
+            .delete(deleted.storageKey)
+            .catch(() => undefined);
+        }
+      }
       if (node.type === 'file') {
         try {
           await this.documentState.unload(node.id);
@@ -178,6 +244,7 @@ export class ProjectMutationsService {
         }
       }
     }
+    await this.projectRevision.bump(projectId, 'tree', undefined, 'delete');
   }
 
   private async loadResolver(projectId: bigint) {
@@ -266,6 +333,40 @@ export class ProjectMutationsService {
       fresh.version,
       retry.version,
     );
+  }
+
+  private async updateMetadata(
+    fileId: bigint,
+    projectId: bigint,
+    data: {
+      storageKey?: string;
+      contentType: string;
+      size: number;
+      checksum: string;
+      isBinary: boolean;
+    },
+  ) {
+    return this.fileRepository.updateFileContentMetadata(fileId, projectId, {
+      ...data,
+      storageKey: data.storageKey ?? undefined,
+    });
+  }
+
+  private async invalidateDocument(fileId: string): Promise<void> {
+    try {
+      const redis = this.redisService.getClient();
+      if (!redis) return;
+      await redis.del(
+        `doc:${fileId}:content`,
+        `doc:${fileId}:updates`,
+        `doc:${fileId}:persistedVersion`,
+        `doc:${fileId}:meta`,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `invalidateDocument failed file=${fileId}: ${String(err)}`,
+      );
+    }
   }
 
   private broadcastCollabUpdate(

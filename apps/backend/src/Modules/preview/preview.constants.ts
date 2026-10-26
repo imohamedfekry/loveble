@@ -1,5 +1,5 @@
 /** Filesystem root inside the sandbox where the project is materialized. */
-export const PREVIEW_PROJECT_ROOT = '/home/user/project';
+export const PREVIEW_PROJECT_ROOT = '/home/user/app';
 
 /** Runtime files (server log / install marker) kept outside the project tree. */
 export const PREVIEW_STATE_DIR = '/tmp/lovable-preview';
@@ -12,6 +12,12 @@ export const PREVIEW_INSTALL_MARKER = `${PREVIEW_STATE_DIR}/installed`;
 
 /** Marker holding the project signature of the last filesystem sync. */
 export const PREVIEW_SYNC_MARKER = `${PREVIEW_STATE_DIR}/synced`;
+
+/** Script and log paths baked into the TanStack Start E2B template. */
+export const PREVIEW_TEMPLATE_START = '/home/user/bin/dev-server.sh';
+export const PREVIEW_TEMPLATE_HEALTH = '/home/user/bin/health-check.sh';
+export const PREVIEW_TEMPLATE_PID_PATH = '/home/user/.dev-server.pid';
+export const PREVIEW_TEMPLATE_LOG_PATH = '/home/user/.dev-server.log';
 
 /** Port the Vite dev server binds to inside the sandbox. */
 export const PREVIEW_DEV_PORT = 3000;

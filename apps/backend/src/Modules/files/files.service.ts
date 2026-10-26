@@ -8,6 +8,7 @@ import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth
 import { RESPONSE_MESSAGES } from '@loveble/utils';
 import { fail, success } from 'src/common/utils/response.util';
 import { RealtimeEmitService } from '../realtime/core/realtime-emit.service';
+import { ProjectRevisionService } from '../realtime/core/project-revision.service';
 import { FileRepository } from 'src/common/database/repositories/project/file.repository';
 import { ProjectRepository } from 'src/common/database/repositories/project/project.repository';
 import {
@@ -23,12 +24,14 @@ import { ConfigService } from '@nestjs/config';
 import { StorageService } from '../storage/storage.service';
 import { File } from 'src/common/database/schema';
 import { RedisService } from 'src/common/redis/redis.service';
+import { createHash } from 'node:crypto';
 @Injectable()
 export class FileService {
   constructor(
     private readonly fileRepository: FileRepository,
     private readonly projectRepository: ProjectRepository,
     private readonly realtimeEmitService: RealtimeEmitService,
+    private readonly projectRevision: ProjectRevisionService,
     private readonly storageService: StorageService,
     private readonly redisService: RedisService,
     // private readonly S3client: S3Client,
@@ -73,17 +76,59 @@ export class FileService {
       return success(RESPONSE_MESSAGES.FILE.FETCH_SUCCESS, {
         file: {
           content: '',
-          contentType: 'text/plain; charset=utf-8',
+          contentType: file.contentType,
+          isBinary: file.isBinary,
+          size: file.size,
+          downloadUrl: null,
         },
       });
     }
+
+    if (file.isBinary) {
+      const downloadUrl = await this.storageService.getSignedUrl(storageKey);
+      return success(RESPONSE_MESSAGES.FILE.FETCH_SUCCESS, {
+        file: {
+          content: '',
+          contentType: file.contentType,
+          isBinary: true,
+          size: file.size,
+          downloadUrl,
+        },
+      });
+    }
+
     const { content, contentType } =
       await this.storageService.getFileContent(storageKey);
     return success(RESPONSE_MESSAGES.FILE.FETCH_SUCCESS, {
       file: {
         content,
-        contentType,
+        contentType: file.contentType || contentType,
+        isBinary: false,
+        size: file.size,
+        downloadUrl: null,
       },
+    });
+  }
+
+  async getFileDownload(
+    projectId: bigint,
+    fileId: bigint,
+    req: AuthenticatedRequest,
+  ) {
+    const project = await this.projectRepository.findById(projectId);
+    if (!project || project.userId !== req.user.id) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.PROJECT.NOT_FOUND));
+    }
+    const file = await this.fileRepository.getFile(fileId);
+    if (!file || file.projectId !== projectId || !file.storageKey) {
+      throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
+    }
+    const url = await this.storageService.getSignedUrl(file.storageKey);
+    return success(RESPONSE_MESSAGES.FILE.FETCH_SUCCESS, {
+      url,
+      contentType: file.contentType,
+      size: file.size,
+      isBinary: file.isBinary,
     });
   }
 
@@ -152,6 +197,7 @@ export class FileService {
       FILE_EVENTS.CREATED,
       file,
     );
+    await this.projectRevision.bump(projectId, 'tree', undefined, 'create');
     return success(RESPONSE_MESSAGES.FILE.CREATED, { file });
   }
   async updateFile(
@@ -230,6 +276,7 @@ export class FileService {
       FILE_EVENTS.UPDATED,
       file,
     );
+    await this.projectRevision.bump(projectId, 'tree', undefined, 'update');
     return success(RESPONSE_MESSAGES.FILE.UPDATED, { file });
   }
   async updateFileContent(
@@ -254,28 +301,19 @@ export class FileService {
       throw new NotFoundException(fail(RESPONSE_MESSAGES.FILE.NOT_FOUND));
     }
 
-    await this.storageService.updateFileContent(file.storageKey, body.content);
-
-    {
-      const bytes = Buffer.byteLength(body.content, 'utf8');
-      const now = new Date().toISOString();
-      const line = '━'.repeat(78);
-      const banner = [
-        '',
-        `┏${line}┓`,
-        `┃  💾  S3 DIRECT SAVE  —  REST bulk (PUT /content)${' '.repeat(33)}┃`,
-        `┃  ${line}  ┃`,
-        `┃  fileId     : ${fileId.toString().padEnd(59)}┃`,
-        `┃  projectId  : ${projectId.toString().padEnd(59)}┃`,
-        `┃  storageKey : ${(file.storageKey ?? '').padEnd(59)}┃`,
-        `┃  bytes      : ${String(bytes).padEnd(59)}┃`,
-        `┃  savedAt    : ${now.padEnd(59)}┃`,
-        `┃  source     : REST bulk → S3 (immediate)${' '.repeat(35)}┃`,
-        `┗${line}┛`,
-        '',
-      ].join('\n');
-      console.log(banner);
+    if (file.isBinary) {
+      throw new BadRequestException('Binary files cannot be edited as text');
     }
+
+    await this.storageService.updateFileContent(file.storageKey, body.content);
+    const bytes = Buffer.byteLength(body.content, 'utf8');
+    await this.fileRepository.updateFileContentMetadata(fileId, projectId, {
+      storageKey: file.storageKey,
+      contentType: 'text/plain; charset=utf-8',
+      size: bytes,
+      checksum: createHash('sha256').update(body.content).digest('hex'),
+      isBinary: false,
+    });
 
     // Invalidate collab hot state so next join loads fresh S3 content and
     // existing collaborators get forceResync instead of length-mismatch loop.
@@ -308,6 +346,13 @@ export class FileService {
       fileId: fileId.toString(),
     });
 
+    await this.projectRevision.bump(
+      projectId,
+      'content',
+      fileId.toString(),
+      'rest',
+    );
+
     return success(RESPONSE_MESSAGES.FILE.UPDATED);
   }
   async deleteFile(
@@ -334,6 +379,8 @@ export class FileService {
       FILE_EVENTS.DELETED,
       file,
     );
+
+    await this.projectRevision.bump(projectId, 'tree', undefined, 'delete');
 
     return success(RESPONSE_MESSAGES.FILE.DLETED, { file });
   }

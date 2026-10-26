@@ -10,6 +10,12 @@ import { PulseBackground } from "./PulseBackground";
 const CREATE_ERROR = "Could not create the project. Please try again.";
 
 function toErrorMessage(err: unknown): string {
+  if (err instanceof TypeError) {
+    return "Cannot reach the API. Open https://loveble.app with the dev browser script and make sure the backend is running.";
+  }
+  if (err instanceof Error && err.name === "TimeoutError") {
+    return "The API did not respond. Check that the local stack is running, then try again.";
+  }
   return err instanceof Error ? err.message : CREATE_ERROR;
 }
 
@@ -35,9 +41,11 @@ export const Dashboard = () => {
         router.push(`/project/${res.project.id}`);
       } else {
         setError(res.message || CREATE_ERROR);
+        setValue(text);
       }
     } catch (err) {
       setError(toErrorMessage(err));
+      setValue(text);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,6 +74,14 @@ export const Dashboard = () => {
           sending={isSubmitting}
         />
 
+        {error ? (
+          <p
+            role="alert"
+            className="mt-3 px-4 text-center text-sm text-destructive"
+          >
+            {error}
+          </p>
+        ) : null}
       </div>
 
       <NoiseBackground />

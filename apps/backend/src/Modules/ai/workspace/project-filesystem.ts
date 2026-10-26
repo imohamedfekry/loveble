@@ -164,6 +164,9 @@ export class ProjectFilesystem implements WorkspaceFilesystem {
   ): Promise<string | Buffer> {
     const node = this.requireNode(path);
     if (node.type === 'folder') throw new IsDirectoryError(path);
+    if (node.isBinary) {
+      throw new Error(`Binary file cannot be read as text: ${path}`);
+    }
     const content = await this.readContent(node);
     const encoding = options?.encoding;
     if (!encoding || encoding === 'utf-8' || encoding === 'utf8') {

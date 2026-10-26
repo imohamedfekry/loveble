@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef } from "react";
-import { AlertTriangleIcon, FileWarningIcon } from "lucide-react";
+import { AlertTriangleIcon, DownloadIcon, FileWarningIcon } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import { FileBreadcrumbs } from "./file-breadcrumbs";
 import { TopNavigation } from "./top-navigation";
@@ -161,7 +161,23 @@ function EditorSkeleton() {
   );
 }
 
-function BinaryFileNotice({ fileName }: { fileName: string }) {
+function formatBytes(size: number): string {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function BinaryFileNotice({
+  fileName,
+  contentType,
+  size,
+  downloadUrl,
+}: {
+  fileName: string;
+  contentType: string;
+  size: number;
+  downloadUrl: string | null;
+}) {
   return (
     <div className="size-full flex items-center justify-center">
       <div className="flex flex-col items-center gap-2.5 max-w-md text-center px-6">
@@ -170,6 +186,21 @@ function BinaryFileNotice({ fileName }: { fileName: string }) {
           <span className="font-medium">{fileName}</span> is a binary file and
           cannot be shown in the code editor.
         </p>
+        <p className="text-xs text-muted-foreground">
+          {contentType} · {formatBytes(size)}
+        </p>
+        {downloadUrl && (
+          <a
+            href={downloadUrl}
+            target="_blank"
+            rel="noreferrer"
+            download={fileName}
+            className="mt-1 inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
+          >
+            <DownloadIcon className="size-4" />
+            Download
+          </a>
+        )}
       </div>
     </div>
   );
@@ -188,9 +219,13 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const clientID = useMemo(() => generateClientID(), []);
   const socketStatus = useSocketStatus();
+  const isBinaryContent =
+    Boolean(content?.isBinary) ||
+    Boolean(content && !isTextContent(content.contentType));
   const canJoinCollab =
     Boolean(activeTabId) &&
     Boolean(content) &&
+    !isBinaryContent &&
     socketStatus === "connected";
 
   const { setView, snapshot, peers, sendAwareness } = useCollaboration({
@@ -279,8 +314,13 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
           activeFile.type === "file" &&
           !error &&
           content &&
-          !isTextContent(content.contentType) && (
-            <BinaryFileNotice fileName={activeFile.name} />
+          isBinaryContent && (
+            <BinaryFileNotice
+              fileName={activeFile.name}
+              contentType={content.contentType}
+              size={content.size}
+              downloadUrl={content.downloadUrl}
+            />
           )}
 
         {activeFile &&

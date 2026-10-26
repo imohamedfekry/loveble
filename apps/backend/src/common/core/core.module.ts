@@ -11,6 +11,7 @@ import { SentryModule } from '@sentry/nestjs/setup';
 import storageConfig from '../Global/config/storage.config';
 import inngestConfig from '../Global/config/inngest.config';
 import e2bConfig from '../Global/config/e2b.config';
+import bifrostConfig from '../Global/config/bifrost.config';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import e2bConfig from '../Global/config/e2b.config';
         storageConfig,
         inngestConfig,
         e2bConfig,
+        bifrostConfig,
       ],
     }),
     DatabaseModule.forRoot(),

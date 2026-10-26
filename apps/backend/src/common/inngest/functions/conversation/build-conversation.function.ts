@@ -9,6 +9,9 @@ import { resolveChatAgent } from 'src/mastra/routing/team-router';
 import { ensureWorkspaceRunKey } from 'src/mastra/team/ownership';
 import { getNestApp } from '../../nest-context';
 import { RealtimeEmitService } from 'src/Modules/realtime/core/realtime-emit.service';
+import { FileRepository } from 'src/common/database/repositories/project/file.repository';
+import { buildProjectStructureContext } from 'src/Modules/ai/workspace/project-context';
+import { ensureProjectMaterialized } from 'src/Modules/ai/workspace/project-materialization';
 import {
   registerBuildAbort,
   unregisterBuildAbort,
@@ -59,10 +62,34 @@ export const buildConversationFunction = inngest.createFunction(
     const result = await step.run('run-build-agent', async () => {
       const startedAt = Date.now();
 
+      const app = getNestApp();
+
+      // The agent workspace is database-backed: materialize the sandbox first
+      // so the TanStack Start template exists in the database before the very
+      // first turn. Otherwise the agent sees an empty project and rebuilds
+      // every file from scratch.
+      await ensureProjectMaterialized(BigInt(projectId), 'the first build');
+
+      // Give the first turn the current project structure as base context.
+      let agentInput = content;
+      try {
+        const context = await buildProjectStructureContext(
+          app.get(FileRepository),
+          BigInt(projectId),
+        );
+        if (context) {
+          agentInput = `${context}\n\n<user_request>\n${content}\n</user_request>`;
+        }
+      } catch (error) {
+        log.warn(
+          `project structure snapshot failed for project ${projectId}: ${String(error)}`,
+        );
+      }
+
       const message = {
         id: randomUUID(),
         role: 'user' as const,
-        parts: [{ type: 'text' as const, text: content }],
+        parts: [{ type: 'text' as const, text: agentInput }],
       };
 
       const requestContext = new RequestContext<{

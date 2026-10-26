@@ -29,9 +29,9 @@ export const terminalTool = createTool({
   id: 'terminal',
   description: `Run a shell command inside the project's Linux sandbox and get stdout, stderr, and the exit code.
 
-The project is materialized at ${PREVIEW_PROJECT_ROOT} (the default working directory). Use this to install dependencies, run builds/type-checks/tests, inspect the filesystem, and debug failures.
+The project is materialized at ${PREVIEW_PROJECT_ROOT} (the default working directory). New projects use the TanStack Start template with pnpm dependencies preinstalled. Use this to install dependencies with pnpm, run builds/type-checks/tests, inspect the filesystem, and debug failures.
 
-Important: the sandbox is rebuilt from the project files before each command. Files you create here with shell commands are NOT saved to the project — create/edit source files with the workspace file tools instead.`,
+Important: the sandbox is kept in sync with the project files. Files you create or edit here with shell commands are imported back into the project storage after the command finishes.`,
   inputSchema: z.object({
     command: z.string().min(1).describe('Shell command to run.'),
     cwd: z
@@ -86,6 +86,7 @@ Important: the sandbox is rebuilt from the project files before each command. Fi
         cwd: resolvedCwd,
         timeoutMs: timeout,
       });
+      await preview.flush(projectId).catch(() => undefined);
 
       return {
         ok: result.exitCode === 0,

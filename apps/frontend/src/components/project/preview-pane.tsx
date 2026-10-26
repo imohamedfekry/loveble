@@ -149,7 +149,7 @@ export const PreviewPane = ({
                 src={src}
                 title="Project preview"
                 className={cn("size-full flex-1 border-0 bg-white")}
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-modals"
             />
         </div>
     );

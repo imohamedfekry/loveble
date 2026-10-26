@@ -119,7 +119,7 @@ const SandboxError = ({
 
 export const ProjectIdView = ({ projectId }: { projectId: string }) => {
     const [activeView, setActiveView] = useState<"editor" | "preview">("editor");
-    const [terminalOpen, setTerminalOpen] = useState(false);
+    const [terminalOpen, setTerminalOpen] = useState(true);
     const sandboxState = useEditorStore((s) => s.getSandboxState(projectId));
 
     useEffect(() => {

@@ -7,6 +7,10 @@ export interface ProjectFileType {
     name: string;
     type: FileType;
     storageKey: string | null;
+    contentType: string;
+    size: number;
+    checksum: string | null;
+    isBinary: boolean;
     createdAt: string;
     updatedAt: string;
 }
@@ -39,8 +43,18 @@ export interface FileResponse {
 export interface FileContent {
   content: string;
   contentType: string;
+  size: number;
+  isBinary: boolean;
+  downloadUrl: string | null;
 }
 
 export interface FileContentResponse {
   file: FileContent;
+}
+
+export interface FileDownloadResponse {
+  url: string;
+  contentType: string;
+  size: number;
+  isBinary: boolean;
 }

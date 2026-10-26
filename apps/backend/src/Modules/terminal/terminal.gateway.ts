@@ -40,6 +40,8 @@ interface TerminalSocketData {
   authReady?: Promise<void>;
   user?: { id: bigint | number | string; username?: string };
   userId?: string;
+  /** Stable terminal session key (user + project), set by terminal:start. */
+  terminalKey?: string;
 }
 
 function socketData(socket: Socket): TerminalSocketData {
@@ -72,8 +74,11 @@ export class TerminalGateway
     socketData(socket).authReady = this.connectionHandler.handleConnect(socket);
   }
 
-  async handleDisconnect(socket: Socket) {
-    await this.terminalService.stop(socket.id).catch(() => undefined);
+  handleDisconnect(socket: Socket) {
+    // Keep the session resumable instead of killing it: the client's next
+    // socket (reconnect or dock re-open) picks it right back up within TTL.
+    const sessionKey = socketData(socket).terminalKey;
+    if (sessionKey) this.terminalService.detach(sessionKey);
     this.connectionHandler.handleDisconnect(socket);
   }
 
@@ -81,21 +86,29 @@ export class TerminalGateway
   async start(
     @ConnectedSocket() socket: Socket,
     @MessageBody()
-    payload: { projectId?: unknown; cols?: unknown; rows?: unknown },
+    payload: {
+      projectId?: unknown;
+      cols?: unknown;
+      rows?: unknown;
+      fresh?: unknown;
+    },
   ) {
     const data = socketData(socket);
     await data.authReady;
 
+    const emitError = (message: string, code: 'fatal' | 'retryable') =>
+      socket.emit('terminal:error', { message, code });
+
     const userId = data.userId ?? data.user?.id?.toString();
     if (!userId) {
-      socket.emit('terminal:error', { message: 'Unauthorized' });
+      emitError('Unauthorized', 'fatal');
       return;
     }
 
     const projectId =
       typeof payload?.projectId === 'string' ? payload.projectId : '';
     if (!/^\d+$/.test(projectId)) {
-      socket.emit('terminal:error', { message: 'Invalid project id' });
+      emitError('Invalid project id', 'fatal');
       return;
     }
 
@@ -103,34 +116,42 @@ export class TerminalGateway
     try {
       project = await this.projectRepository.findById(projectId);
     } catch {
-      socket.emit('terminal:error', { message: 'Project not found' });
+      emitError('Project not found', 'fatal');
       return;
     }
     if (!project || project.userId.toString() !== userId) {
       this.logger.warn(
         `Unauthorized terminal attempt socket=${socket.id} project=${projectId} user=${userId}`,
       );
-      socket.emit('terminal:error', { message: 'Unauthorized for project' });
+      emitError('Unauthorized for project', 'fatal');
       return;
     }
+
+    // The session key is stable per user + project so a reconnect (new socket
+    // id) resumes the same terminal instead of building a new one.
+    const key = `terminal:${userId}:${projectId}`;
+    socketData(socket).terminalKey = key;
 
     const cols = clamp(payload?.cols, MIN_COLS, MAX_COLS, 80);
     const rows = clamp(payload?.rows, MIN_ROWS, MAX_ROWS, 24);
 
     try {
       const result = await this.terminalService.start({
-        key: socket.id,
+        key,
         projectId: BigInt(projectId),
         cols,
         rows,
+        fresh: payload?.fresh === true,
         userName: data.user?.username,
         projectLabel: projectId,
-        onData: (data) => socket.emit('terminal:data', data),
+        onData: (chunk) => socket.emit('terminal:data', chunk),
         onExit: (exitCode) => socket.emit('terminal:exit', { exitCode }),
       });
 
       if (!socket.connected) {
-        await this.terminalService.stop(socket.id);
+        // The socket died mid-prepare; keep the session resumable briefly in
+        // case socket.io reconnects right after.
+        this.terminalService.detach(key);
         return;
       }
 
@@ -144,7 +165,7 @@ export class TerminalGateway
       this.logger.error(
         `Terminal failed socket=${socket.id} project=${projectId}: ${message}`,
       );
-      socket.emit('terminal:error', { message });
+      emitError(message, 'retryable');
     }
   }
 
@@ -155,23 +176,31 @@ export class TerminalGateway
   ) {
     if (!socketData(socket).user) return;
     if (typeof payload?.data !== 'string') return;
-    this.terminalService.write(socket.id, payload.data);
+    this.terminalService.write(
+      socketData(socket).terminalKey ?? '',
+      payload.data,
+    );
   }
 
   @SubscribeMessage('terminal:resize')
-  async handleResize(
+  handleResize(
     @ConnectedSocket() socket: Socket,
     @MessageBody() payload: { cols?: unknown; rows?: unknown },
   ) {
     if (!socketData(socket).user) return;
     const cols = clamp(payload?.cols, MIN_COLS, MAX_COLS, 80);
     const rows = clamp(payload?.rows, MIN_ROWS, MAX_ROWS, 24);
-    await this.terminalService.resize(socket.id, cols, rows);
+    this.terminalService.resize(
+      socketData(socket).terminalKey ?? '',
+      cols,
+      rows,
+    );
   }
 
   @SubscribeMessage('terminal:stop')
   async stop(@ConnectedSocket() socket: Socket) {
-    await this.terminalService.stop(socket.id);
+    const key = socketData(socket).terminalKey;
+    if (key) await this.terminalService.stop(key);
     socket.emit('terminal:stopped');
   }
 }

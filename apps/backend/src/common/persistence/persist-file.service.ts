@@ -60,6 +60,11 @@ export class PersistFileService {
   }
 
   private async persistToS3(fileId: string): Promise<PersistResult> {
+    const file = await this.fileRepository.getFile(BigInt(fileId));
+    if (file?.isBinary) {
+      return { skipped: true, reason: 'binary file', fileId };
+    }
+
     const redis = this.redisService.ensureClient();
     const contentKey = `doc:${fileId}:content`;
     const updatesKey = `doc:${fileId}:updates`;
@@ -96,7 +101,6 @@ export class PersistFileService {
     let resolvedProjectId: string = meta?.projectId ?? '';
 
     if (!storageKey) {
-      const file = await this.fileRepository.getFile(BigInt(fileId));
       storageKey = file?.storageKey ?? null;
       resolvedProjectId = file?.projectId?.toString() ?? resolvedProjectId;
       if (storageKey && meta) {

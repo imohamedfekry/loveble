@@ -71,6 +71,13 @@
       "when": 1791835207140,
       "tag": "0009_exotic_the_professor",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792768117150,
+      "tag": "0010_outgoing_red_hulk",
+      "breakpoints": true
     }
   ]
 }

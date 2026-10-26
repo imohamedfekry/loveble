@@ -3,6 +3,7 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
+  Logger,
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { fail, error } from '../utils/response.util';
@@ -15,6 +16,8 @@ interface ValidationErrorResponse {
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
   catch(exception: HttpException, host: ArgumentsHost) {
     const res = host.switchToHttp().getResponse<FastifyReply>();
     // Same as CatchAllFilter: force JSON so error responses from raw
@@ -77,6 +80,39 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // so the specific `code` (e.g. PROJECT_NOT_FOUND) lives inside
     // exceptionResponse. Preserve it instead of replacing it with a generic
     // HTTP_xxx code.
+    // StandardSchemaValidationPipe throws BadRequestException(string[]), so the
+    // field messages arrive as `message`, not as a structured `errors` array.
+    const rawMessage =
+      typeof exceptionResponse === 'object'
+        ? (exceptionResponse as { message?: unknown }).message
+        : undefined;
+    const arrayMessages = Array.isArray(rawMessage)
+      ? rawMessage.filter((entry): entry is string => typeof entry === 'string')
+      : [];
+
+    if (arrayMessages.length > 0) {
+      const errors = arrayMessages.map((entry) => {
+        const separator = entry.indexOf(': ');
+        const field = separator > 0 ? entry.slice(0, separator) : '';
+        const hasField = field.length > 0 && !field.includes(' ');
+
+        return {
+          field: hasField ? field : 'unknown',
+          message: hasField ? entry.slice(separator + 2) : entry,
+        };
+      });
+
+      return res.code(status).send(
+        fail(
+          {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation failed. Please check the errors below.',
+          },
+          { errors } as any,
+        ),
+      );
+    }
+
     const asObj =
       typeof exceptionResponse === 'object'
         ? (exceptionResponse as { code?: unknown; message?: unknown })
@@ -96,6 +132,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (isClientError) {
       return res.code(status).send(fail({ code, message }));
+    }
+
+    if (status === 500) {
+      this.logger.error(exception.message, exception.stack);
+      return res
+        .code(status)
+        .send(error({ code, message: 'An error occurred' }));
     }
 
     return res.code(status).send(error({ code, message }));

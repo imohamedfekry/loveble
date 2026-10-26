@@ -325,11 +325,20 @@
 /* ── Interactive terminal (xterm.js) ───────────────────────────────────── */
 .terminal-surface {
   background: var(--card);
+  overflow: hidden;
 }
 
+/*
+ * FitAddon measures the `.xterm` element's parent and subtracts only the
+ * padding of `.xterm` itself — never the parent's padding. Keeping the inset
+ * here (and the fit container padding-free) is what makes every fit exact;
+ * padding the container made each fit overshoot a column/row, so the grid
+ * kept rendering at the old size.
+ */
 .terminal-surface .xterm {
   height: 100%;
-  padding: 0;
+  padding: 6px 8px;
+  box-sizing: border-box;
 }
 
 .terminal-surface .xterm-viewport {
