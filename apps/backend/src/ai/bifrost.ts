@@ -7,12 +7,12 @@ let bifrostProvider: ReturnType<typeof createOpenAICompatible> | undefined;
 function getBifrostProvider() {
   if (!bifrostProvider) {
     const { baseUrl, virtualKey } = getBifrostConfig();
-    console.log('[Bifrost auth check]', {
-      exists: Boolean(virtualKey),
-      length: virtualKey?.length ?? 0,
-      hasWhitespace: virtualKey !== virtualKey?.trim(),
-      key: virtualKey,
-    });
+    // console.log('[Bifrost auth check]', {
+    //   exists: Boolean(virtualKey),
+    //   length: virtualKey?.length ?? 0,
+    //   hasWhitespace: virtualKey !== virtualKey?.trim(),
+    //   key: virtualKey,
+    // });
     bifrostProvider = createOpenAICompatible({
       name: 'bifrost',
       apiKey: virtualKey,

@@ -95,7 +95,7 @@ services:
     restart: unless-stopped
   nginx:
     image: nginx:alpine
-    container_name: squadra-nginx
+    container_name: lovable-nginx
     ports:
       - "80:80"
       - "443:443"

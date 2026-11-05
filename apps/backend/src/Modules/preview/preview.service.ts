@@ -32,7 +32,7 @@ import { StorageService } from 'src/Modules/storage/storage.service';
 import type { File as ProjectFile } from 'src/common/database/schema/projects/file.schema';
 
 import {
-  DEFAULT_TANSTACK_CONF,
+  DEFAULT_NEXTJS_CONF,
   LOVABLE_CONF_PATH,
   parseLovableConfig,
   resolvePreviewCommands,
@@ -486,11 +486,7 @@ export class PreviewService implements OnModuleInit, OnModuleDestroy {
       if (!alreadyUp) {
         await this.stopTrackedServer(sandboxId, state);
         await this.killStaleServers(sandboxId);
-        state.pid = await this.startDevServer(
-          sandboxId,
-          state.host,
-          commands.start,
-        );
+        state.pid = await this.startDevServer(sandboxId, commands.start);
         const ok = await this.waitForReady(
           sandboxId,
           state.host,
@@ -718,7 +714,7 @@ export class PreviewService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * The E2B template ships the TanStack Start app but no `lovable.conf`.
+   * The E2B template ships the Next.js app but no `lovable.conf`.
    * Add the template manifest once, to both the database and the sandbox, so
    * preview/terminal commands and future sandbox recreations use the baked-in
    * dev-server/health scripts.
@@ -741,21 +737,21 @@ export class PreviewService implements OnModuleInit, OnModuleDestroy {
       const packageJson = await this.e2bService
         .readFile(sandboxId, `${PREVIEW_PROJECT_ROOT}/package.json`)
         .catch(() => '');
-      if (!packageJson.includes('@tanstack/react-start')) return;
+      if (!/"next"\s*:/.test(packageJson)) return;
 
       await this.e2bService.writeFiles(sandboxId, [
         {
           path: `${PREVIEW_PROJECT_ROOT}/${LOVABLE_CONF_PATH}`,
-          data: DEFAULT_TANSTACK_CONF,
+          data: DEFAULT_NEXTJS_CONF,
         },
       ]);
       await this.projectMutations.writeFile(
         projectId,
         LOVABLE_CONF_PATH,
-        DEFAULT_TANSTACK_CONF,
+        DEFAULT_NEXTJS_CONF,
       );
       this.logger.log(
-        `seeded TanStack template manifest for project ${projectId}`,
+        `seeded Next.js template manifest for project ${projectId}`,
       );
     } catch (err) {
       this.logger.warn(
@@ -1982,7 +1978,6 @@ export class PreviewService implements OnModuleInit, OnModuleDestroy {
 
   private async startDevServer(
     sandboxId: string,
-    host: string,
     startCommand: string,
   ): Promise<number | undefined> {
     if (this.isTemplateStart(startCommand)) {
@@ -2006,7 +2001,6 @@ export class PreviewService implements OnModuleInit, OnModuleDestroy {
 
     const command =
       `mkdir -p ${PREVIEW_STATE_DIR} && ` +
-      `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=${host} ` +
       `PORT=${PREVIEW_DEV_PORT} HOST=0.0.0.0 ` +
       `${startCommand} > ${PREVIEW_LOG_PATH} 2>&1`;
     const { pid } = await this.e2bService.runBackground(sandboxId, command, {
@@ -2049,6 +2043,7 @@ export class PreviewService implements OnModuleInit, OnModuleDestroy {
     const ours = processes.filter(
       (process) =>
         process.cmd.includes('vite') ||
+        process.cmd.includes('next') ||
         process.args?.some(
           (arg) => arg.includes('vite') || arg.includes('next dev'),
         ) ||

@@ -308,26 +308,9 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div
-              className="flex items-center gap-3 text-xs tracking-wide text-muted-foreground"
-              style={{ ...ENTRANCE, animationDelay: '220ms' }}
-            >
-              <span className="h-px flex-1 bg-border" />
-              or continue with
-              <span className="h-px flex-1 bg-border" />
-            </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="h-11 w-full gap-2"
-              onClick={redirectToGithubConnect}
-              style={{ ...ENTRANCE, animationDelay: '260ms' }}
-            >
-              <FaGithub className="size-4" />
-              Sign in with GitHub
-            </Button>
+
+
 
             <p
               className="text-center text-sm text-muted-foreground"

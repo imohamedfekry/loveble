@@ -64,7 +64,7 @@ const envSchema = v.object({
   INNGEST_WEBHOOK_SECRET: v.pipe(v.string(), v.nonEmpty()),
   // E2B (sandbox) — optional, needed only for sandbox operations
   E2B_API_KEY: v.pipe(v.string(), v.nonEmpty()),
-  E2B_TEMPLATE: v.optional(v.string(), 'loveble-tanstack-start'),
+  E2B_TEMPLATE: v.optional(v.string(), 'nextjs-template'),
   // Bifrost (LLM gateway)
   BIFROST_BASE_URL: v.pipe(v.string(), v.nonEmpty()),
   BIFROST_VIRTUAL_KEY: v.pipe(v.string(), v.nonEmpty()),

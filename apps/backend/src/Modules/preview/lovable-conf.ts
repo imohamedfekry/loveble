@@ -1,8 +1,8 @@
 /**
  * `lovable.conf` — a tiny, human-editable project manifest written by the agent.
  *
- *   start: npm run dev -- --host 0.0.0.0 --port 3000
- *   install: npm install
+ *   start: bash /home/user/bin/dev-server.sh start
+ *   install: pnpm install --prefer-offline
  *
  * `start` is the command that serves the app on the preview port; `install`
  * (optional) prepares dependencies before it runs. Keeping this in the project
@@ -11,8 +11,8 @@
 
 export const LOVABLE_CONF_PATH = 'lovable.conf';
 
-/** Manifest injected into projects created from the TanStack Start template. */
-export const DEFAULT_TANSTACK_CONF = `start: bash /home/user/bin/dev-server.sh start
+/** Manifest injected into projects created from the Next.js template. */
+export const DEFAULT_NEXTJS_CONF = `start: bash /home/user/bin/dev-server.sh start
 stop: bash /home/user/bin/dev-server.sh stop
 health: bash /home/user/bin/health-check.sh
 install: pnpm install --prefer-offline
@@ -107,10 +107,11 @@ export function resolvePreviewCommands(
 
   let start = config.start;
   if (!start) {
-    if (deps['vite'] && scripts['dev']) {
-      start = `npm run dev -- --host 0.0.0.0 --port ${port} --strictPort`;
-    } else if (deps['next'] && scripts['dev']) {
+    if (deps['next'] && scripts['dev']) {
       start = `npm run dev -- -H 0.0.0.0 -p ${port}`;
+    } else if (deps['vite'] && scripts['dev']) {
+      // Legacy Vite projects created before the Next.js template.
+      start = `npm run dev -- --host 0.0.0.0 --port ${port} --strictPort`;
     } else if (scripts['dev']) {
       start = 'npm run dev';
     } else if (scripts['start']) {

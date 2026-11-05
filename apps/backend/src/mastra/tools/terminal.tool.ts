@@ -29,7 +29,7 @@ export const terminalTool = createTool({
   id: 'terminal',
   description: `Run a shell command inside the project's Linux sandbox and get stdout, stderr, and the exit code.
 
-The project is materialized at ${PREVIEW_PROJECT_ROOT} (the default working directory). New projects use the TanStack Start template with pnpm dependencies preinstalled. Use this to install dependencies with pnpm, run builds/type-checks/tests, inspect the filesystem, and debug failures.
+The project is materialized at ${PREVIEW_PROJECT_ROOT} (the default working directory). New projects use the nextjs-template (Next.js 16 App Router) with pnpm dependencies preinstalled. Use this to install dependencies with pnpm, run builds/type-checks/tests/lint, inspect the filesystem, and debug failures.
 
 Important: the sandbox is kept in sync with the project files. Files you create or edit here with shell commands are imported back into the project storage after the command finishes.`,
   inputSchema: z.object({

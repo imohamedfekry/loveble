@@ -14,6 +14,7 @@ import {
 } from './preview-auth';
 import {
   PREVIEW_PUBLIC_PREFIX,
+  PREVIEW_TOKEN_COOKIE,
   previewProjectFromHost,
   previewPublicScheme,
 } from './preview.constants';
@@ -32,6 +33,8 @@ import { PreviewTokenService } from './preview-token.service';
 const logger = new Logger('PreviewProxy');
 
 const HTML_CONTENT = /text\/html/i;
+const LOVEBLE_COOKIES = new Set(['Authorization', PREVIEW_TOKEN_COOKIE]);
+
 /** Hard cap for browser-console payloads posted by the preview reporter. */
 const MAX_REPORTER_BODY_BYTES = 64 * 1024;
 
@@ -45,8 +48,9 @@ const STRIP_REQUEST_HEADERS = new Set([
   'connection',
   'content-length',
   'accept-encoding',
-  // Vite keys off Origin / X-Forwarded-Host; leaving the public preview host
-  // here makes `*.css?url` resolve as raw CSS instead of a JS module.
+  // The dev server keys off Origin / X-Forwarded-Host; leaving the public
+  // preview host here makes module/asset requests resolve as raw CSS instead
+  // of a JS module.
   'origin',
   'referer',
   'x-forwarded-host',
@@ -54,6 +58,7 @@ const STRIP_REQUEST_HEADERS = new Set([
   'x-forwarded-for',
   'x-forwarded-port',
   'x-real-ip',
+  'x-loveble-public-host',
 ]);
 
 /** Response headers we let the runtime regenerate. */
@@ -315,13 +320,19 @@ export function registerPreviewProxy(
       else headers.set(lower, String(value));
     }
 
+    if (!prefix) {
+      const cookie = sandboxCookieHeader(req.headers.cookie);
+      if (cookie) headers.set('cookie', cookie);
+      headers.set('x-loveble-public-host', req.headers.host ?? req.hostname);
+    }
+
     headers.set('origin', sandboxOrigin);
     headers.set('referer', `${sandboxOrigin}${targetPath}`);
 
-    // Vite serves raw CSS when Accept is text/css. Module imports of
-    // `styles.css?url` (and script dest in general) must get JS.
+    // Some bundlers serve raw CSS when Accept is text/css. Module imports of
+    // a stylesheet with a loader query (and script dest in general) must get JS.
     const dest = (headers.get('sec-fetch-dest') ?? '').toLowerCase();
-    if (dest === 'script' || isViteModuleQuery(targetPath)) {
+    if (dest === 'script' || isModuleQuery(targetPath)) {
       headers.set('accept', '*/*');
     }
 
@@ -423,8 +434,18 @@ function upstreamSetCookies(headers: Headers): string[] {
   return single ? [single] : [];
 }
 
-/** Vite queries whose response must be a JS module, not the raw asset. */
-function isViteModuleQuery(pathAndQuery: string): boolean {
+function sandboxCookieHeader(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const kept = raw
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((pair) => !LOVEBLE_COOKIES.has(pair.split('=')[0]));
+  return kept.length ? kept.join('; ') : undefined;
+}
+
+/** Bundler queries whose response must be a JS module, not the raw asset. */
+function isModuleQuery(pathAndQuery: string): boolean {
   const query = pathAndQuery.split('?')[1];
   if (!query) return false;
   return /(?:^|&)(?:url|direct|inline|raw|import)(?:=|&|$)/.test(query);

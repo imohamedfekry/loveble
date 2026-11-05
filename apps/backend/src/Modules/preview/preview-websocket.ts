@@ -27,7 +27,7 @@ const STRIP_UPGRADE_HEADERS = new Set([
 ]);
 
 /**
- * Proxy Vite HMR (and any other) WebSocket upgrades on `<id>.loveble.app` to
+ * Proxy Next.js HMR (and any other) WebSocket upgrades on `<id>.loveble.app` to
  * the sandbox traffic URL. Socket.IO on `api.loveble.app` is left untouched:
  * we only intercept hosts that look like a preview subdomain, and re-emit
  * everything else to the listeners that were already on the HTTP server
@@ -167,6 +167,10 @@ function pipeUpgrade(
   }
 
   headers.host = hostname;
+  headers.origin = `https://${hostname}`;
+  delete headers['x-forwarded-host'];
+  delete headers['x-forwarded-proto'];
+  delete headers['x-forwarded-for'];
   headers.connection = 'Upgrade';
   headers.upgrade = 'websocket';
   if (trafficToken) {
@@ -276,4 +280,3 @@ function splitHostPort(host: string): { hostname: string; port: number } {
   }
   return { hostname: host, port: 443 };
 }
-

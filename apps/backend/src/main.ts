@@ -68,7 +68,7 @@ async function bootstrap() {
   }
 
   // After listen so Socket.IO's upgrade handler is already attached; we wrap
-  // it and only steal `<projectId>.loveble.app` Vite HMR connections.
+  // it and only steal `<projectId>.loveble.app` Next.js HMR connections.
   registerPreviewWebSocketProxy(app.getHttpServer(), app);
 
   AppBootstrap.logServerInfo(serverInfo);

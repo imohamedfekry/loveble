@@ -75,7 +75,7 @@ function classify(text: string): PreviewLogLevel {
  * Live view of what the running website prints.
  *
  * Two sources feed it, both scoped to a project:
- * - the sandbox dev-server log (Vite + SSR output: build errors, server
+ * - the sandbox dev-server log (Next.js dev output: build errors, server
  *   exceptions, `console.*` from server-rendered code), followed with a
  *   long-lived `tail -F` inside the sandbox;
  * - browser events forwarded by the preview proxy (uncaught errors, unhandled

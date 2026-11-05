@@ -65,7 +65,7 @@ export const buildConversationFunction = inngest.createFunction(
       const app = getNestApp();
 
       // The agent workspace is database-backed: materialize the sandbox first
-      // so the TanStack Start template exists in the database before the very
+      // so the Next.js template exists in the database before the very
       // first turn. Otherwise the agent sees an empty project and rebuilds
       // every file from scratch.
       await ensureProjectMaterialized(BigInt(projectId), 'the first build');
