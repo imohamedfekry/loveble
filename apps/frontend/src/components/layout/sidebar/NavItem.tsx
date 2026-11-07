@@ -40,9 +40,9 @@ export function NavItem({
         )}
       >
         {Array.isArray(Icon) ? (
-          <HugeiconsIcon icon={Icon} className="size-4.5 shrink-0" />
+          <HugeiconsIcon icon={Icon} className="size-4 shrink-0" />
         ) : (
-          <Icon className="size-4.5 shrink-0" />
+          <Icon className="size-4 shrink-0" />
         )}
       </span>
 
@@ -58,7 +58,7 @@ export function NavItem({
 
       {/* Shortcut */}
       {shortcut && open && (
-        <span className="ml-auto mr-2 shrink-0 rounded-sm border px-1.5 py-1 text-[10px] font-medium leading-none tracking-wide bg-sidebar-accent/60 text-muted-foreground/70 border-border/40">
+        <span className="ml-auto mr-2 shrink-0 rounded-md border border-border/70 bg-card/70 px-1.5 py-1 text-[10px] font-medium leading-none tracking-wide text-muted-foreground/80">
           {modKey} {shortcut}
         </span>
       )}
@@ -79,8 +79,8 @@ if (href) {
       <Link
         href={href}
         className={cn(
-          "group relative flex h-7 w-full items-center rounded-sm p-0 ring-1",
-          "text-[13.5px] font-[450] tracking-[-0.01em]",
+          "group relative flex h-8 w-full items-center rounded-lg p-0 ring-1",
+          "text-[13px] font-[450] tracking-[-0.01em]",
           "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
           "text-sidebar-foreground",
@@ -88,13 +88,13 @@ if (href) {
           !active &&
             cn(
               "ring-transparent",
-              "hover:bg-foreground/[0.06] hover:ring-border/50",
+              "hover:bg-sidebar-accent/70 hover:ring-transparent",
             ),
 
           active &&
             cn(
-              "bg-foreground/[0.06] ring-border/50 shadow-sm",
-              "hover:bg-foreground/[0.08]"
+              "bg-card ring-border shadow-[0_0_0_1px_var(--border),0_1px_2px_rgba(28,28,28,0.05)]",
+              "hover:bg-card"
             ),
 
           !open && "cursor-pointer"
@@ -115,8 +115,8 @@ if (href) {
         onClick?.();
       }}
       className={cn(
-        "group relative flex h-7 w-full items-center rounded-sm p-0 ring-1",
-        "text-[13.5px] font-[450] tracking-[-0.01em]",
+        "group relative flex h-8 w-full items-center rounded-lg p-0 ring-1",
+        "text-[13px] font-[450] tracking-[-0.01em]",
         "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
         "text-sidebar-foreground",
@@ -124,13 +124,13 @@ if (href) {
         !active &&
           cn(
             "ring-transparent",
-            "hover:bg-foreground/[0.06] hover:ring-border/50",
+            "hover:bg-sidebar-accent/70 hover:ring-transparent",
           ),
 
         active &&
           cn(
-            "bg-foreground/[0.06] ring-border/50 shadow-sm",
-            "hover:bg-foreground/[0.08]"
+            "bg-card ring-border shadow-[0_0_0_1px_var(--border),0_1px_2px_rgba(28,28,28,0.05)]",
+            "hover:bg-card"
           ),
 
         !open && "cursor-pointer"

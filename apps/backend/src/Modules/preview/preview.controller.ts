@@ -29,16 +29,8 @@ export class PreviewController {
       throw new NotFoundException('Project not found');
     }
 
-    // Kick provisioning in the background and report the current state so the
-    // request never blocks on an install/start cycle (which can take minutes).
-    void this.previewService.ensure(projectId).catch(() => undefined);
-
-    const state = this.previewService.peek(projectId);
-
-    return success(PREVIEW_STATUS_MSG, {
-      status: state?.status ?? 'starting',
-      url: state?.url,
-      error: state?.error,
-    });
+    // Never blocks: reports the current state and wakes the preview in the
+    // background when it is not serving yet.
+    return success(PREVIEW_STATUS_MSG, await this.previewService.status(projectId));
   }
 }

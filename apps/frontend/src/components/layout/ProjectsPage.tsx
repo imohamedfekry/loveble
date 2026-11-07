@@ -4,9 +4,12 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import {
+  PlusIcon,
   StarIcon,
   UsersRoundIcon,
 } from "lucide-react";
+
+import { Button } from "@loveble/ui/button";
 
 import type { LucideIcon } from "lucide-react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -64,29 +67,50 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
   };
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-muted rounded-2xl">
-      <nav className="flex shrink-0 gap-1 px-6 pt-3">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <Link
-            key={id}
-            href={`/projects${id !== "all" ? `/${id}` : ""}`}
-            className={cn(
-              "relative flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ring-1",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
-              tab === id
-                ? "bg-foreground/[0.06] ring-border/50 text-foreground shadow-sm"
-                : "ring-transparent text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground hover:ring-border/50",
-            )}
+    <div className="flex h-full flex-1 flex-col bg-background">
+      <header className="shrink-0 border-b border-border/70 px-6 pt-7 pb-4 md:px-9">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[28px] leading-[1.1] font-semibold tracking-[-0.03em] md:text-[32px]">
+              Projects
+            </h1>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Everything you have built, in one warm place.
+            </p>
+          </div>
+
+          <Button
+            onClick={handleNewProject}
+            className="gap-1.5 shadow-[0_1px_2px_rgba(28,28,28,0.12)]"
           >
-            {Array.isArray(Icon) ? (
-              <HugeiconsIcon icon={Icon} className="h-4 w-4" />
-            ) : (
-              <Icon className="h-4 w-4" />
-            )}
-            {label}
-          </Link>
-        ))}
-      </nav>
+            <PlusIcon className="size-4" />
+            New project
+          </Button>
+        </div>
+
+        <nav className="mt-6 inline-flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-border bg-muted p-1">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <Link
+              key={id}
+              href={`/projects${id !== "all" ? `/${id}` : ""}`}
+              className={cn(
+                "relative flex shrink-0 items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0",
+                tab === id
+                  ? "bg-card text-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgba(28,28,28,0.06)]"
+                  : "text-muted-foreground hover:bg-card/60 hover:text-foreground",
+              )}
+            >
+              {Array.isArray(Icon) ? (
+                <HugeiconsIcon icon={Icon} className="h-3.5 w-3.5" />
+              ) : (
+                <Icon className="h-3.5 w-3.5" />
+              )}
+              {label}
+            </Link>
+          ))}
+        </nav>
+      </header>
 
       <main className="flex min-h-0 flex-1 overflow-auto">
         {loading && projects.length === 0 ? (
@@ -102,7 +126,7 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
               <EmptyHeader>
                 <EmptyMedia
                   variant="icon"
-                  className="bg-card text-foreground"
+                  className="karlek-mark rounded-xl text-white"
                 >
                   <HugeiconsIcon icon={FolderLibraryIcon} className="h-5 w-5" />
                 </EmptyMedia>
@@ -118,11 +142,13 @@ export function ProjectsPage({ params: _params }: { params: { tab?: string } }) 
             </Empty>
           </div>
         ) : (
-          <ul className="w-full max-w-3xl space-y-1 px-6 py-4">
-            {filteredProjects.map((project) => (
-              <ProjectItem key={project.id} data={project} />
-            ))}
-          </ul>
+          <div className="w-full px-6 py-6 md:px-9">
+            <ul className="w-full max-w-4xl space-y-0.5 rounded-2xl border border-border bg-card p-1.5 shadow-(--karlek-shadow-card)">
+              {filteredProjects.map((project) => (
+                <ProjectItem key={project.id} data={project} />
+              ))}
+            </ul>
+          </div>
         )}
       </main>
     </div>

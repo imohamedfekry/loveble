@@ -27,7 +27,6 @@ import {
 } from './preview-reporter';
 import { PreviewLogService } from './preview-logs.service';
 import { PreviewService } from './preview.service';
-import type { PreviewState } from './preview.service';
 import { PreviewTokenService } from './preview-token.service';
 
 const logger = new Logger('PreviewProxy');
@@ -81,12 +80,14 @@ interface ProxyServices {
 /**
  * Register the raw Fastify preview-proxy handlers.
  *
- * Public previews are served from `<projectId>.loveble.app` (nginx routes the
- * whole wildcard host here) and proxied to the sandbox root, so the app sees
- * normal root-relative URLs and needs no response rewriting.
+ * The proxy is a tunnel: authorize the caller, resolve the sandbox host, pipe
+ * the request through. When nothing listens on the preview port yet it answers
+ * with a self-refreshing "starting" page and wakes the sandbox in the
+ * background (only for authorized callers).
  *
- * The legacy path-based routes (`/api/v1/preview/:projectId`) stay available
- * for internal/server-to-server callers.
+ * Public previews are served from `<projectId>.loveble.app` (nginx routes the
+ * whole wildcard host here). The legacy path-based routes
+ * (`/api/v1/preview/:projectId`) stay for internal/server-to-server callers.
  *
  * Both live outside Nest's routing/interceptor pipeline so the sandbox
  * response can be streamed back byte-for-byte instead of being wrapped in the
@@ -135,15 +136,23 @@ export function registerPreviewProxy(
       return recordBrowserEvents(req, reply, rawId);
     }
 
-    const state = await ensureState(rawId);
-    const sandboxHost = state?.host;
-    if (!state?.url || !sandboxHost) {
-      return reply
-        .code(503)
-        .send({ message: state?.error ?? 'Preview is starting' });
+    const { preview } = services();
+    const target = await preview.resolve(BigInt(rawId));
+    if (!target) {
+      void preview.wake(BigInt(rawId)).catch(() => undefined);
+      return sendStarting(req, reply);
     }
 
-    return forward(req, reply, rawId, sandboxHost, prefix, state.trafficToken);
+    return forward(
+      req,
+      reply,
+      rawId,
+      target.host,
+      prefix,
+      target.trafficToken,
+      undefined,
+      true,
+    );
   };
 
   const methods: Array<
@@ -168,73 +177,61 @@ export function registerPreviewProxy(
     reply: FastifyReply,
     rawId: string,
   ): Promise<FastifyReply | undefined> {
-    // Starting a sandbox still requires the owner. Once the preview is
-    // already running, proxy without a Loveble session — Google/GitHub OAuth
-    // returns are top-level GET navigations from another site, so neither
-    // Authorization nor a pin cookie is sent.
-  
-  const authorized = await authorizeHost(req, rawId);
-  // console.log('[preview.proxy] authorizeHost && projectId:', rawId, 'authorized:', authorized);
+    const { preview, tokens } = services();
+    const projectId = BigInt(rawId);
+
+    // Waking a sandbox requires the owner (or a pinned preview cookie). Once a
+    // sandbox exists, traffic is proxied without a Loveble session — Google /
+    // GitHub OAuth returns are top-level GET navigations from another site, so
+    // neither Authorization nor a pin cookie is sent.
+    const authorized = await authorizeHost(req, rawId);
 
     // Ignore old links that still carry the removed preview token.
     if (stripPreviewToken(req.url) !== req.url) {
       return reply.redirect(stripPreviewToken(req.url), 302);
     }
 
+    const target = await preview.resolve(projectId);
+
     // Browser console events from the injected reporter: no need to wake the
     // preview server, they only feed the terminal panel.
     if (isReporterRequest(req, null)) {
-      if (
-        !authorized &&
-        !(await services().preview.resolveRunning(BigInt(rawId)))?.url
-      ) {
+      if (!authorized && !target) {
         return reply.code(401).send({ message: 'Unauthorized' });
       }
       return recordBrowserEvents(req, reply, rawId);
     }
 
-    const state = authorized
-      ? await ensureState(rawId)
-      : await services().preview.resolveRunning(BigInt(rawId));
-    const sandboxHost = state?.host;
-
-    if (!state?.url || !sandboxHost) {
-    // console.log('[preview.proxy] no url or host for project', rawId, 'state:', state, 'host:', sandboxHost);
+    if (!target) {
       if (!authorized) {
         return reply
           .code(401)
           .type('text/plain')
           .send('Preview link expired. Reload the preview from the project.');
       }
-      return reply
-        .code(503)
-        .send({ message: state?.error ?? 'Preview is starting' });
+      void preview.wake(projectId).catch(() => undefined);
+      return sendStarting(req, reply);
     }
 
-    const pinCookie = issuePreviewAuthCookie(services().tokens, rawId);
-    reply.header('set-cookie', pinCookie);
+    // Only callers that proved ownership get a pin cookie.
+    const pinCookie = authorized
+      ? issuePreviewAuthCookie(tokens, rawId)
+      : undefined;
+    if (pinCookie) reply.header('set-cookie', pinCookie);
 
     return forward(
       req,
       reply,
       rawId,
-      sandboxHost,
+      target.host,
       null,
-      state.trafficToken,
+      target.trafficToken,
       pinCookie,
+      authorized,
     );
   }
 
   // --------------------------------------------------------------- helpers ---
-
-  async function ensureState(rawId: string): Promise<PreviewState | undefined> {
-    const { preview } = services();
-    try {
-      return await preview.ensure(BigInt(rawId));
-    } catch {
-      return preview.peek(BigInt(rawId));
-    }
-  }
 
   async function recordBrowserEvents(
     req: FastifyRequest,
@@ -304,8 +301,9 @@ export function registerPreviewProxy(
     rawId: string,
     sandboxHost: string,
     prefix: string | null,
-    trafficToken?: string,
-    pinCookie?: string,
+    trafficToken: string | undefined,
+    pinCookie: string | undefined,
+    canWake: boolean,
   ): Promise<FastifyReply> {
     const incomingPath = req.raw.url ?? req.url;
     const targetPath = prefix ? stripPrefix(incomingPath, prefix) : incomingPath;
@@ -343,7 +341,7 @@ export function registerPreviewProxy(
     const method = req.method.toUpperCase();
     const body = await readRequestBody(req, method);
 
-    let upstream: Response;
+    let upstream: Response | undefined;
     try {
       upstream = await fetch(target, {
         method,
@@ -353,7 +351,18 @@ export function registerPreviewProxy(
       });
     } catch (err) {
       logger.warn(`preview upstream failed for ${rawId}: ${String(err)}`);
-      return reply.code(502).send({ message: 'Preview upstream unreachable' });
+    }
+
+    // The E2B gateway answers 502 when nothing listens on the port: the dev
+    // server is down or still booting. Show the starting page and wake it.
+    if (!upstream || upstream.status === 502) {
+      void upstream?.body?.cancel().catch(() => undefined);
+      if (canWake) {
+        void services()
+          .preview.wake(BigInt(rawId))
+          .catch(() => undefined);
+      }
+      return sendStarting(req, reply);
     }
 
     const contentType = upstream.headers.get('content-type') ?? '';
@@ -424,6 +433,27 @@ export function registerPreviewProxy(
       Readable.fromWeb(upstream.body as unknown as WebReadableStream),
     );
   }
+}
+
+/** "Preview is starting" answer: auto-refreshing page for navigations. */
+function sendStarting(req: FastifyRequest, reply: FastifyReply): FastifyReply {
+  reply.header('retry-after', '2').header('cache-control', 'no-store');
+  const accept = String(req.headers.accept ?? '');
+  if (accept.includes('text/html')) {
+    return reply
+      .code(503)
+      .type('text/html; charset=utf-8')
+      .send(
+        '<!doctype html><meta charset="utf-8">' +
+          '<meta http-equiv="refresh" content="2">' +
+          '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+          '<title>Starting preview…</title>' +
+          '<body style="margin:0;height:100vh;display:grid;place-items:center;' +
+          'font:16px system-ui,sans-serif;color:#666;background:#fff">' +
+          'Starting preview…</body>',
+      );
+  }
+  return reply.code(503).send({ message: 'Preview is starting' });
 }
 
 function upstreamSetCookies(headers: Headers): string[] {

@@ -1,22 +1,20 @@
 /** Filesystem root inside the sandbox where the project is materialized. */
 export const PREVIEW_PROJECT_ROOT = '/home/user/app';
 
-/** Runtime files (server log / install marker) kept outside the project tree. */
+/** Runtime files (server log / sync marker) kept outside the project tree. */
 export const PREVIEW_STATE_DIR = '/tmp/lovable-preview';
 
-/** Where the dev server's stdout/stderr is redirected. */
+/** Where a non-template dev server's stdout/stderr would be redirected. */
 export const PREVIEW_LOG_PATH = `${PREVIEW_STATE_DIR}/server.log`;
-
-/** Marker holding the package hash of the last successful install. */
-export const PREVIEW_INSTALL_MARKER = `${PREVIEW_STATE_DIR}/installed`;
 
 /** Marker holding the project signature of the last filesystem sync. */
 export const PREVIEW_SYNC_MARKER = `${PREVIEW_STATE_DIR}/synced`;
 
-/** Script and log paths baked into the Next.js E2B template. */
+/**
+ * Script and log paths baked into the Next.js E2B template.
+ * `dev-server.sh` owns install + start + stop; the backend only calls it.
+ */
 export const PREVIEW_TEMPLATE_START = '/home/user/bin/dev-server.sh';
-export const PREVIEW_TEMPLATE_HEALTH = '/home/user/bin/health-check.sh';
-export const PREVIEW_TEMPLATE_PID_PATH = '/home/user/.dev-server.pid';
 export const PREVIEW_TEMPLATE_LOG_PATH = '/home/user/.dev-server.log';
 
 /** Port the Next.js dev server binds to inside the sandbox. */
@@ -67,11 +65,5 @@ export function previewProjectFromHost(
   return /^\d+$/.test(projectId) ? projectId : null;
 }
 
-/** How long a known-ready preview is trusted before re-validating (ms). */
-export const PREVIEW_READY_TTL_MS = 15_000;
-
 /** Max time to wait for the dev server to answer after starting it (ms). */
 export const PREVIEW_START_TIMEOUT_MS = 60_000;
-
-/** Timeout for `npm install` (ms). */
-export const PREVIEW_INSTALL_TIMEOUT_MS = 5 * 60_000;

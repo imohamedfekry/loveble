@@ -26,6 +26,13 @@ const STRIP_UPGRADE_HEADERS = new Set([
   'accept-encoding',
 ]);
 
+interface WsDeps {
+  preview: PreviewService;
+  accessTokens: AccessTokenService;
+  projects: ProjectRepository;
+  tokens: PreviewTokenService;
+}
+
 /**
  * Proxy Next.js HMR (and any other) WebSocket upgrades on `<id>.loveble.app` to
  * the sandbox traffic URL. Socket.IO on `api.loveble.app` is left untouched:
@@ -37,7 +44,7 @@ export function registerPreviewWebSocketProxy(
   server: Server,
   app: NestFastifyApplication,
 ): void {
-  const services = () => ({
+  const services = (): WsDeps => ({
     preview: app.get(PreviewService),
     accessTokens: app.get(AccessTokenService),
     projects: app.get(ProjectRepository),
@@ -110,12 +117,7 @@ async function tunnelPreviewUpgrade(
   socket: Duplex,
   head: Buffer,
   projectId: string,
-  deps: {
-    preview: PreviewService;
-    accessTokens: AccessTokenService;
-    projects: ProjectRepository;
-    tokens: PreviewTokenService;
-  },
+  deps: WsDeps,
 ): Promise<void> {
   const authorized = await authorizePreviewCaller({
     cookieHeader: req.headers.cookie,
@@ -125,19 +127,11 @@ async function tunnelPreviewUpgrade(
     projects: deps.projects,
   });
 
-  let state;
-  if (authorized) {
-    try {
-      state = await deps.preview.ensure(BigInt(projectId));
-    } catch {
-      state = deps.preview.peek(BigInt(projectId));
+  const target = await deps.preview.resolve(BigInt(projectId));
+  if (!target) {
+    if (authorized) {
+      void deps.preview.wake(BigInt(projectId)).catch(() => undefined);
     }
-  } else {
-    state = await deps.preview.resolveRunning(BigInt(projectId));
-  }
-
-  const sandboxHost = state?.host;
-  if (!state?.url || !sandboxHost) {
     rejectUpgrade(
       socket,
       authorized ? 503 : 401,
@@ -146,7 +140,7 @@ async function tunnelPreviewUpgrade(
     return;
   }
 
-  await pipeUpgrade(req, socket, head, sandboxHost, state.trafficToken);
+  await pipeUpgrade(req, socket, head, target.host, target.trafficToken);
 }
 
 function pipeUpgrade(
@@ -252,16 +246,10 @@ function disableTimeout(socket: Duplex): void {
   }
 }
 
-function rejectUpgrade(
-  socket: Duplex,
-  status: number,
-  reason: string,
-): void {
+function rejectUpgrade(socket: Duplex, status: number, reason: string): void {
   if (socket.destroyed) return;
   socket.resume();
-  socket.write(
-    `HTTP/1.1 ${status} ${reason}\r\nConnection: close\r\n\r\n`,
-  );
+  socket.write(`HTTP/1.1 ${status} ${reason}\r\nConnection: close\r\n\r\n`);
   socket.destroy();
 }
 
