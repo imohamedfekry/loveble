@@ -30,6 +30,7 @@ test-bifrost.ts
 coverage/
 .nyc_output/
 test.md
+migrate.mjs
 # ============================================
 # Environment Variables
 # ============================================

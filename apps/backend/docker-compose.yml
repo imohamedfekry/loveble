@@ -63,7 +63,7 @@ services:
       echo 'MinIO buckets initialized successfully.';
       "
 
-  walgit:
+  # walgit:
     build:
       context: ./walgit
       dockerfile: Containerfile
@@ -108,5 +108,5 @@ services:
 volumes:
   searxng-data:
   minio_data:
-  walgit-cache:
+  # walgit-cache:
   bifrost-data:
