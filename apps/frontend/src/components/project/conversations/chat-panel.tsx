@@ -7,10 +7,8 @@ import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
 import { DivideIcon, SparklesIcon } from "lucide-react";
 import { LoadingState, StreamText } from "@/components/beautiful-ui";
-import {
-  ToolCalls,
-  type ToolPart,
-} from "@/components/beautiful-ui/primitives/ToolCalls";
+import { ToolCalls } from "@/components/beautiful-ui/primitives/tool-calls";
+
 import { ChatComposer } from "@/components/layout/chat/composer/ChatComposer";
 import { API_BASE_URL } from "@/lib/api/api-fetch";
 import { socket } from "@/lib/socket/socket";
@@ -34,7 +32,7 @@ import { useEditor } from "@/lib/hooks/use-editor";
 import type { ConversationItem } from "@/store/conversations.store";
 import { UserMessage } from "./messages/user-message";
 import { MemoryPanel } from "./memory-panel";
-
+import type { ToolPart } from "@/components/beautiful-ui/primitives/tool-calls";
 const chatTransport = new DefaultChatTransport({
   api: `${API_BASE_URL}/ai/chat`,
   credentials: "include",
