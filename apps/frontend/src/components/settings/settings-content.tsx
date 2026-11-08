@@ -5,7 +5,6 @@ import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@loveble/ui/avatar";
 import { Button } from "@loveble/ui/button";
-import { Switch } from "@loveble/ui/switch";
 import { GithubConnectButton } from "@/components/user/github-connect-button";
 import { useGithubAccount } from "@/components/user/hooks/useGithubAccount";
 import { useUserStore } from "@/store/user.store";
@@ -14,6 +13,7 @@ import { useSettingsStore } from "@/store/settings.store";
 import { cn } from "@loveble/utils";
 import { SettingsRow } from "./settings-row";
 import { SettingsSectionHeader } from "./settings-section-header";
+import { SettingsToggle } from "./settings-toggle";
 
 function AccountSection() {
   const user = useUserStore((s) => s.user);
@@ -168,21 +168,21 @@ function NotificationsSection() {
             label="Project updates"
             description="Get notified when your projects finish importing or exporting."
           >
-            <Switch defaultChecked />
+            <SettingsToggle aria-label="Project updates" defaultChecked />
           </SettingsRow>
 
           <SettingsRow
             label="Email notifications"
             description="Receive important updates via email."
           >
-            <Switch />
+            <SettingsToggle aria-label="Email notifications" />
           </SettingsRow>
 
           <SettingsRow
             label="Sound effects"
             description="Play sounds for notifications."
           >
-            <Switch defaultChecked />
+            <SettingsToggle aria-label="Sound effects" defaultChecked />
           </SettingsRow>
         </div>
       </section>

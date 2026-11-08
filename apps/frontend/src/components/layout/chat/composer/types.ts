@@ -2,7 +2,7 @@ import type { FileType } from "@/lib/api/apis/files/types";
 
 export type ComposerVariant = "Rounded" | "Pill";
 
-export type ComposerMenuType = "at" | "files" | "slash" | null;
+export type ComposerMenuType = "at" | "files" | null;
 
 export type ComposerSource = {
   key: string;
@@ -18,6 +18,7 @@ export type ComposerCommand = {
   key: string;
   name: string;
   desc: string;
+  group?: string;
 };
 
 export type ComposerModel = {

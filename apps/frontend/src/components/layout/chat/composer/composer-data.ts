@@ -53,29 +53,36 @@ export const SOURCES: ComposerSource[] = [
 
 export const COMMANDS: ComposerCommand[] = [
   {
-    key: "compare",
-    name: "/compare",
-    desc: "Flavor vs. last summer",
+    key: "release-notes",
+    name: "/release-notes",
+    desc: "Draft release notes from merged changes.",
   },
   {
-    key: "churn-plan",
-    name: "/churn-plan",
-    desc: "Draft a churn schedule",
+    key: "weekly-report",
+    name: "/weekly-report",
+    desc: "Summarize the week's tasks and decisions.",
   },
   {
-    key: "restock",
-    name: "/restock",
-    desc: "Build a reorder list",
+    key: "brand-voice",
+    name: "/brand-voice",
+    desc: "Rewrite text in your product's voice.",
   },
   {
-    key: "draft-email",
-    name: "/draft-email",
-    desc: "Write a supplier email",
+    key: "meeting-summary",
+    name: "/meeting-summary",
+    desc: "Turn notes into decisions and next steps.",
   },
   {
-    key: "summarize",
-    name: "/summarize",
-    desc: "Digest the thread so far",
+    key: "calendar-digest",
+    name: "/calendar-digest",
+    desc: "List tomorrow's meetings and agendas.",
+    group: "Calendar",
+  },
+  {
+    key: "free-slots",
+    name: "/free-slots",
+    desc: "Find open times that work for everyone.",
+    group: "Calendar",
   },
 ];
 
@@ -96,6 +103,17 @@ export const MODELS: ComposerModel[] = [
     tag: "Stale",
   },
 ];
+
+export const EFFORT_LEVELS = [
+  "Low",
+  "Medium",
+  "High",
+  "Extra",
+  "Max",
+  "Ultra",
+];
+
+export const DEFAULT_EFFORT = 2;
 
 export const FILES = [
   "flavor-chart.png",

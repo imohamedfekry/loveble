@@ -5,26 +5,67 @@ import {
   ArrowUp,
   ChevronDown,
   FilePlusCornerIcon,
+  Layers2Icon,
   Mic,
+  PaperclipIcon,
   Plus,
+  ScrollIcon,
   Square,
   Upload,
+  UsersIcon,
 } from "lucide-react";
 
 import { cn } from "@loveble/utils";
+import { Button } from "@loveble/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@loveble/ui/dropdown-menu";
+import {
+  AIChatComposer,
+  AIChatComposerHeader,
+  AIChatComposerLeading,
+  AIChatComposerSubmit,
+  AIChatComposerTextarea,
+  AIChatComposerTrailing,
+  insertAIChatComposerToken,
+  useAIChatComposerAnchor,
+  type AIChatComposerCommand,
+} from "@/components/ui/ai-chat-composer";
+import { EffortSlider } from "@/components/ui/effort-slider";
 
 import { ComposerAttachments } from "./ComposerAttachments";
+import { ComposerIcon } from "./ComposerIcon";
 import { ComposerMentions } from "./ComposerMentions";
 import { ComposerMenu } from "./ComposerMenu";
-import { ComposerModelMenu } from "./ComposerModelMenu";
+import { EFFORT_LEVELS, COMMANDS, MODELS, SOURCES } from "./composer-data";
+import { BRANDS, GLYPHS } from "./omposer-data-icons";
 import { useChatComposer } from "./useChatComposer";
 import { VoiceWave } from "./voice-wave";
-import type {
-  ComposerModel,
-  ComposerVariant,
-} from "./types";
+import type { ComposerVariant } from "./types";
 import type { ChatContextItem } from "@/store/chat-context.store";
 import { useFileDragStore } from "@/store/file-drag.store";
+
+const commands: AIChatComposerCommand[] = COMMANDS.map((command) => ({
+  value: command.name.replace(/^\//, ""),
+  label: command.name,
+  description: command.desc,
+  group: command.group,
+  icon: <ScrollIcon />,
+}));
+
+const sourceItems = SOURCES.filter(
+  (source) => !source.attach && !source.brand
+);
+const connectorItems = SOURCES.filter((source) => !!source.brand);
 
 export function ChatComposer({
   variant = "Rounded",
@@ -56,18 +97,11 @@ export function ChatComposer({
 
   const {
     inputRef,
-    controlsRef,
-    measureRef,
-    modelRef,
-
-    plusOpen,
-    setPlusOpen,
-
-    modelOpen,
-    setModelOpen,
 
     model,
     selectModel,
+    effort,
+    setEffort,
 
     attachments,
     addFiles,
@@ -79,23 +113,6 @@ export function ChatComposer({
     active,
     setActive,
 
-    modelHovered,
-    setModelHovered,
-
-    modelRowRefs,
-
-    expanded,
-
-    rowBox,
-    modelBox,
-
-    listening,
-    startDictation,
-    audioLevelRef,
-
-    engaged,
-    setEngaged,
-
     menu,
     rows,
 
@@ -104,9 +121,14 @@ export function ChatComposer({
     handleChange,
     handleKeyDown,
 
-    openPlusMenu,
     pick,
     send,
+
+    listening,
+    startDictation,
+    audioLevelRef,
+
+    focusInput,
   } = useChatComposer({
     value,
     onChange,
@@ -118,36 +140,12 @@ export function ChatComposer({
   const sendActive = canSend || sending;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const composerRef = useRef<HTMLDivElement>(null);
+  const { ref: composerRef, anchor } = useAIChatComposerAnchor();
 
-  useEffect(() => {
-    if (!plusOpen && !modelOpen) return;
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (
-        composerRef.current &&
-        !composerRef.current.contains(
-          event.target as Node,
-        )
-      ) {
-        setPlusOpen(false);
-        setModelOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-
-    return () =>
-      document.removeEventListener(
-        "pointerdown",
-        onPointerDown,
-      );
-  }, [plusOpen, modelOpen, setModelOpen, setPlusOpen]);
-
-  useEffect(() => {
-    if (!listening) return;
-    inputRef.current?.focus();
-  }, [inputRef, listening]);
+  const insertToken = (token: string) => {
+    insertAIChatComposerToken(inputRef.current, token);
+    requestAnimationFrame(focusInput);
+  };
 
   const handlePick = (row: {
     key: string;
@@ -156,15 +154,10 @@ export function ChatComposer({
   }) => {
     if (row.key === "attach") {
       fileInputRef.current?.click();
-      setPlusOpen(false);
       return;
     }
 
     pick(row);
-  };
-
-  const handleModelSelect = (next: ComposerModel) => {
-    selectModel(next);
   };
 
   const [isDragging, setIsDragging] = useState(false);
@@ -191,7 +184,7 @@ export function ChatComposer({
 
     window.addEventListener("pointermove", onPointerMove);
     return () => window.removeEventListener("pointermove", onPointerMove);
-  }, [dragItem]);
+  }, [composerRef, dragItem]);
 
   const handleDragEnter = (event: React.DragEvent) => {
     if (!event.dataTransfer.types.includes("Files")) return;
@@ -237,268 +230,281 @@ export function ChatComposer({
   };
 
   return (
-    <div
-      ref={composerRef}
-      data-chat-dropzone
-    >
+    <div data-chat-dropzone className="w-full">
       <div className="relative">
         <ComposerMenu
           menu={menu}
           rows={rows}
           active={active}
-          engaged={engaged}
           connected={connected}
-          rowBox={rowBox}
-          onHover={(index) => {
-            setActive(index);
-            setEngaged(true);
-          }}
+          onHover={setActive}
           onClick={handlePick}
-          onConnect={() =>
-            setConnected((current) => !current)
-          }
-          onMouseLeave={() => setEngaged(false)}
+          onConnect={() => setConnected((current) => !current)}
         />
 
-        <ComposerModelMenu
-          open={modelOpen}
-          selected={model}
-          hovered={modelHovered}
-          modelBox={modelBox}
-          rowRefs={modelRowRefs}
-          onHover={setModelHovered}
-          onSelect={handleModelSelect}
-          onMouseLeave={() => setModelHovered(null)}
-        />
-
-        <div
-          onDragEnter={handleDragEnter}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={cn(
-            "relative isolate flex flex-col gap-1.5 overflow-hidden",
-            "border border-border bg-muted",
-            "p-1.5",
-            "transition-[border-color,border-radius] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-            // "focus-within:border-ring",
-            (isDragging || mentionDropActive) && "border-primary/60 ring-2 ring-primary/30",
-            pill
-              ? attachments.length > 0 || mentions.length > 0 || expanded
-                ? "rounded-3xl"
-                : "rounded-full"
-              : "rounded-3xl"
-          )}
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (sending) {
+              onStop?.();
+            } else {
+              send();
+            }
+          }}
         >
-          <ComposerMentions
-            mentions={mentions}
-            variant={variant}
-            onRemove={(id) => onRemoveMention?.(id)}
-            onOpen={onOpenMention}
-          />
-
-          <ComposerAttachments
-            attachments={attachments}
-            variant={variant}
-            onRemove={removeAttachment}
-          />
-
-          {isDragging && (
-            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 rounded-[inherit] bg-background/80 backdrop-blur-[1px]">
-              <Upload className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">
-                Drop files here
-              </span>
-            </div>
-          )}
-
-          {mentionDropActive && (
-            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 rounded-[inherit] bg-background/80 backdrop-blur-[1px]">
-              <FilePlusCornerIcon className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">
-                Add to chat
-              </span>
-            </div>
-          )}
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/*,.pdf,.txt,.md,.json,.ts,.tsx,.js,.jsx,.css,.html,.svg"
-            className="hidden"
-            onChange={(event) => {
-              if (event.target.files) {
-                addFiles(event.target.files);
-              }
-
-              event.target.value = "";
-            }}
-          />
-
-          <span
-            ref={measureRef}
-            aria-hidden
-            className="pointer-events-none absolute invisible whitespace-pre text-[15px] leading-[20px]"
-          >
-            {value}
-          </span>
-
-          <div
-            ref={controlsRef}
+          <AIChatComposer
+            ref={composerRef}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             className={cn(
-              "grid items-end gap-x-1.5 gap-y-1.5 p-2 overflow-hidden",
-              "transition-[grid-template-columns] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-              expanded
-                ? sendActive
-                  ? "grid-cols-[minmax(0,1fr)_auto_32px_32px]"
-                  : "grid-cols-[minmax(0,1fr)_auto_32px_0px]"
-                : sendActive
-                  ? "grid-cols-[32px_minmax(0,1fr)_auto_32px_32px]"
-                  : "grid-cols-[32px_minmax(0,1fr)_auto_32px_0px]"
+              "min-h-15",
+              // A fixed 30px radius stays a true pill at the 60px resting
+              // height, and a rounded card (not an oval) when text wraps.
+              pill ? "rounded-[30px]" : "rounded-3xl",
+              "data-[multiline=true]:pb-1.5",
+              (isDragging || mentionDropActive) &&
+                "ring-2 ring-primary/30",
             )}
           >
+            {(mentions.length > 0 || attachments.length > 0) && (
+              <AIChatComposerHeader>
+                <ComposerMentions
+                  mentions={mentions}
+                  variant={variant}
+                  onRemove={(id) => onRemoveMention?.(id)}
+                  onOpen={onOpenMention}
+                />
+                <ComposerAttachments
+                  attachments={attachments}
+                  variant={variant}
+                  onRemove={removeAttachment}
+                />
+              </AIChatComposerHeader>
+            )}
 
-
-            {/* INPUT */}
-            <textarea
+            <AIChatComposerTextarea
               ref={inputRef}
-              rows={1}
               value={value}
-              onChange={(event) =>
-                handleChange(event.target.value)
-              }
+              onChange={(event) => handleChange(event.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={
-                listening
-                  ? "Listening…"
-                  : "Write a message…"
-              }
+              commands={commands}
+              placeholder={listening ? "Listening…" : "Write a message…"}
               aria-label="Prompt"
-className={cn(
-                "min-w-0 w-full resize-none",
-                "bg-transparent px-1.5 py-1.5",
-                "text-[15px] leading-[20px] text-foreground",
-                "outline-none",
-                "placeholder:text-muted-foreground",
-                expanded
-                  ? "col-span-full col-start-1 row-start-1 [overflow-wrap:anywhere]"
-                  : "col-start-2 row-start-1 whitespace-pre overflow-x-hidden"
-              )}
             />
 
-                        {/* PLUS */}
-            <button
-              type="button"
-              aria-label="Add attachments and sources"
-              aria-expanded={plusOpen}
-              onClick={openPlusMenu}
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center",
-                "text-muted-foreground transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-                "hover:bg-foreground/5 hover:text-foreground",
-                "active:scale-[0.96]",
-                pill ? "rounded-full" : "rounded-lg",
-                plusOpen &&
-                  "bg-foreground/5 text-foreground",
-                expanded
-                  ? "col-start-1 row-start-2"
-                  : "col-start-1 row-start-1"
-              )}
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+            <AIChatComposerLeading>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-lg"
+                      className="rounded-full"
+                      aria-label="Add attachments and sources"
+                    />
+                  }
+                >
+                  <Plus className="size-[18px]" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  anchor={anchor}
+                  align="start"
+                  side="top"
+                  className="w-56!"
+                >
+                  <DropdownMenuItem
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <PaperclipIcon />
+                    Add files or photos
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <ScrollIcon />
+                      Skills
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {commands.map((command) => (
+                        <DropdownMenuItem
+                          key={command.value}
+                          onClick={() =>
+                            insertToken(`/${command.value}`)
+                          }
+                        >
+                          {command.icon}
+                          {command.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Layers2Icon />
+                      Sources
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {sourceItems.map((source) => (
+                        <DropdownMenuItem
+                          key={source.key}
+                          onClick={() =>
+                            insertToken(`@${source.name}`)
+                          }
+                        >
+                          <ComposerIcon size={15}>
+                            {GLYPHS[source.glyph ?? "clip"]}
+                          </ComposerIcon>
+                          {source.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <UsersIcon />
+                      Connectors
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {connectorItems.map((source) => (
+                        <DropdownMenuItem
+                          key={source.key}
+                          onClick={() =>
+                            insertToken(`@${source.name}`)
+                          }
+                        >
+                          {source.brand ? BRANDS[source.brand] : null}
+                          {source.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </AIChatComposerLeading>
 
-            {/* MODEL */}
-            <button
-              ref={modelRef}
-              type="button"
-              aria-expanded={modelOpen}
-              aria-label="Choose model"
-              onClick={() => {
-                setPlusOpen(false);
-                setModelOpen(
-                  (current) => !current
-                );
-              }}
-              className={cn(
-                "flex h-8 shrink-0 items-center gap-1",
-                "px-1.5 text-xs font-medium",
-                "text-muted-foreground transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-                "hover:bg-foreground/5 hover:text-foreground",
-                "active:scale-[0.96]",
-                pill ? "rounded-full" : "rounded-lg",
-                expanded
-                  ? "col-start-2 row-start-2"
-                  : "col-start-3 row-start-1"
-              )}
-            >
-              {model.name}
-
-              <ChevronDown
+            <AIChatComposerTrailing>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 rounded-full font-normal text-muted-foreground"
+                    />
+                  }
+                >
+                  {model.name} {EFFORT_LEVELS[effort]}
+                  <ChevronDown
+                    data-icon="inline-end"
+                    className="size-3.5"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  anchor={anchor}
+                  align="end"
+                  side="top"
+                  className="w-49! bg-muted p-0"
+                >
+                  <DropdownMenuRadioGroup
+                    value={model.key}
+                    onValueChange={(key) => {
+                      const next = MODELS.find(
+                        (item) => item.key === key
+                      );
+                      if (next) selectModel(next);
+                    }}
+                    className="rounded-xl bg-popover p-1 ring-[0.5px] ring-border"
+                  >
+                    {MODELS.map((item) => (
+                      <DropdownMenuRadioItem
+                        key={item.key}
+                        value={item.key}
+                      >
+                        <span className="flex-1 truncate">
+                          {item.name}
+                        </span>
+                        <span className="text-2xs text-muted-foreground">
+                          {item.tag}
+                        </span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                  <EffortSlider
+                    levels={EFFORT_LEVELS}
+                    value={effort}
+                    onValueChange={setEffort}
+                    className="w-full gap-2 rounded-none bg-transparent p-3 text-2xs shadow-none ring-0 *:first:text-sm"
+                  />
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-lg"
+                aria-label={
+                  listening ? "Stop dictation" : "Start dictation"
+                }
+                aria-pressed={listening}
+                onClick={startDictation}
                 className={cn(
-                  "h-3 w-3 text-muted-foreground transition-[rotate] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-                  modelOpen && "rotate-180"
+                  "rounded-full text-muted-foreground hover:text-foreground",
+                  listening && "bg-foreground/[0.08] text-foreground"
                 )}
-              />
-            </button>
+              >
+                {listening ? (
+                  <VoiceWave levelRef={audioLevelRef} />
+                ) : (
+                  <Mic className="size-[18px]" />
+                )}
+              </Button>
+              <AIChatComposerSubmit
+                disabled={!sendActive}
+                className="rounded-full"
+                aria-label={sending ? "Stop generating" : "Send"}
+              >
+                {sending ? (
+                  <Square className="size-4 fill-current" />
+                ) : (
+                  <ArrowUp className="size-[18px]" />
+                )}
+              </AIChatComposerSubmit>
+            </AIChatComposerTrailing>
 
-            {/* MIC */}
-            <button
-              type="button"
-              aria-label={
-                listening
-                  ? "Stop dictation"
-                  : "Start dictation"
-              }
-              aria-pressed={listening}
-              onClick={startDictation}
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center",
-                "transition-[background-color,color,scale] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-                "active:scale-[0.96]",
-                pill ? "rounded-full" : "rounded-lg",
-                listening
-                  ? "bg-foreground/[0.08] text-foreground"
-                  : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
-                expanded
-                  ? "col-start-3 row-start-2"
-                  : "col-start-4 row-start-1"
-              )}
-            >
-              {listening ? (
-                <VoiceWave levelRef={audioLevelRef} />
-              ) : (
-                <Mic className="h-4 w-4" />
-              )}
-            </button>
+            {isDragging && (
+              <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 rounded-[inherit] bg-background/80 backdrop-blur-[1px]">
+                <Upload className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  Drop files here
+                </span>
+              </div>
+            )}
 
-            {/* SEND — مخفي تماماً لما مش active ويظهر بسلايد من اليمين للشمال */}
-            <button
-              type="button"
-              aria-label={sending ? "Stop generating" : "Send"}
-              aria-hidden={!sendActive}
-              tabIndex={sendActive ? 0 : -1}
-              onClick={sending ? onStop : send}
-              className={cn(
-                "flex h-8 shrink-0 items-center justify-center overflow-hidden",
-                "transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-                "active:scale-[0.96]",
-                pill ? "rounded-full" : "rounded-lg",
-                expanded ? "col-start-4 row-start-2" : "col-start-5 row-start-1",
-                sendActive
-                  ? "w-8 translate-x-0 scale-100 bg-primary text-primary-foreground opacity-100 hover:bg-primary/90"
-                  : "pointer-events-none w-0 translate-x-4 scale-90 bg-primary text-primary-foreground opacity-0"
-              )}
-            >
-              {sending ? (
-                <Square className="h-3.5 w-3.5 shrink-0 fill-current" />
-              ) : (
-                <ArrowUp className="h-4 w-4 shrink-0" />
-              )}
-            </button>
-          </div>
-        </div>
+            {mentionDropActive && (
+              <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 rounded-[inherit] bg-background/80 backdrop-blur-[1px]">
+                <FilePlusCornerIcon className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  Add to chat
+                </span>
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.txt,.md,.json,.ts,.tsx,.js,.jsx,.css,.html,.svg"
+              className="hidden"
+              onChange={(event) => {
+                if (event.target.files) addFiles(event.target.files);
+                event.target.value = "";
+              }}
+            />
+          </AIChatComposer>
+        </form>
       </div>
     </div>
   );

@@ -793,7 +793,7 @@ export function ChatPanel({
           </div>
         </div>
         <ChatComposer
-          variant="Rounded"
+          variant="Pill"
           value={input}
           onChange={setInput}
           onSend={handleSend}

@@ -18,7 +18,7 @@ export function ChatBox({
 }) {
   return (
     <ChatComposer
-      variant="Rounded"
+      variant="Pill"
       value={value}
       onChange={onChange}
       onSend={onSend}
