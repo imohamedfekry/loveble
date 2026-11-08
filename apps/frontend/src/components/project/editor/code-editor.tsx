@@ -41,6 +41,7 @@ interface Props {
   peers?: RemotePeer[];
   onViewReady?: (view: EditorView | null) => void;
   onLocalAwareness?: (awareness: LocalAwareness) => void;
+  onDocChange?: () => void;
 }
 
 export const CodeEditor = ({
@@ -53,15 +54,20 @@ export const CodeEditor = ({
   peers = [],
   onViewReady,
   onLocalAwareness,
+  onDocChange,
 }: Props) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onLocalAwarenessRef = useRef(onLocalAwareness);
+  const onDocChangeRef = useRef(onDocChange);
 
-  onChangeRef.current = onChange;
-  onLocalAwarenessRef.current = onLocalAwareness;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onLocalAwarenessRef.current = onLocalAwareness;
+    onDocChangeRef.current = onDocChange;
+  });
 
   const languageExtension = useMemo(() => {
     return getLanguageExtension(fileName)
@@ -104,6 +110,7 @@ export const CodeEditor = ({
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           onChangeRef.current?.(update.state.doc.toString());
+          onDocChangeRef.current?.();
         }
 
         if (update.selectionSet || update.docChanged) {

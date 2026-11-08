@@ -306,7 +306,9 @@ export function registerPreviewProxy(
     canWake: boolean,
   ): Promise<FastifyReply> {
     const incomingPath = req.raw.url ?? req.url;
-    const targetPath = prefix ? stripPrefix(incomingPath, prefix) : incomingPath;
+    const targetPath = prefix
+      ? stripPrefix(incomingPath, prefix)
+      : incomingPath;
     const sandboxOrigin = `https://${sandboxHost}`;
     const target = `${sandboxOrigin}${targetPath}`;
 

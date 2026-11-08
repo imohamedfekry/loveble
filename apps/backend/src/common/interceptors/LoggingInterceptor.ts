@@ -18,10 +18,14 @@ export class LoggingInterceptor implements NestInterceptor {
     const handler = `${ctx.getClass().name}.${ctx.getHandler().name}`;
     const start = Date.now();
 
-    return next.handle().pipe(
-      tap(() =>
-        this.logger.log(`${method} ${url} -> ${handler} (${Date.now() - start}ms)`),
-      ),
-    );
+    return next
+      .handle()
+      .pipe(
+        tap(() =>
+          this.logger.log(
+            `${method} ${url} -> ${handler} (${Date.now() - start}ms)`,
+          ),
+        ),
+      );
   }
 }

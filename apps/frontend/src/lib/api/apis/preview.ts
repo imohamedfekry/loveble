@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../../api";
+import { apiRequest } from "../api-fetch";
 
 export type PreviewStatus =
   | "stopped"
@@ -15,37 +15,42 @@ export interface PreviewStatusResult {
   message?: string;
 }
 
+type PreviewStatusPayload = {
+  success?: boolean;
+  message?: string;
+  data?: { status?: PreviewStatus; url?: string; error?: string };
+  status?: PreviewStatus;
+  url?: string;
+  error?: string;
+};
+
 export async function getPreviewStatus(
   projectId: string,
   signal?: AbortSignal,
 ): Promise<PreviewStatusResult> {
-  const response = await fetch(
-    `${API_BASE_URL}/preview/${projectId}/status`,
-    {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      signal,
-    },
-  );
+  try {
+    const json = await apiRequest<PreviewStatusPayload>(
+      `/preview/${projectId}/status`,
+      { method: "GET", signal },
+    );
 
-  const json = await response.json().catch(() => null);
+    const data = json.data ?? json;
 
-  if (!response.ok || !json) {
+    return {
+      success: json.success ?? true,
+      status: data.status ?? "error",
+      url: data.url,
+      error: data.error,
+      message: json.message,
+    };
+  } catch (error: unknown) {
     return {
       success: false,
       status: "error",
-      error: json?.message ?? `Request failed (${response.status})`,
+      error:
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to load the preview status",
     };
   }
-
-  const data = json.data ?? json;
-
-  return {
-    success: json.success ?? true,
-    status: (data.status as PreviewStatus) ?? "error",
-    url: data.url,
-    error: data.error,
-    message: json.message,
-  };
 }

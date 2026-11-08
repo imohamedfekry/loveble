@@ -30,7 +30,7 @@ export default function VerifyOtpPage() {
     }
 
     if (!email) {
-      setError('ارجع صفحة التسجيل الأول')
+      setError('Start again from the sign-up page.')
       router.push('/register')
       return
     }
@@ -44,12 +44,12 @@ export default function VerifyOtpPage() {
       if (res?.code === 'OTP_VERIFIED') {
         router.push('/register/create')
       } else {
-        setError(res?.message || 'OTP غير صحيح')
+        setError(res?.message || 'That code is incorrect.')
       }
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : (err as { message?: string } | null)?.message;
-      setError(message || 'حصل خطأ')
+      setError(message || 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -72,7 +72,7 @@ export default function VerifyOtpPage() {
 
         {loading && (
           <p className="text-sm text-muted-foreground text-center">
-            جاري التحقق...
+            Verifying…
           </p>
         )}
 

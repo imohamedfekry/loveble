@@ -161,7 +161,9 @@ export class ProjectMutationsService {
     if (!deleted) return;
     this.emitFileEvent(projectId, FILE_EVENTS.DELETED, deleted);
     if (deleted.storageKey) {
-      await this.storageService.delete(deleted.storageKey).catch(() => undefined);
+      await this.storageService
+        .delete(deleted.storageKey)
+        .catch(() => undefined);
     }
     try {
       await this.documentState.unload(node.id);
@@ -214,8 +216,7 @@ export class ProjectMutationsService {
     toDelete.sort((a, b) => b.depth - a.depth);
     for (const { node } of toDelete) {
       let deleted:
-        | Awaited<ReturnType<FileRepository['deleteFile']>>
-        | undefined;
+        Awaited<ReturnType<FileRepository['deleteFile']>> | undefined;
       try {
         deleted = await this.fileRepository.deleteFile(
           BigInt(node.id),

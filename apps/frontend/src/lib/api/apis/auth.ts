@@ -1,54 +1,50 @@
 import { API_BASE_URL } from "../../api";
+import { apiRequest } from "../api-fetch";
+
+export type AuthResponse = {
+  success?: boolean;
+  code?: string;
+  message?: string;
+  data?: unknown;
+};
+
+export type GitHubCallbackResponse = {
+  success: boolean;
+  data?: { provider: string; linked: boolean };
+};
 
 export function redirectToGithubConnect() {
   window.location.href = `${API_BASE_URL}/auth/github/connect`;
 }
 
-export async function githubCallback(code: string, state: string) {
+export function githubCallback(code: string, state: string) {
   const params = new URLSearchParams({ code, state });
-  const res = await fetch(
-    `${API_BASE_URL}/auth/github/callback?${params.toString()}`,
-    {
-      method: "GET",
-      credentials: "include",
-    },
+  return apiRequest<GitHubCallbackResponse>(
+    `/auth/github/callback?${params.toString()}`,
+    { method: "GET" },
   );
-
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as {
-      message?: string;
-    };
-    throw new Error(body?.message ?? "GitHub callback failed");
-  }
-
-  return res.json() as Promise<{
-    success: boolean;
-    data?: { provider: string; linked: boolean };
-  }>;
 }
 
-export async function requestOtp(email: string) {
-  return fetch(`${API_BASE_URL}/auth/request-otp`, {
+export function requestOtp(email: string) {
+  return apiRequest<AuthResponse>(`/auth/request-otp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
-  }).then((r) => r.json());
+  });
 }
 
-export async function verifyOtp(email: string, otp: string) {
-  return fetch(`${API_BASE_URL}/auth/verify-otp`, {
+export function verifyOtp(email: string, otp: string) {
+  return apiRequest<AuthResponse>(`/auth/verify-otp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify({ email, otp }),
-  }).then((r) => r.json());
+  });
 }
 
-export async function createAccount(data: { name: string; password: string }) {
-  return fetch(`${API_BASE_URL}/auth/create`, {
+export function createAccount(data: { name: string; password: string }) {
+  return apiRequest<AuthResponse>(`/auth/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify(data),
-  }).then((r) => r.json());
+  });
 }

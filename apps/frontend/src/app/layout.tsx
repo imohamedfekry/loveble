@@ -38,7 +38,6 @@ export default function RootLayout({
         inter.variable,
         robotoMono.variable,
         "font-sans",
-        inter.variable,
       )}
     >
       <body className="min-h-full flex flex-col">

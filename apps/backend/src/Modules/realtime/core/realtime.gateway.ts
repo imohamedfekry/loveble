@@ -168,10 +168,7 @@ export class RealtimeGateway
     if (!project || project.userId.toString() !== userId) return;
 
     const { conversationId, messageId, role, parts, status } = payload ?? {};
-    if (
-      typeof conversationId !== 'string' ||
-      typeof messageId !== 'string'
-    ) {
+    if (typeof conversationId !== 'string' || typeof messageId !== 'string') {
       return;
     }
 

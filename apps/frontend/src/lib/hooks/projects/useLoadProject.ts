@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { API_BASE_URL } from "@/lib/api";
 import { useProjectsStore } from "@/store/project.store";
 import { useEditorStore } from "@/store/use-editor-store";
-import { openProject } from "@/lib/api/apis/projects";
+import { getProject, openProject } from "@/lib/api/apis/projects";
 import type { Project } from "@loveble/types";
 
 // Module-level: StrictMode double-effect (or two components asking for
@@ -20,26 +19,7 @@ async function fetchProject(projectId: string): Promise<Project> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/projects/project/${projectId}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          signal: controller.signal,
-        },
-      );
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const json = await res.json().catch(() => null);
-      const p = json?.data?.project ?? json?.data ?? json;
-      if (!p || !p.id) {
-        throw new Error("Invalid project data");
-      }
-      return p as Project;
+      return await getProject(projectId, controller.signal);
     } finally {
       clearTimeout(timeoutId);
     }

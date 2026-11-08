@@ -89,7 +89,7 @@ export function registerPreviewWebSocketProxy(
     listener: (...args: unknown[]) => void,
   ) => {
     if (event === 'upgrade') {
-      others.push(listener as UpgradeListener);
+      others.push(listener);
       return server;
     }
     return originalOn(event, listener);
@@ -103,7 +103,7 @@ export function registerPreviewWebSocketProxy(
     listener: (...args: unknown[]) => void,
   ) => {
     if (event === 'upgrade') {
-      others.unshift(listener as UpgradeListener);
+      others.unshift(listener);
       return server;
     }
     return originalPrepend(event, listener);

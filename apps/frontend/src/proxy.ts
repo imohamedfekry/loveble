@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Routes accessible without authentication
-const publicRoutes = ["/login", "/register", "/request-otp", "/verify-otp"];
+// Routes accessible without a session. Children of these paths are public too.
+const publicRoutes = ["/login", "/register"];
 
-// Route that only requires a temp token (not accessToken)
-const createAccountRoute = "/create";
+// Final step of the sign-up flow: needs the short-lived temp token issued by
+// the OTP verification step, not a full session.
+const createAccountRoute = "/register/create";
 
 function matchesRoute(pathname: string, routes: string[]) {
-  return routes.some((route) => pathname.startsWith(route));
+  return routes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
 }
 
 export default function proxy(req: NextRequest) {
@@ -17,36 +20,36 @@ export default function proxy(req: NextRequest) {
   const accessToken = req.cookies.get("Authorization")?.value;
   const tempToken = req.cookies.get("temptoken")?.value;
 
+  // =========================
+  // 1. Sign-up's last step — checked before the public "/register" prefix.
+  // =========================
+  if (matchesRoute(pathname, [createAccountRoute])) {
+    if (accessToken) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+    if (!tempToken) {
+      // Temp token missing or expired: restart the flow at its entry point.
+      return NextResponse.redirect(new URL("/register", req.url));
+    }
+    return NextResponse.next();
+  }
+
   const isPublicRoute = matchesRoute(pathname, publicRoutes);
-  const isCreateAccountRoute = pathname.startsWith(createAccountRoute);
 
   // =========================
-  // 1. If user is logged in and tries to access auth pages → redirect to dashboard
+  // 2. Signed-in users have nothing to do on the auth pages.
   // =========================
   if (accessToken && isPublicRoute) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   // =========================
-  // 2. Protect create-account route (requires temp token)
-  // =========================
-  if (isCreateAccountRoute) {
-    if (!tempToken) {
-      return NextResponse.redirect(new URL("/request-otp", req.url));
-    }
-    return NextResponse.next(); // allowed to proceed
-  }
-
-  // =========================
-  // 3. Any route that is not public and not create-account → requires accessToken
+  // 3. Everything else requires an access token.
   // =========================
   if (!accessToken && !isPublicRoute) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // =========================
-  // 4. Normal flow
-  // =========================
   return NextResponse.next();
 }
 

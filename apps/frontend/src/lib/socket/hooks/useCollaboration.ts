@@ -96,6 +96,7 @@ export function useCollaboration({
     mouse?: { docPos: number } | null;
   }>({});
   const awarenessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleFlushRef = useRef<(() => void) | null>(null);
 
   const setView = useCallback((view: EditorView | null) => {
     viewRef.current = view;
@@ -361,6 +362,7 @@ export function useCollaboration({
     const ackTimeout = setTimeout(() => {
       if (pushGenRef.current === pushGen && pushingRef.current) {
         pushingRef.current = false;
+        scheduleFlushRef.current?.();
       }
     }, 5000);
     ackTimeoutRef.current = ackTimeout;
@@ -382,7 +384,8 @@ export function useCollaboration({
         ackTimeoutRef.current = null;
       }
 
-      const ack = (rawAck as any)?.data ?? rawAck;
+      const ack =
+        (rawAck as { data?: AckPayload } | undefined)?.data ?? rawAck;
 
       const serverDoc = ack?.document ?? ack?.doc;
       const missing = ack?.updates ?? ack?.missing ?? [];
@@ -470,13 +473,23 @@ export function useCollaboration({
     });
   }, [socketStatus]);
 
+  // Flushes are driven by local document changes (and by acks) instead of a
+  // polling interval, so an idle editor costs nothing.
+  const scheduleFlush = useCallback(() => {
+    if (flushTimerRef.current) return;
+
+    flushTimerRef.current = setTimeout(() => {
+      flushTimerRef.current = null;
+      flushUpdates();
+    }, 60);
+  }, [flushUpdates]);
+
   useEffect(() => {
-    if (!snapshot) return;
+    scheduleFlushRef.current = scheduleFlush;
+  }, [scheduleFlush]);
 
-    const interval = setInterval(flushUpdates, 100);
-
+  useEffect(() => {
     return () => {
-      clearInterval(interval);
       if (flushTimerRef.current) {
         clearTimeout(flushTimerRef.current);
         flushTimerRef.current = null;
@@ -487,7 +500,7 @@ export function useCollaboration({
       }
       pushingRef.current = false;
     };
-  }, [snapshot, flushUpdates]);
+  }, []);
 
   const sendAwareness = useCallback((awareness: {
     selection?: RemotePeer["selection"];
@@ -524,5 +537,11 @@ export function useCollaboration({
     [peers, socketStatus, localUserId],
   );
 
-  return { setView, sendAwareness, snapshot, peers: peerList };
+  return {
+    setView,
+    sendAwareness,
+    snapshot,
+    peers: peerList,
+    requestFlush: scheduleFlush,
+  };
 }

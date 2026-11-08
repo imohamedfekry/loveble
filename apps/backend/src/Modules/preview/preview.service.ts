@@ -24,11 +24,7 @@ export interface PreviewTarget {
 }
 
 export type PreviewStatus =
-  | 'stopped'
-  | 'installing'
-  | 'starting'
-  | 'ready'
-  | 'error';
+  'stopped' | 'installing' | 'starting' | 'ready' | 'error';
 
 /** Shape older callers (agent tools, terminal) still read. */
 export interface PreviewState {

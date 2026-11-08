@@ -60,7 +60,7 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginSchema>({
-    resolver: valibotResolver(loginSchema),
+    resolver: valibotResolver<LoginSchema, unknown, LoginSchema>(loginSchema),
   })
 
   const onSubmit = async (data: LoginSchema) => {

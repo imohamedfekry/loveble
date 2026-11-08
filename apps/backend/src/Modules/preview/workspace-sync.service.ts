@@ -27,10 +27,7 @@ import { ProjectMutationsService } from 'src/Modules/ai/workspace/project-mutati
 import { StorageService } from 'src/Modules/storage/storage.service';
 import type { File as ProjectFile } from 'src/common/database/schema/projects/file.schema';
 
-import {
-  PREVIEW_PROJECT_ROOT,
-  PREVIEW_SYNC_MARKER,
-} from './preview.constants';
+import { PREVIEW_PROJECT_ROOT, PREVIEW_SYNC_MARKER } from './preview.constants';
 
 const WRITE_BATCH_SIZE = 50;
 const DELETE_BATCH_SIZE = 50;
@@ -344,9 +341,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
     void this.e2bService.extend(sandboxId).catch(() => undefined);
     session.keepAliveTimer = setInterval(() => {
       void this.e2bService.extend(sandboxId).catch((err) => {
-        this.logger.warn(
-          `sandbox keepalive failed for ${key}: ${String(err)}`,
-        );
+        this.logger.warn(`sandbox keepalive failed for ${key}: ${String(err)}`);
       });
     }, SANDBOX_KEEPALIVE_MS);
     session.keepAliveTimer.unref();
@@ -635,8 +630,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
     fileId: string,
   ): Promise<string | undefined> {
     const projectId = BigInt(session.projectId);
-    const files =
-      await this.fileRepository.getAllFilesWithProjectId(projectId);
+    const files = await this.fileRepository.getAllFilesWithProjectId(projectId);
     const resolver = new ProjectPathResolver(projectId, files);
     const rel = resolver.pathOfId(fileId);
     if (!rel || this.isIgnored(rel)) return undefined;
@@ -680,8 +674,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
 
   private async refreshSyncMarker(session: SyncSession): Promise<void> {
     const projectId = BigInt(session.projectId);
-    const files =
-      await this.fileRepository.getAllFilesWithProjectId(projectId);
+    const files = await this.fileRepository.getAllFilesWithProjectId(projectId);
     const revision = await this.projectRevision.get(projectId);
     const signature = this.computeSignature(projectId, files, revision);
     await this.writeSyncMarker(session.sandboxId, {
@@ -724,9 +717,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
       const synced = await this.syncFiles(projectId, session.sandboxId, files);
       this.updateSessionFromSync(projectId, session.sandboxId, synced);
     } catch (err) {
-      this.logger.warn(
-        `import from sandbox failed for ${key}: ${String(err)}`,
-      );
+      this.logger.warn(`import from sandbox failed for ${key}: ${String(err)}`);
     } finally {
       session.applying = false;
       if (session.pendingImportTree || session.pendingPaths.size > 0) {
@@ -743,8 +734,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
     if (!manifest) return;
     const present = new Set(manifest.map((entry) => entry.path));
     const projectId = BigInt(session.projectId);
-    const files =
-      await this.fileRepository.getAllFilesWithProjectId(projectId);
+    const files = await this.fileRepository.getAllFilesWithProjectId(projectId);
     const resolver = new ProjectPathResolver(projectId, files);
 
     for (const entry of manifest) {
@@ -804,8 +794,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
     const binary = this.isBinaryBytes(bytes);
     const contentType = this.contentTypeFor(rel, bytes);
     const projectId = BigInt(session.projectId);
-    const files =
-      await this.fileRepository.getAllFilesWithProjectId(projectId);
+    const files = await this.fileRepository.getAllFilesWithProjectId(projectId);
     const resolver = new ProjectPathResolver(projectId, files);
     const node = resolver.resolve(rel);
     const sandboxHash = createHash('sha256').update(bytes).digest('hex');
@@ -816,14 +805,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
     }
     if (node.type !== 'file') return false;
     if (node.isBinary !== binary) {
-      await this.handleConflict(
-        session,
-        rel,
-        node,
-        bytes,
-        binary,
-        contentType,
-      );
+      await this.handleConflict(session, rel, node, bytes, binary, contentType);
       return true;
     }
 
@@ -841,14 +823,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
 
     const baseline = session.baseline.get(rel);
     if (!baseline) {
-      await this.handleConflict(
-        session,
-        rel,
-        node,
-        bytes,
-        binary,
-        contentType,
-      );
+      await this.handleConflict(session, rel, node, bytes, binary, contentType);
       return true;
     }
 
@@ -871,8 +846,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
     const rel = this.normalizeSandboxPath(path);
     if (!rel || this.isIgnored(rel)) return false;
     const projectId = BigInt(session.projectId);
-    const files =
-      await this.fileRepository.getAllFilesWithProjectId(projectId);
+    const files = await this.fileRepository.getAllFilesWithProjectId(projectId);
     const resolver = new ProjectPathResolver(projectId, files);
     const node = resolver.resolve(rel);
     if (!node) {
@@ -961,9 +935,8 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
         { requestTimeoutMs: 120_000 },
       );
     } else {
-      const dbText = (
-        await this.documentState.getDocument(node.id.toString())
-      ).doc;
+      const dbText = (await this.documentState.getDocument(node.id.toString()))
+        .doc;
       const sandboxText = Buffer.from(sandboxBytes).toString('utf8');
       await this.projectMutations.writeFile(projectId, projectCopy, dbText);
       this.setBaseline(
@@ -1075,9 +1048,7 @@ export class WorkspaceSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   private isIgnored(rel: string): boolean {
-    return rel
-      .split('/')
-      .some((segment) => SYNC_IGNORED_SEGMENTS.has(segment));
+    return rel.split('/').some((segment) => SYNC_IGNORED_SEGMENTS.has(segment));
   }
 
   private isBinaryBytes(bytes: Uint8Array): boolean {

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useRouter } from 'next/navigation'
@@ -9,21 +10,24 @@ import { Input } from '@loveble/ui/input'
 import { Button } from '@loveble/ui/button'
 import { FormError } from '@/components/auth/form-error'
 import { requestOtp } from '@/lib/api/apis/auth'
-import { emailSchema } from '@loveble/validation/register'
+import { emailSchema, type EmailSchema } from '@loveble/validation/register'
 
 
 export default function RegisterPage() {
   const router = useRouter()
+  const [formError, setFormError] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: valibotResolver(emailSchema),
+  } = useForm<EmailSchema>({
+    resolver: valibotResolver<EmailSchema, unknown, EmailSchema>(emailSchema),
   })
 
-  const onSubmit = async (data: { email: string }) => {
+  const onSubmit = async (data: EmailSchema) => {
+    setFormError(null)
+
     try {
       const res = await requestOtp(data.email)
 
@@ -36,13 +40,12 @@ export default function RegisterPage() {
           `/register/verify-otp?email=${encodeURIComponent(data.email)}`,
         )
       } else {
-        alert(res?.message || 'حدث خطأ أثناء إرسال OTP')
+        setFormError(res?.message || 'Could not send the verification code. Please try again.')
       }
     } catch (error: unknown) {
-      console.error('requestOtp error', error)
       const message =
-        error instanceof Error ? error.message : (error as { message?: string } | null)?.message;
-      alert(message || 'حدث خطأ أثناء إرسال OTP. تأكد من اتصال الإنترنت.')
+        error instanceof Error ? error.message : (error as { message?: string } | null)?.message
+      setFormError(message || 'Could not send the verification code. Check your connection.')
     }
   }
 
@@ -55,6 +58,8 @@ export default function RegisterPage() {
             <FormError message={errors.email.message as string} />
           )}
         </div>
+
+        <FormError message={formError ?? undefined} />
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           Send OTP

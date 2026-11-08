@@ -22,7 +22,11 @@ import type { AuthenticatedRequest } from 'src/common/Global/security/types/auth
 import { OauthTokenService } from 'src/common/Global/security/jwt/services/oauth-token.service';
 import { InngestService } from 'src/common/inngest/inngest.service';
 import { RESPONSE_MESSAGES } from '@loveble/utils';
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 interface GitHubProfile {
   provider: string;
   providerId: string;
@@ -348,7 +352,9 @@ export class AuthService {
    */
   private authCookieOptions(): { domain?: string } {
     const previewDomain = previewBaseDomain();
-    const domain = previewDomain.startsWith('.') ? previewDomain : '.' + previewDomain;
+    const domain = previewDomain.startsWith('.')
+      ? previewDomain
+      : '.' + previewDomain;
     const finalDomain =
       this.configService.get<string>('AUTH_COOKIE_DOMAIN') ??
       process.env.AUTH_COOKIE_DOMAIN ??

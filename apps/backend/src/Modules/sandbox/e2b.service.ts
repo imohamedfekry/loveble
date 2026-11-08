@@ -93,8 +93,8 @@ export class E2bService {
     const options = {
       apiKey,
       timeoutMs,
-      network: { 
-        allowPublicTraffic: false 
+      network: {
+        allowPublicTraffic: false,
       },
     } as const;
     const sandbox = template

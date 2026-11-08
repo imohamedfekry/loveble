@@ -31,6 +31,9 @@ export class PreviewController {
 
     // Never blocks: reports the current state and wakes the preview in the
     // background when it is not serving yet.
-    return success(PREVIEW_STATUS_MSG, await this.previewService.status(projectId));
+    return success(
+      PREVIEW_STATUS_MSG,
+      await this.previewService.status(projectId),
+    );
   }
 }

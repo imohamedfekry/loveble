@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { createSchema } from '@loveble/validation/register'
+import { createSchema, type CreateSchema } from '@loveble/validation/register'
 import { createAccount } from '@/lib/api/apis/auth'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -10,33 +11,35 @@ import Link from 'next/link'
 import { Input } from '@loveble/ui/input'
 import { Button } from '@loveble/ui/button'
 import { AuthCard } from '@/components/auth/auth-card'
+import { FormError } from '@/components/auth/form-error'
 
 export default function CreatePage() {
   const router = useRouter()
+  const [formError, setFormError] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: valibotResolver(createSchema),
+  } = useForm<CreateSchema>({
+    resolver: valibotResolver<CreateSchema, unknown, CreateSchema>(createSchema),
   })
 
-  const onSubmit = async (data: { name: string; password: string }) => {
+  const onSubmit = async (data: CreateSchema) => {
+    setFormError(null)
+
     try {
       const res = await createAccount(data)
-      console.log('createAccount response', res)
 
       if (res?.success) {
         router.push('/dashboard')
       } else {
-        alert(res?.message || 'فشل إنشاء الحساب. حاول مرة أخرى.')
+        setFormError(res?.message || 'Could not create your account. Please try again.')
       }
     } catch (error: unknown) {
-      console.error('createAccount error', error)
       const message =
-        error instanceof Error ? error.message : (error as { message?: string } | null)?.message;
-      alert(message || 'حدث خطأ أثناء إنشاء الحساب.')
+        error instanceof Error ? error.message : (error as { message?: string } | null)?.message
+      setFormError(message || 'Something went wrong while creating your account.')
     }
   }
 
@@ -66,14 +69,16 @@ export default function CreatePage() {
           )}
         </div>
 
+        <FormError message={formError ?? undefined} />
+
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           Create Account
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">
-          لديك حساب بالفعل؟{' '}
+          Already have an account?{' '}
           <Link href="/login" className="text-primary underline-offset-4 hover:underline">
-            سجل دخول هنا
+            Sign in
           </Link>
         </p>
       </form>

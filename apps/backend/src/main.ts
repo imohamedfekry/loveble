@@ -51,7 +51,7 @@ async function bootstrap() {
   // BigIntInterceptor: Converts all BigInt values to strings for JSON serialization
   // ResponseInterceptor: Wraps all responses in the standard ApiResponse format
   app.useGlobalInterceptors(new BigIntInterceptor(), new ResponseInterceptor());
-  app.useGlobalInterceptors(new LoggingInterceptor())
+  app.useGlobalInterceptors(new LoggingInterceptor());
   setNestApp(app);
 
   console.log('🧭 About to start listening on port', serverInfo.port);

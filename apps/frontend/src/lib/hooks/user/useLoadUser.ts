@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-import { useUserStore, isUserLoaded, markUserLoaded } from "@/store/user.store";
+import { useCallback, useEffect, useState } from "react";
+import {
+  useUserStore,
+  isUserLoaded,
+  markUserLoaded,
+  resetUserLoaded,
+} from "@/store/user.store";
 import { getMe } from "@/lib/api/index";
 
 // Module-level: a second mount (React StrictMode double-effect, or a
@@ -12,6 +17,9 @@ let inflightUserPromise: Promise<unknown> | null = null;
 export const useLoadUser = () => {
   const setUser = useUserStore((s) => s.setUser);
   const finishLoading = useUserStore((s) => s.finishLoading);
+
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (isUserLoaded() && useUserStore.getState().user) {
@@ -24,21 +32,24 @@ export const useLoadUser = () => {
     const load = async () => {
       try {
         if (!inflightUserPromise) {
-          console.log("[useLoadUser] Loading user...");
           inflightUserPromise = getMe().finally(() => {
             inflightUserPromise = null;
           });
         }
-        const data = await inflightUserPromise;
+        const user = await inflightUserPromise;
 
         if (!cancelled) {
-          console.log("[useLoadUser] User loaded:", (data as { id?: string })?.id);
           markUserLoaded();
-          setUser(data as Parameters<typeof setUser>[0]);
+          setUser(user as Parameters<typeof setUser>[0]);
+          setError(null);
         }
       } catch (err) {
         if (!cancelled) {
-          console.error("[useLoadUser] Failed to load user:", err);
+          setError(
+            err instanceof Error && err.message
+              ? err.message
+              : "Failed to load your account.",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -52,5 +63,14 @@ export const useLoadUser = () => {
     return () => {
       cancelled = true;
     };
-  }, [setUser, finishLoading]);
+  }, [setUser, finishLoading, attempt]);
+
+  const retry = useCallback(() => {
+    resetUserLoaded();
+    setError(null);
+    useUserStore.setState({ isLoading: true });
+    setAttempt((value) => value + 1);
+  }, []);
+
+  return { error, retry };
 };

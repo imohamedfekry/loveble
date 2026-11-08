@@ -228,7 +228,7 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
     !isBinaryContent &&
     socketStatus === "connected";
 
-  const { setView, snapshot, peers, sendAwareness } = useCollaboration({
+  const { setView, snapshot, peers, sendAwareness, requestFlush } = useCollaboration({
     fileId: canJoinCollab ? (activeTabId ?? null) : null,
     projectId,
     initialContent: content?.content ?? "",
@@ -346,6 +346,7 @@ export const EditorView = ({ projectId }: { projectId: string }) => {
               collaboration={collabConfig}
               peers={peers}
               onLocalAwareness={sendAwareness}
+              onDocChange={requestFlush}
               onViewReady={(view) => {
                 setView(view);
                 if (!view) return;

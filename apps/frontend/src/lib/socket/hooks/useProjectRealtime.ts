@@ -5,11 +5,87 @@ import { socket } from "../socket";
 import { useFilesStore } from "@/store/file.store";
 import { useEditorStore } from "@/store/use-editor-store";
 import { useFilePresenceStore, type FileViewer } from "@/store/file-presence.store";
-import { useMessagesStore } from "@/store/messages.store";
+import { useMessagesStore, type Message } from "@/store/messages.store";
 import { useConversationsStore } from "@/store/conversations.store";
 import type { ProjectFileType } from "@/lib/api/apis/files/types";
 const SUBSCRIBE_MAX_RETRIES = 5;
 const SUBSCRIBE_RETRY_BASE_MS = 700;
+
+type RealtimeId = string | number | bigint;
+
+type RealtimeMessagePayload = {
+  id?: RealtimeId;
+  conversationId?: RealtimeId;
+  projectId?: RealtimeId;
+  content?: unknown;
+  role?: unknown;
+  status?: unknown;
+  parts?: unknown;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
+
+type RealtimeStreamPayload = {
+  conversationId?: RealtimeId;
+  messageId?: unknown;
+  projectId?: RealtimeId;
+  role?: unknown;
+  status?: unknown;
+  parts?: unknown;
+};
+
+type RealtimeConversationPayload = {
+  id?: RealtimeId;
+  conversationId?: RealtimeId;
+  title?: unknown;
+};
+
+type MessageRole = Message["role"];
+
+/** Snowflake ids arrive as strings or numbers over the wire. */
+function toBigInt(value: RealtimeId | null | undefined): bigint | null {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) ? BigInt(value) : null;
+  }
+  if (typeof value === "string" && /^-?\d+$/.test(value)) {
+    return BigInt(value);
+  }
+  return null;
+}
+
+function toRole(value: unknown): MessageRole | null {
+  return value === "user" || value === "assistant" || value === "system"
+    ? value
+    : null;
+}
+
+function toStringValue(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function toMessage(
+  payload: RealtimeMessagePayload,
+  conversationId: bigint,
+): Message | null {
+  const id = toBigInt(payload.id);
+  const projectId = toBigInt(payload.projectId);
+  const role = toRole(payload.role);
+
+  if (id === null || projectId === null || role === null) return null;
+
+  return {
+    id,
+    conversationId,
+    projectId,
+    content: toStringValue(payload.content),
+    role,
+    status: toStringValue(payload.status),
+    createdAt: toStringValue(payload.createdAt),
+    updatedAt: toStringValue(payload.updatedAt),
+    parts: Array.isArray(payload.parts) ? payload.parts : undefined,
+  };
+}
 
 export const useProjectRealtime = (projectId: string | null | undefined) => {
   const subscribedProjectRef = useRef<string | null>(null);
@@ -139,14 +215,14 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
     };
 
     const onUpdated = (payload: ProjectFileType) => {
-      const projectId = payload.projectId;
-      useFilesStore.getState().updateFile(projectId, payload);
+      const fileProjectId = payload.projectId;
+      useFilesStore.getState().updateFile(fileProjectId, payload);
     };
 
     const onDeleted = (payload: ProjectFileType) => {
       const fileId = payload.id;
-      const projectId = payload.projectId;
-      useFilesStore.getState().removeFile(projectId, fileId);
+      const fileProjectId = payload.projectId;
+      useFilesStore.getState().removeFile(fileProjectId, fileId);
     };
 
     socket.on("file:created", onCreated);
@@ -202,48 +278,42 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
   useEffect(() => {
     if (!projectId) return;
 
-    const onMessageNew = (payload: any) => {
-      if (!payload?.conversationId) return;
-      useMessagesStore.getState().addMessage(
-        BigInt(payload.conversationId),
-        {
-          id: BigInt(payload.id),
-          conversationId: BigInt(payload.conversationId),
-          projectId: BigInt(payload.projectId),
-          content: payload.content,
-          role: payload.role,
-          status: payload.status,
-          updatedAt: payload.updatedAt,
-          createdAt: payload.createdAt,
-          parts: Array.isArray(payload.parts) ? payload.parts : undefined,
-        },
-      );
+    const onMessageNew = (payload: RealtimeMessagePayload) => {
+      const conversationId = toBigInt(payload?.conversationId);
+      if (conversationId === null) return;
+
+      const message = toMessage(payload, conversationId);
+      if (!message) return;
+
+      useMessagesStore.getState().addMessage(conversationId, message);
       // The finalized row replaces any in-flight stream for this conversation.
       // Only assistant finals prune: a user `message:new` echo (which the
       // sender also receives, since `server.to()` includes the emitter) would
       // otherwise wipe the assistant stream that is still being persisted.
-      if (payload.role !== "user") {
-        useMessagesStore.getState().pruneStreams(
-          BigInt(payload.conversationId),
-        );
+      if (message.role !== "user") {
+        useMessagesStore.getState().pruneStreams(conversationId);
       }
       // A new message makes its conversation the most recently active one.
-      useConversationsStore.getState().bumpConversation(
-        String(payload.conversationId),
-      );
+      useConversationsStore
+        .getState()
+        .bumpConversation(String(conversationId));
     };
 
-    const onConversationStream = (payload: any) => {
-      if (!payload?.conversationId || !payload?.messageId) return;
-      const conversationId = BigInt(payload.conversationId);
+    const onConversationStream = (payload: RealtimeStreamPayload) => {
+      const conversationId = toBigInt(payload?.conversationId);
+      if (conversationId === null) return;
+      if (typeof payload?.messageId !== "string" || !payload.messageId) return;
+
       useMessagesStore.getState().upsertStreamMessage(conversationId, {
         messageId: payload.messageId,
         conversationId,
-        projectId: payload.projectId ? BigInt(payload.projectId) : BigInt(0),
-        role: payload.role === "user" ? "user" : "assistant",
+        projectId: toBigInt(payload.projectId) ?? BigInt(0),
+        role: payload.role === "user" ? "user" : payload.role === "system" ? "system" : "assistant",
         parts: Array.isArray(payload.parts) ? payload.parts : [],
-        status: typeof payload.status === "string" ? payload.status : "streaming",
+        status:
+          typeof payload.status === "string" ? payload.status : "streaming",
       });
+
       if (payload.status === "error") {
         window.setTimeout(() => {
           useMessagesStore.getState().pruneStreams(conversationId);
@@ -251,42 +321,38 @@ export const useProjectRealtime = (projectId: string | null | undefined) => {
       }
     };
 
-    const onMessageUpdated = (payload: any) => {
-      if (!payload?.conversationId) return;
-      useMessagesStore.getState().updateMessage(
-        BigInt(payload.conversationId),
-        {
-          id: BigInt(payload.id),
-          conversationId: BigInt(payload.conversationId),
-          projectId: BigInt(payload.projectId),
-          content: payload.content,
-          role: payload.role,
-          status: payload.status,
-          updatedAt: payload.updatedAt,
-          createdAt: payload.createdAt,
-          parts: Array.isArray(payload.parts) ? payload.parts : undefined,
-        },
-      );
+    const onMessageUpdated = (payload: RealtimeMessagePayload) => {
+      const conversationId = toBigInt(payload?.conversationId);
+      if (conversationId === null) return;
+
+      const message = toMessage(payload, conversationId);
+      if (!message) return;
+
+      useMessagesStore.getState().updateMessage(conversationId, message);
     };
 
-    const onConversationCreated = (payload: any) => {
-      if (!payload?.id) return;
+    const onConversationCreated = (payload: RealtimeConversationPayload) => {
+      const id = toBigInt(payload?.id);
+      if (id === null) return;
+
       useConversationsStore.getState().addConversation({
-        id: String(payload.id),
-        title: payload.title ?? null,
+        id: String(id),
+        title: typeof payload.title === "string" ? payload.title : null,
       });
     };
 
-    const onConversationUpdated = (payload: any) => {
-      if (!payload?.id || typeof payload.title !== "string") return;
+    const onConversationUpdated = (payload: RealtimeConversationPayload) => {
+      const id = toBigInt(payload?.id);
+      if (id === null || typeof payload.title !== "string") return;
+
       useConversationsStore
         .getState()
-        .updateConversation(String(payload.id), payload.title);
+        .updateConversation(String(id), payload.title);
     };
 
-    const onConversationDeleted = (payload: any) => {
-      const id = payload?.conversationId ?? payload?.id;
-      if (!id) return;
+    const onConversationDeleted = (payload: RealtimeConversationPayload) => {
+      const id = toBigInt(payload?.conversationId ?? payload?.id);
+      if (id === null) return;
       useConversationsStore.getState().removeConversation(String(id));
     };
 

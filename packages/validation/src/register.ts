@@ -24,3 +24,6 @@ export const createSchema = v.object({
     v.minLength(8)
   ),
 })
+
+export type EmailSchema = v.InferOutput<typeof emailSchema>
+export type CreateSchema = v.InferOutput<typeof createSchema>
