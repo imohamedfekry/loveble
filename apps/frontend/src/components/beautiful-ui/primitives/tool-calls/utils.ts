@@ -1,13 +1,18 @@
-import { TOOL_LABELS, WORKSPACE_PREFIX } from "./constants";
+import {
+  normalizeToolBase,
+  TOOL_LABELS,
+  WORKSPACE_PREFIX,
+} from "./constants";
 import type { ToolPart } from "./types";
 
 export function toolBase(part: ToolPart): string {
   const raw =
     part.toolName ??
     (part.type.startsWith("tool-") ? part.type.slice(5) : part.type);
-  return raw.startsWith(WORKSPACE_PREFIX)
+  const base = raw.startsWith(WORKSPACE_PREFIX)
     ? raw.slice(WORKSPACE_PREFIX.length)
     : raw;
+  return normalizeToolBase(base);
 }
 
 export function prettify(base: string): string {

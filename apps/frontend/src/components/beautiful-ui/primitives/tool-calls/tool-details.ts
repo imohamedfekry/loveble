@@ -1,4 +1,11 @@
-import { CATEGORY, FILE_TOOLS, MEMORY_TOOLS, SEARCH_TOOLS } from "./constants";
+import {
+  CATEGORY,
+  FILE_TOOLS,
+  MEMORY_TOOLS,
+  SEARCH_TOOLS,
+  WEB_CRAWL_TOOL,
+  WEB_SEARCH_TOOL,
+} from "./constants";
 import type { Detail, ToolSection } from "./types";
 import {
   inputString,
@@ -66,7 +73,7 @@ export function sectionsFor(
     } else {
       push("Logs", output);
     }
-  } else if (base === "web-crawl") {
+  } else if (base === WEB_CRAWL_TOOL) {
     push("URL", inputValue(input, "url"));
     push("Content", output);
   } else if (base === "get_process_output" || base === "kill_process") {
@@ -98,7 +105,7 @@ export function detailFor(base: string, input: unknown): Detail | undefined {
     return memory ? { kind: "code", text: oneLine(memory) } : undefined;
   }
 
-  if (base === "grep" || base === "search" || base === "web-search") {
+  if (base === "grep" || base === "search" || base === WEB_SEARCH_TOOL) {
     const pattern =
       inputString(input, "pattern") ??
       inputString(input, "query") ??

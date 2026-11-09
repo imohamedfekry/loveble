@@ -7,7 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
  *
  *   Steps      step list with spinner → muted checks
  *   Reasoning  prose reasoning that expands, then settles
- *   Search     web-search trace: query + sources read
+ *   Search     web_search trace: query + sources read
  *   Coding     tool trace: files read, edits, commands
  *
  * The trace runs once, settles, and remains expandable.

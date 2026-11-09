@@ -5,6 +5,9 @@ import { normalize } from 'src/common/scraping/Normalize.helper';
 
 const SEARCH_TIMEOUT_MS = 15_000;
 
+export const WEB_SEARCH_TOOL_ID = 'web_search';
+export const WEB_CRAWL_TOOL_ID = 'web_crawl';
+
 type JsonSchema = {
   $schema: string;
   type: 'object';
@@ -48,7 +51,7 @@ function describeError(error: unknown, fallback: string): string {
 }
 
 export const searchAgentTool = createTool({
-  id: 'web-search',
+  id: WEB_SEARCH_TOOL_ID,
   description: 'Web search using SearXNG (no API key, self-hosted)',
   inputSchema: jsonSchemaInput<{ query: string }>({
     $schema: 'http://json-schema.org/draft-07/schema#',
@@ -61,7 +64,7 @@ export const searchAgentTool = createTool({
   }),
   execute: async ({ query }) => {
     const startedAt = Date.now();
-    console.log(`[tool] web-search start query="${query}"`);
+    console.log(`[tool] ${WEB_SEARCH_TOOL_ID} start query="${query}"`);
     try {
       const url = new URL('http://localhost:8080/search');
       url.searchParams.set('q', query);
@@ -90,12 +93,12 @@ export const searchAgentTool = createTool({
         snippet: r.content ?? '',
       }));
       console.log(
-        `[tool] web-search done in ${Date.now() - startedAt}ms results=${results.length}`,
+        `[tool] ${WEB_SEARCH_TOOL_ID} done in ${Date.now() - startedAt}ms results=${results.length}`,
       );
       return results;
     } catch (error) {
       console.error(
-        `[tool] web-search failed after ${Date.now() - startedAt}ms:`,
+        `[tool] ${WEB_SEARCH_TOOL_ID} failed after ${Date.now() - startedAt}ms:`,
         error,
       );
       return { error: describeError(error, 'Web search failed') };
@@ -104,7 +107,7 @@ export const searchAgentTool = createTool({
 });
 
 export const crawlAgentTool = createTool({
-  id: 'web-crawl',
+  id: WEB_CRAWL_TOOL_ID,
   description: `Crawl a webpage URL and return cleaned markdown content.
 
 Use this tool whenever:
@@ -126,7 +129,7 @@ Use this tool whenever:
   }),
   execute: async ({ url }) => {
     const startedAt = Date.now();
-    console.log(`[tool] web-crawl start url=${url}`);
+    console.log(`[tool] ${WEB_CRAWL_TOOL_ID} start url=${url}`);
     try {
       const raw = await crawl([url]);
       const items = normalize(raw);
@@ -134,11 +137,11 @@ Use this tool whenever:
         ...page,
         content: page.content.slice(0, 15000),
       }));
-      console.log(`[tool] web-crawl done in ${Date.now() - startedAt}ms`);
+      console.log(`[tool] ${WEB_CRAWL_TOOL_ID} done in ${Date.now() - startedAt}ms`);
       return dataset[0] ?? null;
     } catch (error) {
       console.error(
-        `[tool] web-crawl failed after ${Date.now() - startedAt}ms:`,
+        `[tool] ${WEB_CRAWL_TOOL_ID} failed after ${Date.now() - startedAt}ms:`,
         error,
       );
       return { error: describeError(error, 'Web crawl failed') };

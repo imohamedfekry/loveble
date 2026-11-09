@@ -3,6 +3,8 @@ import { DEFAULT_AGENT_MODEL, getModel } from 'src/ai/providers';
 import {
   searchAgentTool,
   crawlAgentTool,
+  WEB_CRAWL_TOOL_ID,
+  WEB_SEARCH_TOOL_ID,
 } from 'src/common/inngest/agents/tools';
 
 /**
@@ -31,8 +33,11 @@ Guidelines:
 - Prefer extending the existing tokens/theme over introducing parallel systems.
 - Keep changes focused on the request; do not refactor unrelated styles.
 - Work in the project's own file tree; all paths are relative to the project root.
-- Use web-search for current styling facts and web-crawl to read a specific URL the user provides.
+- Use ${WEB_SEARCH_TOOL_ID} for current styling facts and ${WEB_CRAWL_TOOL_ID} to read a specific URL the user provides.
 - ALWAYS end with a concise text summary of which files you changed and what design decisions you made.`,
   model: getModel(DEFAULT_AGENT_MODEL),
-  tools: { 'web-search': searchAgentTool, 'web-crawl': crawlAgentTool },
+  tools: {
+    [WEB_SEARCH_TOOL_ID]: searchAgentTool,
+    [WEB_CRAWL_TOOL_ID]: crawlAgentTool,
+  },
 });

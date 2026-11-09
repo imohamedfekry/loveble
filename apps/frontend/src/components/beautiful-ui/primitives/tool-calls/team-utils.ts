@@ -1,4 +1,4 @@
-import { WORKSPACE_PREFIX } from "./constants";
+import { normalizeToolBase, WORKSPACE_PREFIX } from "./constants";
 import type { LiveState, TeamRunLiveEvent, TeamTool } from "./types";
 
 export function teamField(source: unknown, key: string): string | undefined {
@@ -21,9 +21,10 @@ export function teamTools(source: unknown, key: string): TeamTool[] {
 
 /** Strip the workspace prefix to get the bare tool id (e.g. `write_file`). */
 export function teamToolBase(name: string): string {
-  return name.startsWith(WORKSPACE_PREFIX)
+  const base = name.startsWith(WORKSPACE_PREFIX)
     ? name.slice(WORKSPACE_PREFIX.length)
     : name;
+  return normalizeToolBase(base);
 }
 
 export const EMPTY_LIVE: LiveState = {

@@ -2,6 +2,17 @@ export const WORKSPACE_PREFIX = "mastra_workspace_";
 export const TEAM_TOOL = "run-team-workflow";
 export const ASK_TOOL = "ask-user";
 export const PLAN_TOOL = "update-plan";
+export const WEB_SEARCH_TOOL = "web_search";
+export const WEB_CRAWL_TOOL = "web_crawl";
+
+const TOOL_BASE_ALIASES: Record<string, string> = {
+  "web-search": WEB_SEARCH_TOOL,
+  "web-crawl": WEB_CRAWL_TOOL,
+};
+
+export function normalizeToolBase(base: string): string {
+  return TOOL_BASE_ALIASES[base] ?? base;
+}
 
 export const TOOL_LABELS: Record<string, string> = {
   read_file: "Read",
@@ -21,8 +32,8 @@ export const TOOL_LABELS: Record<string, string> = {
   terminal: "Run command",
   "preview-read": "Read preview",
   "preview-logs": "Preview logs",
-  "web-search": "Search the web",
-  "web-crawl": "Read page",
+  [WEB_SEARCH_TOOL]: "Search the web",
+  [WEB_CRAWL_TOOL]: "Read page",
   updateWorkingMemory: "Update memory",
   "update-working-memory": "Update memory",
   setWorkingMemory: "Set memory",
@@ -54,7 +65,7 @@ export const CATEGORY: Record<string, Category> = {
   index: "write",
   grep: "search",
   search: "search",
-  "web-search": "search",
+  [WEB_SEARCH_TOOL]: "search",
 };
 
 export const FILE_TOOLS = new Set([
@@ -68,4 +79,4 @@ export const FILE_TOOLS = new Set([
   "list_files",
 ]);
 
-export const SEARCH_TOOLS = new Set(["grep", "search", "web-search"]);
+export const SEARCH_TOOLS = new Set(["grep", "search", WEB_SEARCH_TOOL]);

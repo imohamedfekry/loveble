@@ -4,6 +4,8 @@ import { generalAgentMemory } from 'src/common/inngest/agents/memory';
 import {
   crawlAgentTool,
   searchAgentTool,
+  WEB_CRAWL_TOOL_ID,
+  WEB_SEARCH_TOOL_ID,
 } from 'src/common/inngest/agents/tools';
 import { askUserTool } from '../tools/ask-user.tool';
 import { planTool } from '../tools/plan.tool';
@@ -17,7 +19,7 @@ Reply in the same language the user writes in. Keep file paths, package names an
 
 You DO:
 - Read and search the project's files to ground your plan in what already exists
-- Search the web or read a page when the user asks for current information or provides a URL
+- Use ${WEB_SEARCH_TOOL_ID} to search the web for current information and ${WEB_CRAWL_TOOL_ID} to read a page when the user provides a URL
 - Plan on top of the Loveble Next.js starter that already exists at /home/user/app (Next.js 16 with the App Router and Turbopack + React 19 + TypeScript, pnpm). The starter already contains package.json (dev, build, start, lint), next.config.ts (dev server on 0.0.0.0:3000), tsconfig.json (@/* alias to ./src/*), src/app/layout.tsx (root layout + metadata) and one placeholder page src/app/page.tsx. It ships no CSS and no Tailwind, and no UI library
 - Plan incrementally: reuse the existing layout, pages and components; new pages become src/app/<name>/page.tsx, reusable UI goes in src/components, helpers in src/lib. If the design needs styling, include the one-time setup in the plan (Tailwind v4 via tailwindcss + @tailwindcss/postcss, postcss.config.mjs, src/app/globals.css imported in the layout, or CSS Modules / plain CSS)
 - Assume only next, react and react-dom are installed at runtime (plus TypeScript and ESLint dev tooling). If the plan needs anything else (UI kit, icons, date library, data fetching, Tailwind), say explicitly that it must be installed with pnpm add and list the packages
@@ -52,12 +54,12 @@ Ending the reply (the user must always know where things stand):
 - Never claim a file was read or a page was checked unless you actually called the tool.
 
 Tools:
-- Use web-search for fresh facts and web-crawl to read the content of a specific URL the user gives you. These only read; they never modify the workspace.`,
+- Use ${WEB_SEARCH_TOOL_ID} for fresh facts and ${WEB_CRAWL_TOOL_ID} to read the content of a specific URL the user gives you. These only read; they never modify the workspace.`,
   model: getModel(DEFAULT_AGENT_MODEL),
   memory: generalAgentMemory,
   tools: {
-    'web-search': searchAgentTool,
-    'web-crawl': crawlAgentTool,
+    [WEB_SEARCH_TOOL_ID]: searchAgentTool,
+    [WEB_CRAWL_TOOL_ID]: crawlAgentTool,
     'ask-user': askUserTool,
     'update-plan': planTool,
   },

@@ -4,6 +4,8 @@ import { generalAgentMemory } from 'src/common/inngest/agents/memory';
 import {
   crawlAgentTool,
   searchAgentTool,
+  WEB_CRAWL_TOOL_ID,
+  WEB_SEARCH_TOOL_ID,
 } from 'src/common/inngest/agents/tools';
 import { askUserTool } from '../tools/ask-user.tool';
 import { planTool } from '../tools/plan.tool';
@@ -89,7 +91,7 @@ Working style:
 - Read before you write. Never recreate package.json, next.config.ts, tsconfig.json, src/app/layout.tsx or src/app/page.tsx from scratch — edit them.
 - Prefer small, focused edits that extend the existing structure; do not scaffold a new app or migrate to another framework unless the user explicitly asks for a different stack.
 - Work in the project's own file tree; all paths are relative to the project root.
-- Use web-search for fresh facts and web-crawl to read the content of a specific URL the user gives you.
+- Use ${WEB_SEARCH_TOOL_ID} for fresh facts and ${WEB_CRAWL_TOOL_ID} to read the content of a specific URL the user gives you.
 - If the request is genuinely ambiguous and the choice changes the outcome, call ask-user with a short question and concrete options, then STOP and wait for the reply. Otherwise pick a sensible default and proceed.
 
 Ask before you assume (ask-user):
@@ -128,8 +130,8 @@ Final answer (the user must always know where things stand):
   model: getModel(DEFAULT_AGENT_MODEL),
   memory: generalAgentMemory,
   tools: {
-    'web-search': searchAgentTool,
-    'web-crawl': crawlAgentTool,
+    [WEB_SEARCH_TOOL_ID]: searchAgentTool,
+    [WEB_CRAWL_TOOL_ID]: crawlAgentTool,
     'ask-user': askUserTool,
     'update-plan': planTool,
     terminal: terminalTool,

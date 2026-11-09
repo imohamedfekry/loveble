@@ -18,7 +18,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { MEMORY_TOOLS } from "./constants";
+import {
+  MEMORY_TOOLS,
+  WEB_CRAWL_TOOL,
+  WEB_SEARCH_TOOL,
+} from "./constants";
 
 /** One icon per tool id (the bare id, without the workspace prefix). */
 const TOOL_ICONS: Record<string, LucideIcon> = {
@@ -39,6 +43,8 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   // search / web
   grep: SearchIcon,
   search: SearchIcon,
+  [WEB_SEARCH_TOOL]: GlobeIcon,
+  [WEB_CRAWL_TOOL]: GlobeIcon,
   "web-search": GlobeIcon,
   "web-crawl": GlobeIcon,
   // command
