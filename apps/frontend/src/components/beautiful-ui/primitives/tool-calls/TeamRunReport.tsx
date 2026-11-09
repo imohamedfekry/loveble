@@ -248,6 +248,7 @@ export function TeamRunReport({
                                 "group/row relative flex min-h-7 w-full items-center gap-2 rounded-[6px] px-1.5 py-0.5 text-left transition-colors duration-150 hover:bg-hover";
                               const rowContent = (
                                 <ToolRowContent
+                                  base={base}
                                   label={TOOL_LABELS[base] ?? prettify(base)}
                                   running={false}
                                   failed={false}

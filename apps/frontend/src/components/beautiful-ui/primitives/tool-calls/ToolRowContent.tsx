@@ -2,20 +2,24 @@ import { FileIcon, FolderIcon } from "@react-symbols/icons/utils";
 
 import type { ProjectFileType } from "@/lib/api/apis/files/types";
 
+import { ToolIcon } from "./ToolIcon";
 import type { Detail } from "./types";
 
 /**
- * The visual body of one tool row — status glyph, friendly label, and the
+ * The visual body of one tool row — tool icon, friendly label, and the
  * file / command / search it touched. Shared by the tool timeline and the
  * nested team-run rows so both read as tools, never as prose.
  */
 export function ToolRowContent({
+  base,
   label,
   running,
   failed,
   detail,
   node,
 }: {
+  /** Bare tool id — picks the icon. */
+  base: string;
   label: string;
   running: boolean;
   failed: boolean;
@@ -33,23 +37,10 @@ export function ToolRowContent({
             style={{ animation: "spin 700ms linear infinite" }}
           />
         ) : (
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={failed ? "text-red" : "text-ink-3"}
-          >
-            {failed ? (
-              <path d="M18 6L6 18M6 6l12 12" />
-            ) : (
-              <path d="M20 6L9 17l-5-5" />
-            )}
-          </svg>
+          <ToolIcon
+            base={base}
+            className={`size-4 ${failed ? "text-red" : "text-ink-3"}`}
+          />
         )}
       </span>
 

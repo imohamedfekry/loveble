@@ -171,6 +171,7 @@ export function ToolCalls({
 
                     const content = (
                       <ToolRowContent
+                        base={row.base}
                         label={row.label}
                         running={row.running}
                         failed={row.failed}
