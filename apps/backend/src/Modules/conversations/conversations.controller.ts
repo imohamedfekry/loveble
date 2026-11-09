@@ -76,6 +76,16 @@ export class ConversationsController {
     return this.conversationsService.delete(id, req);
   }
 
+  // Read-only on purpose: the plan is written by the agent's `update-plan`
+  // tool, never by the browser.
+  @Get(':conversationId/plan')
+  getPlan(
+    @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.conversationsService.getPlan(conversationId, req);
+  }
+
   @Get(':conversationId/messages')
   getMessages(
     @Param('conversationId', ParseSnowflakePipe) conversationId: bigint,

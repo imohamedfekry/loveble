@@ -1,8 +1,14 @@
 import type {
   ComposerCommand,
+  ComposerMode,
   ComposerModel,
   ComposerSource,
 } from "./types";
+
+export const MODES: { key: ComposerMode; name: string }[] = [
+  { key: "plan", name: "Plan" },
+  { key: "build", name: "Build" },
+];
 
 export const SOURCES: ComposerSource[] = [
   {

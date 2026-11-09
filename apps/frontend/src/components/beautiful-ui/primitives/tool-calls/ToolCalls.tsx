@@ -10,8 +10,7 @@ import { useEditor } from "@/lib/hooks/use-editor";
 import type { ProjectFileType } from "@/lib/api/apis/files/types";
 import { useFilesStore } from "@/store/file.store";
 
-import { AskUserCard } from "./AskUserCard";
-import { ASK_TOOL, MEMORY_TOOLS, TEAM_TOOL } from "./constants";
+import { ASK_TOOL, MEMORY_TOOLS, PLAN_TOOL, TEAM_TOOL } from "./constants";
 import { Chevron } from "./icons";
 import { buildPathIndex } from "./path-index";
 import { detailFor, sectionsFor, summarize } from "./tool-details";
@@ -27,12 +26,10 @@ export function ToolCalls({
   parts,
   projectId,
   className,
-  onQuickReply,
 }: {
   parts: ToolPart[];
   projectId: string;
   className?: string;
-  onQuickReply?: (text: string) => void;
 }) {
   const [open, setOpen] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -42,20 +39,18 @@ export function ToolCalls({
   const pathIndex = useMemo(() => buildPathIndex(files), [files]);
   const { openFile } = useEditor(projectId);
 
-  // The team workflow and ask-user tools get bespoke UI, not generic rows.
+  // The team workflow tool gets a bespoke report, not a generic row.
   const teamParts = useMemo(
     () => parts.filter((part) => toolBase(part) === TEAM_TOOL),
     [parts],
   );
-  const askParts = useMemo(
-    () => parts.filter((part) => toolBase(part) === ASK_TOOL),
-    [parts],
-  );
+  // The plan and the agent's questions are conversation state rendered above
+  // the composer, not rows in this timeline, so they are filtered out of it.
   const timelineParts = useMemo(
     () =>
       parts.filter((part) => {
         const base = toolBase(part);
-        return base !== TEAM_TOOL && base !== ASK_TOOL;
+        return base !== TEAM_TOOL && base !== ASK_TOOL && base !== PLAN_TOOL;
       }),
     [parts],
   );
@@ -102,14 +97,6 @@ export function ToolCalls({
           projectId={projectId}
           pathIndex={pathIndex}
           onOpenFile={(id) => openFile(id, { pinned: false })}
-        />
-      ))}
-
-      {askParts.map((part) => (
-        <AskUserCard
-          key={part.toolCallId ?? part.type}
-          part={part}
-          onQuickReply={onQuickReply}
         />
       ))}
 

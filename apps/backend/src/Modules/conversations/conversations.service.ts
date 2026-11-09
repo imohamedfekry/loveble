@@ -163,6 +163,21 @@ export class ConversationsService {
     return success(RESPONSE_MESSAGES.CONVERSATION.DELETE_SUCCESS);
   }
 
+  /**
+   * The plan the agent published for this conversation. Ownership is checked
+   * through the conversation's project, so one user can never read another
+   * user's plan; the value itself is server-written (see plan.tool.ts).
+   */
+  async getPlan(conversationId: bigint, req: AuthenticatedRequest) {
+    const conversation = await this.assertConversationOwnership(
+      conversationId,
+      req,
+    );
+    return success(RESPONSE_MESSAGES.CONVERSATION.FETCH_SUCCESS, {
+      plan: conversation.plan ?? null,
+    });
+  }
+
   async getMessages(conversationId: bigint, req: AuthenticatedRequest) {
     await this.assertConversationOwnership(conversationId, req);
     const messageList =

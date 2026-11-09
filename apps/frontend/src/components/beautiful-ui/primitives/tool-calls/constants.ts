@@ -1,6 +1,7 @@
 export const WORKSPACE_PREFIX = "mastra_workspace_";
 export const TEAM_TOOL = "run-team-workflow";
 export const ASK_TOOL = "ask-user";
+export const PLAN_TOOL = "update-plan";
 
 export const TOOL_LABELS: Record<string, string> = {
   read_file: "Read",

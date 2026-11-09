@@ -5,10 +5,13 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
-import { DivideIcon, SparklesIcon } from "lucide-react";
+import { ArrowDownIcon, DivideIcon, SparklesIcon } from "lucide-react";
 import { LoadingState, StreamText } from "@/components/beautiful-ui";
+import {
+  LoaderGrid,
+  PATTERNS,
+} from "@/components/beautiful-ui/primitives/LoadingState";
 import { ToolCalls } from "@/components/beautiful-ui/primitives/tool-calls";
-
 import { ChatComposer } from "@/components/layout/chat/composer/ChatComposer";
 import { API_BASE_URL } from "@/lib/api/api-fetch";
 import { socket } from "@/lib/socket/socket";
@@ -28,10 +31,14 @@ import {
 import { useChatContextStore } from "@/store/chat-context.store";
 import { useFilesStore } from "@/store/file.store";
 import { fileIdByPath, formatMentions } from "@/lib/chat-context";
+import { pendingAskQuestions } from "@/lib/ask";
+import { readPlanInput, type ConversationPlan } from "@/lib/plan";
+import { useConversationPlan } from "@/lib/hooks/conversations/useConversationPlan";
 import { useEditor } from "@/lib/hooks/use-editor";
 import type { ConversationItem } from "@/store/conversations.store";
 import { UserMessage } from "./messages/user-message";
-import { MemoryPanel } from "./memory-panel";
+import { AskPanel } from "./ask-panel";
+import { PlanPanel } from "./plan-panel";
 import type { ToolPart } from "@/components/beautiful-ui/primitives/tool-calls";
 const chatTransport = new DefaultChatTransport({
   api: `${API_BASE_URL}/ai/chat`,
@@ -98,6 +105,39 @@ function toolPartsFromParts(parts: UIMessage["parts"]): ToolPart[] {
     }
   }
   return result;
+}
+
+/**
+ * The newest `update-plan` input across the message lists, used while the turn
+ * is still streaming: the saved plan only lands on the server once the tool has
+ * run, and the panel should move as the agent progresses, not after it finishes.
+ */
+function latestPlanFromMessages(
+  lists: { parts?: unknown }[][],
+): ConversationPlan | null {
+  let plan: ConversationPlan | null = null;
+
+  for (const list of lists) {
+    for (const message of list) {
+      if (!Array.isArray(message.parts)) continue;
+      for (const part of message.parts) {
+        const candidate = part as {
+          type?: unknown;
+          toolName?: unknown;
+          input?: unknown;
+        };
+        const isPlanPart =
+          candidate.type === "tool-update-plan" ||
+          (candidate.type === "dynamic-tool" &&
+            candidate.toolName === "update-plan");
+        if (!isPlanPart) continue;
+        const parsed = readPlanInput(candidate.input);
+        if (parsed) plan = parsed;
+      }
+    }
+  }
+
+  return plan;
 }
 
 /** The heart-pixel loader used wherever the agent is thinking. */
@@ -194,12 +234,10 @@ function AssistantReplyView({
   parts,
   loading,
   projectId,
-  onQuickReply,
 }: {
   parts: UIMessage["parts"];
   loading: boolean;
   projectId: string;
-  onQuickReply?: (text: string) => void;
 }) {
   const tools = toolPartsFromParts(parts);
   const reasoning = reasoningFromParts(parts);
@@ -210,12 +248,7 @@ function AssistantReplyView({
   return (
     <AssistantShell>
       {tools.length > 0 && (
-        <ToolCalls
-          parts={tools}
-          projectId={projectId}
-          className="mb-2.5"
-          onQuickReply={onQuickReply}
-        />
+        <ToolCalls parts={tools} projectId={projectId} className="mb-2.5" />
       )}
       {reasoning && <ReasoningBlock text={reasoning} loading={reasoningStreaming} />}
       {showThinking ? (
@@ -243,12 +276,10 @@ function StoredMessageView({
   message,
   projectId,
   onOpenPath,
-  onQuickReply,
 }: {
   message: Message;
   projectId: string;
   onOpenPath?: (path: string) => void;
-  onQuickReply?: (text: string) => void;
 }) {
   if (message.role === "user") {
     return <UserMessage message={message} onOpenPath={onOpenPath} />;
@@ -268,24 +299,21 @@ function StoredMessageView({
       </AssistantShell>
     );
   }
-  return <AssistantReplyView parts={parts} loading={false} projectId={projectId} onQuickReply={onQuickReply} />;
+  return <AssistantReplyView parts={parts} loading={false} projectId={projectId} />;
 }
 
 function StreamMessageView({
   message,
   projectId,
-  onQuickReply,
 }: {
   message: StreamMessage;
   projectId: string;
-  onQuickReply?: (text: string) => void;
 }) {
   return (
     <AssistantReplyView
       parts={message.parts as UIMessage["parts"]}
       loading={message.status === "streaming"}
       projectId={projectId}
-      onQuickReply={onQuickReply}
     />
   );
 }
@@ -330,6 +358,16 @@ export function ChatPanel({
   const lastProgressKeyRef = useRef("");
   const toolRunningSinceRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Whether the view is following the bottom of the conversation. Scrolling up
+  // detaches it so reading earlier output is never yanked back mid-generation.
+  // The stored value is scoped to a conversation, so switching conversations
+  // starts pinned without a state write inside an effect.
+  const [pinState, setPinState] = useState<{
+    conversation: bigint | null;
+    pinned: boolean;
+  }>({ conversation: conversationId, pinned: true });
+  const pinned =
+    pinState.conversation === conversationId ? pinState.pinned : true;
 
   const allMentions = useChatContextStore((s) => s.items);
   const mentions = useMemo(
@@ -369,10 +407,35 @@ export function ChatPanel({
     setSending(value);
   }, []);
 
+  // Instant, never smooth: the jump must also survive a chunk arriving mid
+  // animation, and a smooth scroll fires scroll events that would re-detach it.
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, []);
+
+  const setPinned = useCallback(
+    (value: boolean) => {
+      setPinState((state) =>
+        state.conversation === conversationId && state.pinned === value
+          ? state
+          : { conversation: conversationId, pinned: value },
+      );
+    },
+    [conversationId],
+  );
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distance = el.scrollHeight - el.clientHeight - el.scrollTop;
+    setPinned(distance <= 56);
+  }, [setPinned]);
+
+  const jumpToLatest = useCallback(() => {
+    setPinned(true);
+    scrollToBottom();
+  }, [scrollToBottom, setPinned]);
 
   const relayStream = useCallback(
     (
@@ -477,6 +540,37 @@ export function ChatPanel({
 
   const busy = status === "submitted" || status === "streaming";
 
+  // The plan lives on the conversation (written by the agent's tool), shown
+  // above the composer. A finished turn refreshes it from the server; while the
+  // turn runs, the newest streamed `update-plan` input previews it.
+  const [planRefresh, setPlanRefresh] = useState(0);
+  const savedPlan = useConversationPlan(conversationId, planRefresh);
+  const wasSendingRef = useRef(false);
+  const livePlan = useMemo(
+    () =>
+      latestPlanFromMessages([
+        messages as { parts?: unknown }[],
+        liveMessages as { parts?: unknown }[],
+      ]),
+    [messages, liveMessages],
+  );
+  const plan = livePlan ?? savedPlan;
+
+  // The agent's questions are also conversation state, not a bubble in the
+  // thread: they sit above the composer and disappear once the user replies.
+  const askQuestions = useMemo(
+    () =>
+      pendingAskQuestions([
+        messages as { role?: string; parts?: unknown }[],
+        liveMessages as { role?: string; parts?: unknown }[],
+      ]),
+    [messages, liveMessages],
+  );
+  const askKey = useMemo(
+    () => askQuestions?.map((entry) => entry.question).join("|") ?? "",
+    [askQuestions],
+  );
+
   // A stream can be active on this conversation without any local useChat
   // request — the dashboard "create project from a prompt" flow runs the build
   // server-side in Inngest and relays it over realtime. That build is not
@@ -540,6 +634,18 @@ export function ChatPanel({
     relayStream(last.id, last.role, last.parts, "streaming");
   }, [busy, conversationId, liveMessages, projectId, relayStream]);
 
+  // A turn just finished: the tool has persisted its last plan by now, so pull
+  // the server copy and drop the streamed preview (it may be a step behind).
+  useEffect(() => {
+    if (busy) {
+      wasSendingRef.current = true;
+      return;
+    }
+    if (!wasSendingRef.current) return;
+    wasSendingRef.current = false;
+    setPlanRefresh((value) => value + 1);
+  }, [busy]);
+
   // Track the last time the stream actually produced new parts, so the
   // watchdog below can tell "still thinking" apart from "stalled forever".
   useEffect(() => {
@@ -597,9 +703,21 @@ export function ChatPanel({
     return () => window.clearInterval(timer);
   }, [busy, liveMessages, stop]);
 
+  // Follow the stream: while the user is at the bottom, every new message and
+  // every streamed chunk keeps the view there. Auto-scroll used to fire only on
+  // a new message, so a long generation scrolled off-screen as it streamed.
   useEffect(() => {
+    if (!pinned) return;
     scrollToBottom();
-  }, [messages.length, awaitingAssistant, scrollToBottom]);
+  }, [
+    messages,
+    awaitingAssistant,
+    liveMessages,
+    busy,
+    conversationId,
+    pinned,
+    scrollToBottom,
+  ]);
 
   const handleSend = useCallback(
     (payload: { text: string; files?: File[] }) => {
@@ -610,6 +728,8 @@ export function ChatPanel({
       if ((!typed && contextItems.length === 0) || sendingRef.current) return;
 
       setSendingState(true);
+      // Sending is an explicit intent to see the newest output.
+      setPinned(true);
       sendGenRef.current = generationRef.current;
       lastProgressAtRef.current = Date.now();
       lastProgressKeyRef.current = "";
@@ -671,6 +791,7 @@ export function ChatPanel({
       mode,
       sendMessage,
       setMessages,
+      setPinned,
       setSendingState,
     ],
   );
@@ -722,74 +843,93 @@ export function ChatPanel({
     [handleSend],
   );
 
+  const generating = displaySending || awaitingAssistant;
+
   return (
     <div className="flex h-full flex-col">
-      <div
-        ref={scrollRef}
-        className="flex-1 space-y-3 overflow-y-auto px-4 py-4 [scrollbar-gutter:stable]"
-      >
-        {messages.length > 0 ? (
-          <>
-            {messages.map((message) =>
-              isStreamMessage(message) ? (
-                <StreamMessageView
-                  key={message.messageId}
-                  message={message}
-                  projectId={projectId}
-                  onQuickReply={handleQuickReply}
-                />
-              ) : (
-                <StoredMessageView
-                  key={String(message.id)}
-                  message={message}
-                  projectId={projectId}
-                  onOpenPath={handleOpenPath}
-                  onQuickReply={handleQuickReply}
-                />
-              ),
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="h-full space-y-3 overflow-y-auto px-4 py-4 [scrollbar-gutter:stable]"
+        >
+          {messages.length > 0 ? (
+            <>
+              {messages.map((message) =>
+                isStreamMessage(message) ? (
+                  <StreamMessageView
+                    key={message.messageId}
+                    message={message}
+                    projectId={projectId}
+                  />
+                ) : (
+                  <StoredMessageView
+                    key={String(message.id)}
+                    message={message}
+                    projectId={projectId}
+                    onOpenPath={handleOpenPath}
+                  />
+                ),
+              )}
+              {awaitingAssistant && lastIsUser && (
+                <AssistantShell>
+                  <Thinking />
+                </AssistantShell>
+              )}
+            </>
+          ) : displaySending ? (
+            <AssistantShell>
+              <Thinking label="Building" />
+            </AssistantShell>
+          ) : (
+            <EmptyState />
+          )}
+        </div>
+
+        {/* Scrolled up during/after a generation: one tap returns to the newest
+            output instead of forcing the view back down while the user reads. */}
+        {!pinned && (
+          <button
+            type="button"
+            onClick={jumpToLatest}
+            aria-label={
+              generating
+                ? "Jump to the current generation"
+                : "Jump to the latest message"
+            }
+            className="absolute bottom-3 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-[11.5px] font-medium text-ink shadow-lg transition-colors duration-150 hover:bg-hover-2"
+          >
+            {generating ? (
+              <>
+                <LoaderGrid {...PATTERNS.Heart} />
+                <span
+                  className="bg-clip-text whitespace-nowrap text-transparent"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
+                    backgroundSize: "200% 100%",
+                    animation: "shimmer-text 1.4s linear infinite",
+                  }}
+                >
+                  Generating
+                </span>
+              </>
+            ) : (
+              <span className="whitespace-nowrap">Jump to latest</span>
             )}
-            {awaitingAssistant && lastIsUser && (
-              <AssistantShell>
-                <Thinking />
-              </AssistantShell>
-            )}
-          </>
-        ) : displaySending ? (
-          <AssistantShell>
-            <Thinking label="Building" />
-          </AssistantShell>
-        ) : (
-          <EmptyState />
+            <ArrowDownIcon className="size-3.5 shrink-0 text-ink-3" />
+          </button>
         )}
       </div>
       <div className="shrink-0 px-3 pb-3 pt-1">
-        <div className="mb-1.5 flex items-center justify-between gap-2 pr-1">
-          <MemoryPanel conversationId={conversationId} />
-          <div
-            role="tablist"
-            aria-label="Agent mode"
-            className="inline-flex items-center gap-0.5 rounded-full border border-line bg-surface p-0.5 text-xs"
-          >
-            {(["plan", "build"] as const).map((item) => (
-              <button
-                key={item}
-                type="button"
-                role="tab"
-                aria-selected={mode === item}
-                disabled={displaySending}
-                onClick={() => setMode(item)}
-                className={
-                  "rounded-full px-2.5 py-1 font-medium capitalize transition-colors disabled:opacity-50 " +
-                  (mode === item
-                    ? "bg-primary text-primary-foreground"
-                    : "text-ink-2 hover:text-ink")
-                }
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
+        <PlanPanel plan={plan} conversationId={conversationId} />
+        <AskPanel
+          key={askKey}
+          questions={askQuestions}
+          conversationId={conversationId}
+          onReply={handleQuickReply}
+          disabled={displaySending}
+        />
         <ChatComposer
           variant="Pill"
           value={input}
@@ -801,6 +941,9 @@ export function ChatPanel({
           mentions={mentions}
           onRemoveMention={removeMention}
           onOpenMention={handleOpenMention}
+          mode={mode}
+          onModeChange={setMode}
+          modeDisabled={displaySending}
         />
       </div>
     </div>

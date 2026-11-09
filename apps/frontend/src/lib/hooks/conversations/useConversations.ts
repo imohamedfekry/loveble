@@ -5,6 +5,7 @@ import { apiFetch } from "@/lib/api/api-fetch";
 import { useMessagesStore } from "@/store/messages.store";
 import type { ApiSuccess } from "@loveble/types/envelope";
 import type { Message } from "@/store/messages.store";
+import type { ConversationPlan } from "@/lib/plan";
 
 const API_BASE = "/conversations";
 
@@ -218,6 +219,18 @@ export async function sendFirstMessage(
 export async function getConversationMemory(conversationId: bigint | string) {
   return apiRequest<{ workingMemory: string }>(
     `${API_BASE}/${toId(conversationId)}/memory`,
+  );
+}
+
+/**
+ * The plan the agent is working through in this conversation. Server-written
+ * (by the `update-plan` tool) and read-only here — there is no client write.
+ */
+export async function getConversationPlan(
+  conversationId: bigint | string,
+) {
+  return apiRequest<{ plan: ConversationPlan | null }>(
+    `${API_BASE}/${toId(conversationId)}/plan`,
   );
 }
 

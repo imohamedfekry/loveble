@@ -7,6 +7,7 @@ import type { DrizzleDatabase } from 'src/common/database/database.constants';
 import {
   conversations,
   Conversation,
+  ConversationPlan,
   NewConversation,
 } from '../../schema/conversations/conversation.schema';
 import { messages } from '../../schema/conversations/message.schema';
@@ -60,6 +61,24 @@ export class ConversationRepository extends BaseRepository {
     const [conversation] = await this.db
       .update(conversations)
       .set({ ...data, updatedAt: new Date() })
+      .where(eq(conversations.id, id))
+      .returning();
+
+    return conversation ?? null;
+  }
+
+  /**
+   * Stores the agent's current plan for one conversation. `updatedAt` is left
+   * alone on purpose: a plan update is not conversation activity, and bumping it
+   * would reorder the conversation list every time a step changes.
+   */
+  async setPlan(
+    id: bigint,
+    plan: ConversationPlan | null,
+  ): Promise<Conversation | null> {
+    const [conversation] = await this.db
+      .update(conversations)
+      .set({ plan })
       .where(eq(conversations.id, id))
       .returning();
 

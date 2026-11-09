@@ -1038,6 +1038,7 @@ function CommandMenu({
   onDismiss: () => void
 }) {
   const positionerRef = React.useRef<HTMLDivElement>(null)
+  const popupRef = React.useRef<HTMLDivElement>(null)
   const [descriptionTop, setDescriptionTop] = React.useState(0)
   const description = commands[active]?.description
 
@@ -1053,9 +1054,25 @@ function CommandMenu({
 
   React.useLayoutEffect(() => {
     if (!open) return
-    document
-      .getElementById(`${listId}-${active}`)
-      ?.scrollIntoView({ block: "nearest" })
+
+    // Scroll only the popup, never the page around it, and keep a little
+    // breathing room so the highlighted row is not flush with the edge.
+    const popup = popupRef.current
+    const option = document.getElementById(`${listId}-${active}`)
+
+    if (popup && option) {
+      const popupRect = popup.getBoundingClientRect()
+      const optionRect = option.getBoundingClientRect()
+      const top = optionRect.top - popupRect.top
+      const bottom = top + optionRect.height
+
+      if (top < 0) {
+        popup.scrollTop += top - 4
+      } else if (bottom > popup.clientHeight) {
+        popup.scrollTop += bottom - popup.clientHeight + 4
+      }
+    }
+
     placeDescription()
   }, [open, listId, active, commands, placeDescription])
 
@@ -1077,11 +1094,19 @@ function CommandMenu({
           className="isolate z-50 outline-none"
         >
           <PopoverPrimitive.Popup
+            ref={popupRef}
             initialFocus={false}
             finalFocus={false}
             data-slot="ai-chat-composer-commands"
             onScroll={placeDescription}
-            className="max-h-(--available-height) w-60 origin-(--transform-origin) overflow-y-auto rounded-14 bg-popover p-1 text-sm text-popover-foreground shadow-(--shadow-popover) ring-1 ring-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+            className={cn(
+              "max-h-(--available-height) w-60 origin-(--transform-origin) overflow-y-auto overscroll-contain rounded-xl border border-border/50 bg-muted p-1 text-sm text-popover-foreground shadow-lg ring-1 ring-black/[0.04] outline-none dark:border-white/10 dark:ring-white/10",
+              "[scrollbar-width:thin] [scrollbar-color:var(--border)_transparent]",
+              "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent",
+              "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:bg-clip-padding",
+              "[&::-webkit-scrollbar-thumb:hover]:bg-foreground/25",
+              "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+            )}
           >
             <div id={listId} role="listbox" className="flex flex-col">
               {commands.map((command, index) => {
@@ -1095,10 +1120,10 @@ function CommandMenu({
                         {index > 0 && (
                           <div
                             role="separator"
-                            className="mx-1 mt-1 mb-[3px] h-px bg-border"
+                            className="mx-1 mt-1 mb-1 h-px bg-border/60"
                           />
                         )}
-                        <div className="px-2 py-1.5 text-2xs font-medium text-muted-foreground">
+                        <div className="px-2 pt-1 pb-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
                           {command.group}
                         </div>
                       </>
@@ -1108,7 +1133,7 @@ function CommandMenu({
                       role="option"
                       aria-selected={index === active}
                       data-highlighted={index === active || undefined}
-                      className="flex cursor-default items-center gap-2 rounded-lg px-2 py-1.5 select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&>svg]:mx-0.5"
+                      className="flex h-8 cursor-default items-center gap-2 rounded-md px-2 text-[13px] select-none data-highlighted:bg-foreground/[0.06] data-highlighted:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&>svg]:mx-0.5"
                       onMouseMove={() => onHighlight(index)}
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => onChoose(command)}

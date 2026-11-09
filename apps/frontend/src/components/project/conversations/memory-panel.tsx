@@ -40,8 +40,11 @@ const PLACEHOLDER = `# Conversation Memory
  */
 export function MemoryPanel({
   conversationId,
+  compact = false,
 }: {
   conversationId: bigint | null;
+  /** Icon-only trigger, for the chat header instead of a row above the composer. */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
@@ -148,14 +151,16 @@ export function MemoryPanel({
         disabled={!conversationId}
         render={
           <Button
-            variant="ghost"
-            size="sm"
-            className="text-ink-2 hover:text-ink"
+            variant={compact ? "highlight" : "ghost"}
+            size={compact ? "icon-xs" : "sm"}
+            className={compact ? undefined : "text-ink-2 hover:text-ink"}
+            aria-label={compact ? "Conversation memory" : undefined}
+            title={compact ? "Conversation memory" : undefined}
           />
         }
       >
-        <BrainIcon />
-        Memory
+        <BrainIcon className={compact ? "size-3.5" : undefined} />
+        {!compact && "Memory"}
       </DialogTrigger>
       <DialogContent className="w-[calc(100vw-2rem)] max-w-3xl gap-3 border border-line bg-surface sm:max-w-2xl">
         <DialogHeader>

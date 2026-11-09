@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowUp,
   ChevronDown,
@@ -46,11 +47,17 @@ import { ComposerAttachments } from "./ComposerAttachments";
 import { ComposerIcon } from "./ComposerIcon";
 import { ComposerMentions } from "./ComposerMentions";
 import { ComposerMenu } from "./ComposerMenu";
-import { EFFORT_LEVELS, COMMANDS, MODELS, SOURCES } from "./composer-data";
+import {
+  EFFORT_LEVELS,
+  COMMANDS,
+  MODELS,
+  MODES,
+  SOURCES,
+} from "./composer-data";
 import { BRANDS, GLYPHS } from "./omposer-data-icons";
 import { useChatComposer } from "./useChatComposer";
 import { VoiceWave } from "./voice-wave";
-import type { ComposerVariant } from "./types";
+import type { ComposerMode, ComposerVariant } from "./types";
 import type { ChatContextItem } from "@/store/chat-context.store";
 import { useFileDragStore } from "@/store/file-drag.store";
 
@@ -78,6 +85,9 @@ export function ChatComposer({
   mentions = [],
   onRemoveMention,
   onOpenMention,
+  mode,
+  onModeChange,
+  modeDisabled = false,
 }: {
   variant?: ComposerVariant;
   value: string;
@@ -92,8 +102,13 @@ export function ChatComposer({
   mentions?: ChatContextItem[];
   onRemoveMention?: (id: string) => void;
   onOpenMention?: (mention: ChatContextItem) => void;
+  /** Agent mode, shown in the model picker. Omit it and the picker is unchanged. */
+  mode?: ComposerMode;
+  onModeChange?: (mode: ComposerMode) => void;
+  modeDisabled?: boolean;
 }) {
   const pill = variant === "Pill";
+  const modeLayoutId = useId();
 
   const {
     inputRef,
@@ -409,36 +424,86 @@ export function ChatComposer({
                   side="top"
                   className="w-49! bg-muted p-0"
                 >
-                  <DropdownMenuRadioGroup
-                    value={model.key}
-                    onValueChange={(key) => {
-                      const next = MODELS.find(
-                        (item) => item.key === key
-                      );
-                      if (next) selectModel(next);
-                    }}
-                    className="rounded-xl bg-popover p-1 ring-[0.5px] ring-border"
-                  >
-                    {MODELS.map((item) => (
-                      <DropdownMenuRadioItem
-                        key={item.key}
-                        value={item.key}
+                  <div className="flex flex-col gap-1 p-1">
+                    <div className="rounded-xl bg-popover p-1 ring-[0.5px] ring-border">
+                      <div className="px-2 pt-0.5 pb-1 text-[10.5px] font-semibold tracking-wider text-muted-foreground uppercase">
+                        Model
+                      </div>
+                      <DropdownMenuRadioGroup
+                        value={model.key}
+                        onValueChange={(key) => {
+                          const next = MODELS.find(
+                            (item) => item.key === key
+                          );
+                          if (next) selectModel(next);
+                        }}
                       >
-                        <span className="flex-1 truncate">
-                          {item.name}
-                        </span>
-                        <span className="text-2xs text-muted-foreground">
-                          {item.tag}
-                        </span>
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
+                        {MODELS.map((item) => (
+                          <DropdownMenuRadioItem
+                            key={item.key}
+                            value={item.key}
+                          >
+                            <span className="flex-1 truncate">
+                              {item.name}
+                            </span>
+                            <span className="text-2xs text-muted-foreground">
+                              {item.tag}
+                            </span>
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </div>
+                  </div>
                   <EffortSlider
                     levels={EFFORT_LEVELS}
                     value={effort}
                     onValueChange={setEffort}
                     className="w-full gap-2 rounded-none bg-transparent p-3 text-2xs shadow-none ring-0 *:first:text-sm"
                   />
+                  {mode && onModeChange && (
+                    <div className="border-t border-border p-2">
+                      <div
+                        role="tablist"
+                        aria-label="Agent mode"
+                        className="flex w-full items-center gap-1 rounded-lg border border-border bg-muted/50 p-1 select-none"
+                      >
+                        {MODES.map((item) => {
+                          const isActive = mode === item.key;
+                          return (
+                            <button
+                              key={item.key}
+                              type="button"
+                              role="tab"
+                              aria-selected={isActive}
+                              disabled={modeDisabled}
+                              onClick={() => onModeChange(item.key)}
+                              className={cn(
+                                "relative flex flex-1 cursor-pointer items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
+                                isActive
+                                  ? "text-foreground"
+                                  : "text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              {isActive && (
+                                <motion.span
+                                  layoutId={modeLayoutId}
+                                  transition={{
+                                    type: "spring",
+                                    stiffness: 380,
+                                    damping: 32,
+                                  }}
+                                  className="absolute inset-0 rounded-md border border-border bg-popover shadow-xs"
+                                />
+                              )}
+                              <span className="relative z-10">
+                                {item.name}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button

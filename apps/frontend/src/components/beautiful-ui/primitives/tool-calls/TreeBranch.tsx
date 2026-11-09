@@ -1,11 +1,3 @@
-/**
- * فرع الشجرة. كل الرسم في نظام إحداثيات واحد (بكسلات ثابتة، من غير scaling):
- *  - الـ svg (ارتفاعه 28px = ارتفاع الصف) فيه path واحد: الخط العمودي + المنحنى،
- *    فمفيش overlap ولا اختلاف سُمك/شفافية بين الخط والفرع.
- *  - باقي الخط لتحت (من 28px لآخر الـ wrapper) span بعرض 1px على نفس المحور (x=0.5).
- *  - آخر صف: الخط بينزل لحد بداية المنحنى بس.
- * لازم الـ wrapper يكون `relative` وارتفاع الصف 28px (min-h-7).
- */
 export function TreeBranch({
   first,
   last,
@@ -15,7 +7,7 @@ export function TreeBranch({
 }) {
   return (
     <>
-      {/* وصلة من الهيدر لأول صف (mt-0.5 + py-1 = 6px) */}
+      {/* connecter from header to frist colomn (mt-0.5 + py-1 = 6px) */}
       {first && (
         <span
           aria-hidden

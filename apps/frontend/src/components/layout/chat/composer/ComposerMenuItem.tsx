@@ -10,6 +10,7 @@ import { BRANDS, GLYPHS } from "./omposer-data-icons";
 
 export function ComposerMenuItem({
   row,
+  index,
   source,
   active,
   connected,
@@ -24,6 +25,7 @@ export function ComposerMenuItem({
     desc: string;
     fileType?: "file" | "folder";
   };
+  index: number;
   source?: ComposerSource;
   active: boolean;
   connected: boolean;
@@ -35,6 +37,7 @@ export function ComposerMenuItem({
   return (
     <button
       type="button"
+      data-row={index}
       onMouseDown={(event) => {
         event.preventDefault();
         onMouseDown();
@@ -42,14 +45,14 @@ export function ComposerMenuItem({
       onMouseEnter={onMouseEnter}
       onClick={onClick}
       className={cn(
-        "relative z-10 flex h-9 w-full items-center gap-2.5 rounded-lg px-2 text-left",
-        "transition-[background-color,color] duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
-        "focus-visible:outline-none focus-visible:bg-foreground/10 dark:focus-visible:bg-foreground/15",
-        active && "bg-foreground/10 dark:bg-foreground/15"
+        "relative z-10 flex h-8 w-full items-center gap-2 rounded-md px-2 text-left",
+        "transition-colors duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
+        "focus-visible:outline-none focus-visible:bg-foreground/[0.06]",
+        active && "bg-foreground/[0.06]"
       )}
     >
       {row.fileType ? (
-        <span className="flex h-5.5 w-5.5 shrink-0 items-center justify-center">
+        <span className="flex size-5 shrink-0 items-center justify-center">
           {row.fileType === "folder" ? (
             <FolderIcon folderName={row.name} className="size-4 shrink-0" />
           ) : (
@@ -58,7 +61,7 @@ export function ComposerMenuItem({
         </span>
       ) : (
         source && (
-          <span className="flex h-5.5 w-5.5 shrink-0 items-center justify-center text-muted-foreground">
+          <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
             {source.brand ? (
               BRANDS[source.brand]
             ) : (
@@ -70,11 +73,11 @@ export function ComposerMenuItem({
         )
       )}
 
-      <span className="shrink-0 text-[12.5px] font-medium text-foreground">
+      <span className="max-w-[58%] min-w-0 shrink-0 truncate text-[13px] font-medium text-foreground">
         {row.name}
       </span>
 
-      <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+      <span className="min-w-0 flex-1 truncate text-[11.5px] text-muted-foreground">
         {row.desc}
       </span>
 
@@ -87,7 +90,7 @@ export function ComposerMenuItem({
             onConnect?.();
           }}
           className={cn(
-            "shrink-0 text-xs font-medium transition-colors duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
+            "shrink-0 text-[11.5px] font-medium transition-colors duration-(--duration-quick) ease-(--ease-smooth-out) motion-reduce:transition-none",
             /* Brand kit: body text must be AA — onyx on light surfaces (AAA). */
             connected
               ? "text-foreground"

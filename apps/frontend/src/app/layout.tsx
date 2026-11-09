@@ -1,21 +1,34 @@
 import type { Metadata } from "next";
-import { Inter, Roboto_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@loveble/utils";
 import { SettingsProvider } from "@/components/settings/settings-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@loveble/ui/sonner";
 
-const inter = Inter({
+/*
+ * Self-hosted on purpose. `next/font/google` downloads the CSS and the font
+ * files while the app builds, and Google intermittently answers with
+ * extensionless `fonts.gstatic.com/l/font?kit=…&skey=…` URLs. Turbopack splits
+ * those on `&`, so the build dies with "next/font/google queries have exactly
+ * one entry" (vercel/next.js#99114) with no code change. The same latin subsets
+ * live in ./fonts, so builds are deterministic and need no network.
+ */
+const inter = localFont({
+  src: "./fonts/inter-latin.woff2",
   variable: "--font-inter",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
 /* Brand kit mono face. */
-const robotoMono = Roboto_Mono({
+const robotoMono = localFont({
+  src: [
+    { path: "./fonts/roboto-mono-400-latin.woff2", weight: "400" },
+    { path: "./fonts/roboto-mono-500-latin.woff2", weight: "500" },
+  ],
   variable: "--font-roboto-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

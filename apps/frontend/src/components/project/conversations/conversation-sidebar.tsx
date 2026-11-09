@@ -13,6 +13,7 @@ import {
   type ConversationItem,
 } from "@/store/conversations.store";
 import { ChatPanel } from "./chat-panel";
+import { MemoryPanel } from "./memory-panel";
 import { Button } from "@loveble/ui/button";
 import {
   AlertDialog,
@@ -226,9 +227,9 @@ export function ConversationSidebar({
   );
 
   return (
-    <div className="flex flex-col h-full bg-sidebar">
+    <div className="relative flex flex-col h-full bg-sidebar">
       {/* Header */}
-      <div className="h-12 flex items-center justify-between gap-2 border-b px-3">
+      <div className="relative h-12 flex items-center justify-between gap-2 border-b px-3">
         <div className="min-w-0 flex-1">
           {isEditing ? (
             <input
@@ -262,9 +263,13 @@ export function ConversationSidebar({
           )}
         </div>
         <div className="flex items-center gap-1">
+          <MemoryPanel conversationId={activeConversationId} compact />
           <Button
             size="icon-xs"
             variant="highlight"
+            aria-expanded={showConversationList}
+            aria-label="Conversation history"
+            title="Conversation history"
             onClick={() => setShowConversationList(!showConversationList)}
           >
             <HistoryIcon className="size-3.5" />
@@ -279,38 +284,55 @@ export function ConversationSidebar({
         </div>
       </div>
 
-      {/* Conversation List Dropdown */}
+      {/*
+        Conversation list: a floating panel under the header, not a block in the
+        column -- opening it must never push the chat down.
+      */}
       {showConversationList && (
-        <div className="border-b max-h-48 overflow-y-auto">
-          {conversations.map((conv) => (
-            <div key={conv.id} className="group relative">
-              <button
-                onClick={() => handleSelectConversation(conv.id)}
-                className="w-full truncate px-3 py-2 pr-8 text-left text-sm hover:bg-muted/50 transition-colors"
-              >
-                <span className="block truncate">{conv.title || "New conversation"}</span>
-              </button>
-              <button
-                type="button"
-                aria-label="Delete conversation"
-                title="Delete conversation"
-                onClick={() => {
-                  setDeleteTarget(conv);
-                  setDeleteTitle(conv.title?.trim() || "conversation");
-                  setDeleteOpen(true);
-                }}
-                className="absolute right-1 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-              >
-                <TrashIcon className="size-3.5" />
-              </button>
-            </div>
-          ))}
-          {conversations.length === 0 && (
-            <div className="px-3 py-2 text-xs text-muted-foreground">
-              No conversations yet
-            </div>
-          )}
-        </div>
+        <>
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            onClick={() => setShowConversationList(false)}
+            className="fixed inset-0 z-20 cursor-default"
+          />
+          <div
+            className="absolute right-2 top-[calc(3rem-4px)] z-30 max-h-72 w-64 overflow-y-auto overscroll-contain rounded-xl border border-border/50 bg-popover p-1 shadow-lg ring-1 ring-black/[0.04] [scrollbar-width:thin]"
+            style={{ animation: "fade-in 120ms ease-out both" }}
+          >
+            {conversations.map((conv) => (
+              <div key={conv.id} className="group relative">
+                <button
+                  onClick={() => handleSelectConversation(conv.id)}
+                  className="w-full truncate rounded-lg px-2 py-1.5 pr-8 text-left text-[13px] transition-colors hover:bg-foreground/[0.06]"
+                >
+                  <span className="block truncate">
+                    {conv.title || "New conversation"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Delete conversation"
+                  title="Delete conversation"
+                  onClick={() => {
+                    setDeleteTarget(conv);
+                    setDeleteTitle(conv.title?.trim() || "conversation");
+                    setDeleteOpen(true);
+                  }}
+                  className="absolute right-1 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                >
+                  <TrashIcon className="size-3.5" />
+                </button>
+              </div>
+            ))}
+            {conversations.length === 0 && (
+              <div className="px-2 py-2 text-xs text-muted-foreground">
+                No conversations yet
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* Chat panel */}

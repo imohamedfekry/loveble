@@ -2,6 +2,9 @@ import type { FileType } from "@/lib/api/apis/files/types";
 
 export type ComposerVariant = "Rounded" | "Pill";
 
+/** Plan mode is read-only; build mode may edit the project. */
+export type ComposerMode = "plan" | "build";
+
 export type ComposerMenuType = "at" | "files" | null;
 
 export type ComposerSource = {

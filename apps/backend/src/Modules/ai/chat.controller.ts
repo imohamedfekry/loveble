@@ -23,6 +23,32 @@ import type { ChatRequestDto } from './dto/chat.dto';
 // `useChat` hits `onError` instead of freezing on "Working…".
 const CHAT_START_TIMEOUT_MS = 120_000;
 
+/** Steps allowed in one turn; see `defaultOptions` below. */
+const MAX_CHAT_STEPS = 40;
+
+/**
+ * `ask-user` asks the user to decide, so the turn has to end on it. The tool
+ * description tells the model to stop, but a model that keeps going would make
+ * the question look ignored; this makes the stop a property of the harness
+ * instead of a hope in the prompt.
+ *
+ * Mastra composes this with `maxSteps` itself (`[stepCountIs(maxSteps), ...]`),
+ * so it does not replace the step cap.
+ */
+function endsOnQuestion(steps: readonly unknown[]): boolean {
+  const last = steps[steps.length - 1] as
+    | {
+        toolCalls?: { toolName?: string }[];
+        toolResults?: { toolName?: string }[];
+      }
+    | undefined;
+  const called = [
+    ...(last?.toolCalls ?? []),
+    ...(last?.toolResults ?? []),
+  ].some((call) => call.toolName === 'ask-user');
+  return called;
+}
+
 function withTimeout<T>(
   promise: Promise<T>,
   ms: number,
@@ -153,7 +179,16 @@ export class ChatController {
               resource: String(user.id),
             },
           },
-          defaultOptions: { maxSteps: 25 },
+          // Enough steps for a real multi-file build to keep going AND still
+          // have a final step left for the summary the user needs; 25 used to
+          // run out mid-tool, ending the turn on a tool call with no answer.
+          defaultOptions: {
+            maxSteps: MAX_CHAT_STEPS,
+            // A turn that asked a question is over: the answer is the next
+            // user message, so nothing should keep running behind the card.
+            stopWhen: ({ steps }) =>
+              endsOnQuestion(steps as readonly unknown[]),
+          },
           sendReasoning: true,
           sendSources: true,
           onError: (error) => {
